@@ -1,0 +1,621 @@
+
+=head1 NAME
+
+OODoc::Parser::Markov - Parser for the MARKOV syntax
+
+=head1 INHERITANCE
+
+ OODoc::Parser::Markov
+   is a OODoc::Parser
+   is a OODoc::Object
+
+=head1 SYNOPSIS
+
+
+=head1 DESCRIPTION
+
+The Markov parser is named after the author, because the author likes to
+invite other people to write their own parser as well: every one has
+not only their own coding style, but also their own documentation
+wishes.
+
+The task for the parser is to strip Perl package files into a code
+part and a documentation tree.  The code is written to a directory
+where the module distribution is built, the documenation tree is
+later formatted into manual pages.
+
+See L</DETAILS> chapter below
+   General Description
+      Disadvantages
+   Structural tags
+      Heading
+      Subroutines
+      Include examples
+      Include diagnostics
+      Compatibility
+   Text markup
+      The M-link
+   Grouping subroutines
+   Caveats
+   Examples
+
+=head1 METHODS
+
+
+=head2 Parsing a file
+
+
+$obj-E<gt>B<currentManual>([MANUAL])
+
+=over 4
+
+Returns the manual object which is currently being filled with data.
+With a new MANUAL, a new one is set.
+
+=back
+
+$obj-E<gt>B<findMatchingRule>(LINE)
+
+=over 4
+
+Check the list of rules whether this LINE matches one of them.  This
+is an ordered evaluation.  Returned is the matched string and the required
+action.  If the line fails to match anything, an empty list is returned.
+
+I<Example:> 
+
+  if(my($match, $action) = $parser->findMatchingRule($line))
+  {  # do something with it
+     $action->($parser, $match, $line);
+  }
+
+=back
+
+$obj-E<gt>B<inDoc>([BOOLEAN])
+
+=over 4
+
+When a BOOLEAN is specified, the status changes.  It returns the current
+status of the document reader.
+
+=back
+
+$obj-E<gt>B<parse>(OPTIONS)
+
+=over 4
+
+ Option   Defined in       Default   
+ input                     <required>
+ output                    devnull   
+ version                   <required>
+
+. input FILENAME
+
+. output FILENAME
+
+. version STRING
+
+=back
+
+$obj-E<gt>B<rule>((STRING|REGEX), (METHOD|CODE))
+
+=over 4
+
+Register a rule which will be applied to a line in the input file.  When
+a STRING is specified, it must start at the beginning of the line to be
+selected.  You may also specify a regular expression which will match
+on the line.
+
+The second argument is the action which will be taken when the line
+is selected.  Either the named METHOD or the CODE reference will be called.
+Their arguments are:
+
+ $parser->METHOD($match, $line, $file, $linenumber);
+ CODE->($parser, $match, $line, $file, $linenumber);
+
+=back
+
+$obj-E<gt>B<setBlock>(REF-SCALAR)
+
+=over 4
+
+Set the scalar where the next documentation lines should be collected
+in.
+
+=back
+
+=head2 Producing manuals
+
+
+$obj-E<gt>B<decomposeLink>(MANUAL, LINK)
+
+=over 4
+
+=back
+
+=head3 Producing POD
+
+
+$obj-E<gt>B<cleanupPod>(FORMATTER, MANUAL, STRING)
+
+=over 4
+
+=back
+
+$obj-E<gt>B<cleanupPodLink>(FORMATTER, MANUAL, LINK)
+
+=over 4
+
+=back
+
+=head2 Formatting text pieces
+
+After the manuals have been parsed into objects, the information can
+be formatted in various ways, for instance into POD and HTML.  However,
+the parsing is not yet complete: the structure has been decomposed 
+with L<parse()|"Parsing a file">, but the text blocks not yet.  This is because the
+transformations which are needed are context dependent.  For each
+text section L<cleanup()|OODoc::Parser/"Formatting text pieces"> is called for the final touch.
+
+$obj-E<gt>B<cleanup>(FORMATTER, MANUAL, STRING)
+
+=over 4
+
+See L<OODoc::Parser/"Formatting text pieces">
+
+=back
+
+=head2 Initiation
+
+
+OODoc::Parser::Markov-E<gt>B<new>(OPTIONS)
+
+=over 4
+
+See L<OODoc::Text::Diagnostic/"METHODS">
+
+=back
+
+=head2 Inheritance
+
+
+$obj-E<gt>B<extends>([OBJECT])
+
+=over 4
+
+See L<OODoc::Object/"Inheritance">
+
+=back
+
+=head2 Commonly used functions
+
+
+$obj-E<gt>B<filenameToPackage>(FILENAME)
+
+OODoc::Parser::Markov-E<gt>B<filenameToPackage>(FILENAME)
+
+=over 4
+
+See L<OODoc::Object/"Commonly used functions">
+
+=back
+
+$obj-E<gt>B<mergeObjects>(OPTIONS)
+
+=over 4
+
+See L<OODoc::Object/"Commonly used functions">
+
+=back
+
+$obj-E<gt>B<mkdirhier>(DIRECTORY)
+
+OODoc::Parser::Markov-E<gt>B<mkdirhier>(DIRECTORY)
+
+=over 4
+
+See L<OODoc::Object/"Commonly used functions">
+
+=back
+
+$obj-E<gt>B<unique>
+
+=over 4
+
+See L<OODoc::Text/"METHODS">
+
+=back
+
+=head2 Manual database
+
+All manuals can be reached everywhere in the program: it is a global
+collection.
+
+$obj-E<gt>B<addManual>(MANUAL)
+
+=over 4
+
+See L<OODoc::Object/"Manual database">
+
+=back
+
+$obj-E<gt>B<mainManual>(NAME)
+
+=over 4
+
+See L<OODoc::Object/"Manual database">
+
+=back
+
+$obj-E<gt>B<manuals>
+
+=over 4
+
+See L<OODoc::Object/"Manual database">
+
+=back
+
+$obj-E<gt>B<manualsForPackage>(NAME)
+
+=over 4
+
+See L<OODoc::Object/"Manual database">
+
+=back
+
+$obj-E<gt>B<packageNames>
+
+=over 4
+
+See L<OODoc::Object/"Manual database">
+
+=back
+
+=head1 DIAGNOSTICS
+
+I<Warning:> =cut does not terminate any doc in $file line $number
+
+There is no document to end here.
+
+I<Warning:> Debugging remains in $filename line $number
+
+The author's way of debugging is by putting warn/die/carp etc on the
+first position of a line.  Other lines in a method are always indented,
+which means that these debugging lines are clearly visible.  You may
+simply ingnore this warning.
+
+I<Error:> The formatter type $class is not known for cleanup
+
+Text blocks have to get the finishing touch in the final formatting
+phase.  The parser has to fix the text block segments to create a
+formatter dependent output.  Only a few formatters are predefined.
+
+I<Warning:> You may have accidentally captured code in doc file $fn line $number
+
+Some keywords on the first position of a line are very common for code.
+However, code within doc should start with a blank to indicate pre-formatted
+lines.  This warning may be false.
+
+I<Error:> cannot read document from $input: $!
+
+The document file can not be processed because it can not be read.  Reading
+is required to be able to build a documentation tree.
+
+I<Error:> chapter $name before package statement in $file line $number
+
+A package file can contain more than one package: more than one
+name space.  The docs are sorted after the name space.  Therefore,
+each chapter must be preceeded by a package statement in the file
+to be sure that the correct name space is used.
+
+I<Error:> default for option $name outside subroutine in $file line $number
+
+A default is set, however there is not subroutine in scope (yet).  It
+is plausible that the option does not exist either, but that will
+be checked later.
+
+I<Warning:> default line incorrect in $file line $number: $line
+
+The shown $line is not in the right format: it should contain at least
+two words being the option name and the default value.
+
+I<Error:> diagnostic $type outside subroutine in $file line $number
+
+It is unclear to which subroutine this diagnostic message belongs.
+
+I<Warning:> doc did not end in $input
+
+When the whole $input was parsed, the documentation part was still open.
+Probably you forgot to terminate it with a C<=cut>.
+
+I<Error:> example outside chapter in $file line $number
+
+An example can belong to a subroutine, chapter, section, and subsection.
+Apparently, this example was found before the first chapter started in
+the file.
+
+I<Error:> manual definition requires manual object
+
+A call to L<addManual()|OODoc::Object/"Manual database"> expects a new manual object (a L<OODoc::Manual|OODoc::Manual>),
+however an incompatible thing was passed.  Usually, intended was a call
+to L<manualsForPackage()|OODoc::Object/"Manual database"> or L<mainManual()|OODoc::Object/"Manual database">.
+
+I<Warning:> no diagnostic message supplied in $file line $number
+
+The start of a diagnostics message was indicated, however not provided
+on the same line.
+
+I<Error:> no input file to parse specified
+
+The parser needs the name of a file to be read, otherwise it can not
+work.
+
+I<Warning:> option "$name" is not defined for subroutine $name in $package, but is linked to in $manual
+
+
+I<Error:> option $name outside subroutine in $file line $number
+
+An option is set, however there is not subroutine in scope (yet).
+
+I<Warning:> option line incorrect in $file line $number: $line
+
+The shown $line is not in the right format: it should contain at least
+two words being the option name and an abstract description of possible
+values.
+
+I<Warning:> order conflict "$take" before "$insert" in $file line $number
+
+The order of the objects in a sub-class shall be the same as that of
+the super class, otherwise the result of merging of the information
+received from both classes is undertermined.
+
+I<Warning:> package $link is not on your system, but linked to in $manual
+
+
+I<Error:> section $name outside chapter in $file line $number
+
+Sections must be contained in chapters.
+
+I<Error:> subroutine $name outside chapter in $file line $number
+
+Subroutine descriptions (method, function, tie, ...) can only be used
+within a restricted set of chapters.  You have not started any
+chapter yet.
+
+I<Warning:> subroutine $name() is not defined by $package, but linked to in $manual
+
+
+I<Error:> subsection $name outside section in $file line $number
+
+Subsections are only allowed in a chapter when it is nested within
+a section.
+
+I<Warning:> unknown markup in $file line $number: $line
+
+The standard pod and the extensions made by this parser define a long
+list of markup keys, but yours is not one of these predefined names.
+
+=head1 DETAILS
+
+
+=head2 General Description
+
+The Markov parser has some commonalities with the common POD syntax.
+You can use the same tags as are defined by POD, however these tags are
+"visual style", which means that OODoc can not treat it smart.  The Markov
+parser adds many logical markups which will produce nicer pages.
+
+Furthermore, the parser will remove the documentation from the
+source code, because otherwise the package installation would fail:
+Perl's default installation behavior will extract POD from packages,
+but the markup is not really POD, which will cause many complaints.
+
+The version of the module is defined by the OODoc object which creates
+the manual page.  Therefore, C<$VERSION> will be added to each package
+automatically.
+
+=head3 Disadvantages
+
+The Markov parser removes all raw documentation from the package files,
+which means that people sending you patches will base them on the
+processed source: the line numbers will be wrong.  Usually, it is not
+much of a problem to manually process the patch: you have to check the
+correctness anyway.
+
+A second disadvantage is that you have to backup your sources separately:
+the sources differ from what is published on CPAN, so CPAN is not your
+backup anymore.
+
+=head2 Structural tags
+
+
+=head3 Heading
+
+ =chapter    STRING
+ =section    STRING
+ =subsection STRING
+
+These text structures are used to group descriptive text and subroutines.
+You can use any name for a chapter, but the formatter expects certain
+names to be used: if you use a name which is not expected by the formatter,
+that documentation will be ignored.
+
+=head3 Subroutines
+
+Perl has many kinds of subroutines, which are distinguished in the logical
+markup.  The output may be different per kind.
+
+ =i_method  NAME PARAMETERS   (instance method)
+ =c_method  NAME PARAMETERS   (class method)
+ =ci_method NAME PARAMETERS   (class and instance method)
+ =method    NAME PARAMETERS   (short for i_method)
+ =function  NAME PARAMETERS
+ =tie       NAME PARAMETERS
+ =overload  STRING
+
+The NAME is the name of the subroutine, and the PARAMETERS an argument
+indicator.
+
+Then the subroutine description follows.  These tags have to follow the
+general description of the subroutines.  You can use
+
+ =option    NAME PARAMETERS
+ =default   NAME VALUE
+ =requires  NAME PARAMETERS
+
+If you have defined an =option, you have to provide a =default for this
+option anywhere.  Use of =default for an option on a higher level will
+overrule the one in a subclass.
+
+=head3 Include examples
+
+Examples can be added to chapters, sections, subsections and subroutines.
+They run until the next markup line, so can only come at the end of the
+documentation pieces.
+
+ =example
+ =examples
+
+=head3 Include diagnostics
+
+A subroutine description can also contain error or warning descriptions.
+These diagnostics are usually collected into a special chapter of the
+manual page.
+
+ =error this is very wrong
+ Of course this is not really wrong, but only as an example
+ how it works.
+
+ =warning wrong, but not sincerely
+ Warning message, which means that the program can create correct output
+ even though it found sometning wrong.
+
+=head3 Compatibility
+
+For comfort, all POD markups are supported as well
+
+ =head1 Heading Text          (same as =chapter)
+ =head2 Heading Text          (same as =section)
+ =head3 Heading Text          (same as =subsection)
+ =head4 Heading Text
+ =over indentlevel
+ =item stuff
+ =back
+ =cut
+ =pod
+ =begin format
+ =end format
+ =for format text...
+
+=head2 Text markup
+
+Next to the structural markup, there is textual markup.  This markup is the
+same as POD defines in the perlpod manual page. For instance,
+C<< C<some code> >> can be used to create visual markup as a code
+fragment.
+
+One kind is added to the standard list: the C<M>.
+
+=head3 The M-link
+
+The C<M>-link can not be nested inside other text markup items.  It is used
+to refer to manuals, subroutines, and options.  You can use an C<L>-link
+to manuals as well, however then the POD output filter will modify the
+manual page while converting it to other manual formats.
+
+Syntax of the C<M>-link:
+ ME<lt>OODoc::ObjectE<gt>
+ ME<lt>OODoc::Object::new()E<gt>
+ ME<lt>OODoc::Object::new(verbose)E<gt>
+ ME<lt>new()E<gt>
+ ME<lt>new(verbose)E<gt>
+
+These links refer to a manual page, a subroutine within a manual page, and
+an option of a subroutine respectively.  And then two abbreviations are
+shown: they refer to subroutines of the same manual page, in which case
+you may refer to inherited documentation as well.
+
+=head2 Grouping subroutines
+
+Subroutine descriptions can be grouped in a chapter, section, or subsection.
+It is very common to have a large number of subroutines, so some structure
+has to be imposed here.
+
+If you document the same routine in more than one manual page with an
+inheritance relationship, the documentation location shall not conflict.
+You do not need to give the same level of detail about the exact
+location of a subroutine, as long as it is not conflicting.  This
+relative freedom is created to be able to regroup existing documentation
+without too much effort.
+
+For instance, in the code of OODoc itself (which is of course documented
+with OODoc), the following happens:
+
+ package OODoc::Object;
+ ...
+ =chapter METHODS
+ =section Initiation
+ =c_method new OPTIONS
+
+ package OODoc;
+ use base 'OODoc::Object';
+ =chapter METHODS
+ =c_method new OPTIONS
+
+As you can see in the example, in the higher level of inheritance, the
+C<new> method is not put in the C<Initiation> section explicitly.  However,
+it is located in the METHODS chapter, which is required to correspond to
+the base class.  The generated documentation will show C<new> in the
+C<Initiation> section in both manual pages.
+
+=head2 Caveats
+
+The markov parser does not require blank lines before or after tags, like
+POD does.  This means that the change to get into parsing problems have
+increased: lines within here documents which start with a C<=> will
+cause confusion.  However, I these case, you can usually simply add a backslash
+in front of the printed C<=>, which will disappear once printed.
+
+=head2 Examples
+
+You may also take a look at the raw code archive for OODoc (the text
+as is before it was processed for distribution).
+
+I<Example:> how subroutines are documented
+
+
+ =chapter FUNCTIONS
+
+ =function countCharacters FILE|STRING, OPTIONS
+ Returns the number of bytes in the FILE or STRING, or undef if the
+ string is undef or the character set unknown.
+
+ =option  charset CHARSET
+ =default charset 'us-ascii'
+ Characters in, for instance, utf-8 or unicode encoding require variable
+ number of bytes per character.  The correct CHARSET is needed for the
+ correct result.
+
+ =examples
+
+   my $count = countCharacters("monkey");
+   my $count = countCharacters("monkey", charset => 'utf-8');
+
+ =error unknown character set $charset
+
+ The character set you can use is limited by the sets defined by
+ L<Encode>.  The characters of the input can not be seperated from
+ each other without this definition.
+
+ =cut
+
+ # now the coding starts
+ sub countCharacters($@) {
+    my ($self, $input, %options) = @_;
+    ...
+ }
+
+=head2 COPYRIGHTS
+
+all mine.
+
