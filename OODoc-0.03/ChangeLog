@@ -1,0 +1,17 @@
+
+version 0.03:
+
+	Improvements:
+	- Added OODoc::Format::PodTemplate
+	- Minor reorderings in OODoc::Format::Pod
+
+version 0.02: Tue Apr  1 13:52:33 CEST 2003
+
+	Improvements:
+	- handling of format_options
+	- appending text to POD
+	- documentation about POD configuration
+
+version 0.01: March 30, 2003
+
+	Initial implementation

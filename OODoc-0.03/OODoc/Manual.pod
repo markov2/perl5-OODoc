@@ -1,0 +1,431 @@
+
+=head1 NAME
+
+OODoc::Manual - Contains the information found in one manual about a package
+
+
+=head1 INHERITANCE
+
+ OODoc::Manual
+   is a OODoc::Object
+
+
+=head1 SYNOPSIS
+
+ my $doc    = OODoc->new(...);
+ my $manual = OODoc::Manual->new(name => ..., source => ...);
+
+ $doc->manual($manual);
+ my @manual = $doc->manualsForPackage('Mail::Box');
+
+ print $manual->name;
+ print $manual->package;
+
+
+=head1 DESCRIPTION
+
+
+
+
+=head1 METHODS
+
+
+$obj-E<gt>B<all>(METHOD, PARAMETERS)
+
+=over 4
+
+Call L<OODoc::Text::Structure::all()|OODoc::Text::Structure/"Container"> on all chapters, passing the METHOD
+and PARAMETERS.  In practice, this means that you can simply collect
+kinds of information from various parts within the manual page.
+
+I<Example:> 
+
+ my @diags = $manual->all('diagnostics');
+
+=back
+
+$obj-E<gt>B<chapter>(NAME|OBJECT)
+
+=over 4
+
+When a NAME (a string) given, the chapter with that name is returned, or
+C<undef> when it is not known.  With an OBJECT, that object is added to
+the list of chapters.
+
+=back
+
+$obj-E<gt>B<chapters>([CHAPTERS])
+
+=over 4
+
+Returns the ordered list of chapter object for this manual.
+
+=back
+
+overload: B<cmp>
+
+=over 4
+
+String comparison takes place between a manual name and another
+manual name which may be a manual object or any other string or
+stringifyable object.
+
+I<Example:> 
+
+ if($manual eq 'OODoc') ...
+ if($man1 eq $man2) ...
+ my @sorted = sort @manuals;    # implicit calls to cmp
+
+=back
+
+$obj-E<gt>B<collectPackageRelations>
+
+=over 4
+
+=back
+
+$obj-E<gt>B<diagnostics>(OPTIONS)
+
+=over 4
+
+All diagnostic messages of all chapters for this manual together.
+
+ Option  Defined in  Default
+ select              []     
+
+. select ARRAY
+
+=over 4
+
+Select only the diagnostic message of the specified types (case
+insensitive).  Without any type, all are selected.
+
+=back
+
+=back
+
+$obj-E<gt>B<examples>
+
+=over 4
+
+All examples of all chapters within this manual together, especially
+useful for counting.
+
+I<Example:> 
+
+ print scalar $manual->examples;
+
+=back
+
+$obj-E<gt>B<expand>
+
+=over 4
+
+Add the information of lower level manuals into this one.
+
+=back
+
+$obj-E<gt>B<extraCode>([PACKAGES])
+
+=over 4
+
+Returns a list of manuals which contain extra code for this package
+When PACKAGES (names or objects) are specified, they are added first.
+
+=back
+
+$obj-E<gt>B<inherited>(SUBROUTINE|OPTION)
+
+=over 4
+
+Returns whether the SUBROUTINE or OPTION was defined by this manual page,
+or inherited from it.
+
+=back
+
+$obj-E<gt>B<isPurePod>
+
+=over 4
+
+Returns whether this package has real code related to it.
+
+=back
+
+$obj-E<gt>B<name>
+
+=over 4
+
+Returns the name of the manual, which is found in the NAME chapter.
+
+=back
+
+$obj-E<gt>B<ownSubroutines>
+
+=over 4
+
+Returns only the subroutines which are described in this manual page
+itself.  L<subroutines()|"METHODS"> returns them all.
+
+=back
+
+$obj-E<gt>B<package>
+
+=over 4
+
+Returns the package of the manual.
+
+=back
+
+$obj-E<gt>B<parser>
+
+=over 4
+
+Returns the parser which has produced this manual object.
+
+=back
+
+$obj-E<gt>B<realizers>([PACKAGES])
+
+=over 4
+
+Returns a list of packages which can realize into this object
+using Object::Realize::Later magic.  When PACKAGES (names or objects)
+are specified, they are added first.
+
+=back
+
+$obj-E<gt>B<realizes>([PACKAGE])
+
+=over 4
+
+Returns the class into which this class can be realized.  This is
+a trick of the Object::Realize::Later module.  The PACKAGE (name or
+object) will be set first, if specified.
+
+=back
+
+$obj-E<gt>B<source>
+
+=over 4
+
+Returns the source of this manual information.
+
+=back
+
+$obj-E<gt>B<stats>
+
+=over 4
+
+Returns a string which displays some stats about the manual.
+
+=back
+
+overload: B<stringification>
+
+=over 4
+
+Used in string context, a manual produces its name.
+
+=back
+
+$obj-E<gt>B<stripped>
+
+=over 4
+
+The name of the produced stripped package file.
+
+=back
+
+$obj-E<gt>B<subClasses>([PACKAGES])
+
+=over 4
+
+Returns the names of all sub-classes (extensions) of this package.
+When PACKAGES (names or objects) are specified, they are first added
+to the list.
+
+=back
+
+$obj-E<gt>B<subroutine>(NAME)
+
+=over 4
+
+Returns the subroutine with the specified NAME as object reference.
+
+=back
+
+$obj-E<gt>B<subroutines>
+
+=over 4
+
+All subroutines of all chapters within this manual together, especially
+useful for counting.
+
+I<Example:> 
+
+ print scalar $manual->subroutines;
+
+=back
+
+$obj-E<gt>B<superClasses>([PACKAGES])
+
+=over 4
+
+Returns the super classes for this package.  PACKAGES (names or objects)
+will be added to the list of superclasses first.
+
+=back
+
+=head2 Initiation
+
+
+OODoc::Manual-E<gt>B<new>(OPTIONS)
+
+=over 4
+
+See L<OODoc::Text::Diagnostic/"METHODS">
+
+=back
+
+=head2 Inheritance
+
+
+$obj-E<gt>B<extends>([OBJECT])
+
+=over 4
+
+See L<OODoc::Object/"Inheritance">
+
+=back
+
+=head2 Commonly used functions
+
+
+$obj-E<gt>B<filenameToPackage>(FILENAME)
+
+OODoc::Manual-E<gt>B<filenameToPackage>(FILENAME)
+
+=over 4
+
+See L<OODoc::Object/"Commonly used functions">
+
+=back
+
+$obj-E<gt>B<mergeObjects>(OPTIONS)
+
+=over 4
+
+See L<OODoc::Object/"Commonly used functions">
+
+=back
+
+$obj-E<gt>B<mkdirhier>(DIRECTORY)
+
+OODoc::Manual-E<gt>B<mkdirhier>(DIRECTORY)
+
+=over 4
+
+See L<OODoc::Object/"Commonly used functions">
+
+=back
+
+$obj-E<gt>B<unique>
+
+=over 4
+
+See L<OODoc::Text/"METHODS">
+
+=back
+
+=head2 Manual database
+
+All manuals can be reached everywhere in the program: it is a global
+collection.
+
+$obj-E<gt>B<addManual>(MANUAL)
+
+=over 4
+
+See L<OODoc::Object/"Manual database">
+
+=back
+
+$obj-E<gt>B<mainManual>(NAME)
+
+=over 4
+
+See L<OODoc::Object/"Manual database">
+
+=back
+
+$obj-E<gt>B<manuals>
+
+=over 4
+
+See L<OODoc::Object/"Manual database">
+
+=back
+
+$obj-E<gt>B<manualsForPackage>(NAME)
+
+=over 4
+
+See L<OODoc::Object/"Manual database">
+
+=back
+
+$obj-E<gt>B<packageNames>
+
+=over 4
+
+See L<OODoc::Object/"Manual database">
+
+=back
+
+
+
+=head1 DIAGNOSTICS
+
+I<Error:> manual definition requires manual object
+
+A call to L<addManual()|OODoc::Object/"Manual database"> expects a new manual object (a L<OODoc::Manual|OODoc::Manual>),
+however an incompatible thing was passed.  Usually, intended was a call
+to L<manualsForPackage()|OODoc::Object/"Manual database"> or L<mainManual()|OODoc::Object/"Manual database">.
+
+I<Error:> no name in manual in $source
+
+Each documentation part requires a chapter NAME which starts with
+the manual name followed by a dash.  Apparently, this was not found
+in the indicated file.
+
+I<Warning:> order conflict "$take" before "$insert" in $file line $number
+
+The order of the objects in a sub-class shall be the same as that of
+the super class, otherwise the result of merging of the information
+received from both classes is undertermined.
+
+I<Error:> two chapters name $name in $filename line $ln1 and $ln2
+
+The indicated file contains two chapters with the same name, which
+is not permitted.  Join the contents of both parts.
+
+
+
+
+
+
+=head1 REFERENCES
+
+See the OODoc website at L<$website> for more details.
+
+=head1 COPYRIGHTS
+
+Module version $version.
+Written by Mark Overmeer (mark@overmeer.net).  See the ChangeLog for
+other contributors.
+
+Copyright (c) 2001-2002 by the authors. All rights reserved.  This program
+is free software; you can redistribute it and/or modify it under the
+same terms as Perl itself.
+
+
