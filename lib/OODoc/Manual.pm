@@ -611,16 +611,19 @@ sub expand()
     my %extended  = map { ($_->name => $_) }
                        map { $_->subroutines }
                           ($self, $self->extraCode);
+    my %used;  # items can be used more than once, collecting mulitple inherit
 
     my @inherited = map { $_->subroutines  } @supers;
     my %location;
 
     foreach my $inherited (@inherited)
     {   my $name        = $inherited->name;
-        if(my $extended = delete $extended{$name})
+        if(my $extended = $extended{$name})
         {   $extended->extends($inherited);
-            my $path = $self->mostDetailedLocation($extended);
-            push @{$location{$path}}, $extended;
+            unless($used{$name}++)    # add only at first appearance
+            {   my $path = $self->mostDetailedLocation($extended);
+                push @{$location{$path}}, $extended;
+            }
         }
         else
         {   my $path = $self->mostDetailedLocation($inherited);
@@ -628,7 +631,10 @@ sub expand()
         }
     }
 
-    push @{$location{$_->path}}, $_ foreach values %extended;
+    while(my($name, $item) = each %extended)
+    {   next if $used{$name};
+        push @{$location{$item->path}}, $item;
+    }
 
     foreach my $chapter ($self->chapters)
     {   $chapter->setSubroutines(delete $location{$chapter->path});

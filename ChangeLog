@@ -2,6 +2,26 @@
 All changes where made by Mark Overmeer <oodoc@overmeer.net>, unless
 explicitly stated differently.
 
+version 0.90: Tue Aug 24 09:26:52 CEST 2004
+
+	Fixes:
+
+	- Inheritance in HTML didn't remove <pre> when using multiple
+	  inheritance.
+
+	- =option with missing default crashed.
+
+	Improvements:
+
+	- The 'version' file can contain complex strings, like
+	     $VERSION = '0.0.2'
+	  The first sequence of digits and dots is taken.
+
+	- Abbreviated some of the error messages.
+
+	- options, sections and subroutines do understand most of
+	  multiple inheritance.
+
 version 0.10: Wed Jan 21 09:48:08 CET 2004
 
 	Fixes:

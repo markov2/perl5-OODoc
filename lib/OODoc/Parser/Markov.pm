@@ -770,9 +770,9 @@ a typo) or you didn't install the module on purpose.  This message will
 also be produced if some defined package is stored in one file together
 with an other module or when compilation errors are encountered.
 
-=warning subroutine $name is not defined by $package, but linked to in $manual
+=warning subroutine $name is not defined by $package, found in $manual
 
-=warning option "$name" is not defined for subroutine $name in $package, but is linked to in $manual
+=warning option "$name" unknow for $name() in $package, found in $manual
 
 =warning no manual for $package (correct casing?)
 The manual for $package cannot be found.  If you have a module named this
@@ -801,7 +801,7 @@ sub decomposeM($$)
     {   eval "no warnings; require $link";
         if(! $@)  { ; }
         elsif($@ =~ m/Can't locate/ )
-        {  warn "WARNING: module $link is not on your system, but linked to in $manual\n";
+        {  warn "WARNING: module $link is not on your system, found in $manual\n";
         }
         else
         {  warn "ERROR: compilation problems for module $link in $manual:\n$@";
@@ -840,7 +840,7 @@ sub decomposeM($$)
 
     my $opt = $sub->findOption($option);
     unless(defined $opt)
-    {   warn "WARNING: option \"$option\" is not defined for subroutine $subroutine in $location, but linked to in $manual\n";
+    {   warn "WARNING: option \"$option\" unknown for $subroutine() in $location, found in $manual\n";
         return ($location, "$package subroutine $subroutine option $option");
     }
 

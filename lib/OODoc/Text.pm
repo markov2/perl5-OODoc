@@ -245,8 +245,8 @@ sub findDescriptionObject()
 {   my $self   = shift;
     return $self if length $self->description;
 
-    my $extends = $self->extends;
-    defined $extends ? $extends->findDescriptionObject : undef;
+    my @descr = map { $_->findDescriptionObject } $self->extends;
+    wantarray ? @descr : $descr[0];
 }
 
 #-------------------------------------------

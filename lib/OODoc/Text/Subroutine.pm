@@ -290,38 +290,43 @@ Returns a list of option-default combinations on this subroutine.
 
 sub collectedOptions(@)
 {   my ($self, %args) = @_;
-    my $extends   = $self->extends;
-    my $options   = $extends ? $extends->collectedOptions : {};
-    
-    $options->{$_->name}[0] = $_ for $self->options;
+    my @extends   = $self->extends;
+    my %options;
+    foreach ($self->extends)
+    {   my $options = $_->collectedOptions;
+        @options{ keys %$options } = values %$options;
+    }
+
+    $options{$_->name}[0] = $_ for $self->options;
 
     foreach my $default ($self->defaults)
     {   my $name = $default->name;
 
-        unless(exists $options->{$name})
+        unless(exists $options{$name})
         {   my ($fn, $ln) = $default->where;
             warn "WARNING: no option $name for default in $fn line $ln\n";
             next;
         }
-        $options->{$name}[1] = $default;
+        $options{$name}[1] = $default;
     }
 
     foreach my $option ($self->options)
     {   my $name = $option->name;
-        next if defined $options->{$name}[1];
+        next if defined $options{$name}[1];
 
         my ($fn, $ln) = $option->where;
         warn "WARNING: no default for option $name defined in $fn line $ln\n";
 
-        my $default = $options->{$name}[0] =
+        my $default = $options{$name}[1] =
         OODoc::Text::Default->new
-         ( name => $name, value => 'C<undef>'
-         , soubroutine => $self, linenr => $ln
+         ( name => $name, value => 'undef'
+         , subroutine => $self, linenr => $ln
          );
+
         $self->default($default);
     }
 
-    $options;
+    \%options;
 }
 
 1;

@@ -110,6 +110,7 @@ sub init($)
         {   my $v = IO::File->new($fn, 'r')
                or die "ERROR: Cannot read version from file $fn: $!\n";
             $version = $v->getline;
+            $version = $1 if $version =~ m/(\d+\.[\d\.]+)/;
             chomp $version;
         }
     }
@@ -314,6 +315,7 @@ sub processFiles(@)
         {   my $v = IO::File->new($fn, "r")
                 or die "ERROR: Cannot read version from $fn: $!";
             $version = $v->getline;
+            $version = $1 if $version =~ m/(\d+\.[\d\.]+)/;
             chomp $version;
         }
         elsif($version = $self->version) { ; }
@@ -483,11 +485,14 @@ sub getPackageRelations()
 
     #
     # load all distributions (which are not loaded yet)
-    # simply ignore all errors.
+    #
 
     foreach my $manual (@manuals)
     {    next if $manual->isPurePod;
          eval "require $manual";
+         if($@ && $@ !~ /Can't locate/)
+         {   die "$@";
+         }
     }
 
     foreach my $manual (@manuals)

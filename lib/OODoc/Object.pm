@@ -68,6 +68,7 @@ sub new(@)
 
 sub init($)
 {   my ($self, $args) = @_;
+    $self->{OO_extends} = [];
     $self;
 }
 
@@ -85,7 +86,12 @@ is not supported here.
 
 sub extends(;$)
 {   my $self = shift;
-    @_ ? ($self->{OO_extends} = shift) : $self->{OO_extends};
+    my $ext  = $self->{OO_extends};
+    if(@_)
+    {   push @$ext, @_;
+    }
+
+    wantarray ? @$ext : $ext->[0];
 }
 
 #-------------------------------------------

@@ -924,7 +924,7 @@ sub templateInheritance(@)
     return '' unless length $output;
 
     for($output)
-    {   s#<pre>\n*(.*)</pre>\n*#$1#s;            # over-eager cleanup
+    {   s#<pre>\s*(.*?)</pre>\n*#\n$1#gs;   # over-eager cleanup
         s#^( +)#'&nbsp;' x length($1)#gme;
         s#$#<br />#gm;
     }
