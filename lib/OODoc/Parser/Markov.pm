@@ -776,6 +776,12 @@ with an other module or when compilation errors are encountered.
 
 =warning option "$name" is not defined for subroutine $name in $package, but is linked to in $manual
 
+=warning no manual for $package (correct casing?)
+The manual for $package cannot be found.  If you have a module named this
+way, this may indicate that the NAME chapter of the manual page in that
+module differs from the package name.  Often, this is a typo in the
+NAME... probably a difference in used cases.
+
 =error compilation problems for module $link $@
 If the report is about a syntax error involving 'require', then you
 may have created a link to a module with a name which is not acceptable
@@ -816,6 +822,12 @@ sub decomposeM($$)
         unless defined $subroutine && length $subroutine;
 
     my $package = $self->manual($man->package);
+    unless(defined $package)
+    {   my $want = $man->package;
+        warn "WARNING: no manual for $want (correct casing?)\n";
+        return (undef, "$want subroutine $subroutine");
+    }
+
     my $sub     = $package->subroutine($subroutine);
     unless(defined $sub)
     {   warn "WARNING: subroutine $subroutine() is not defined by $package, but linked to in $manual\n";

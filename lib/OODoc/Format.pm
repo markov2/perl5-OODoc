@@ -153,10 +153,6 @@ sub manifest() {shift->{OF_manifest}}
 
 =section Page generation
 
-=cut
-
-#-------------------------------------------
-
 =method createManual OPTIONS
 
 =option  format_options ARRAY

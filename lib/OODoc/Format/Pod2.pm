@@ -79,7 +79,8 @@ sub formatManual(@)
      ( { -lookups => \%permitted }
      );
 
-    my $created = $template->output($self->{O_template});
+    my $layout  = ${$self->{O_template}};        # Copy needed by template!
+    my $created = $template->output(\$layout);
     $output->print($$created);
 }
 
