@@ -1,4 +1,16 @@
 
+version 0.05: Tue May  6 12:19:17 CEST 2003
+
+	The Markov parser syntax has not changed, but nearly everything
+	else did.
+
+	Improvements:
+	- Many improvements in the produced HTML, especially when
+	  more than one manual page is produced for a single packages
+	  OODoc is now able to produce Mail::Box documentation, which
+	  is huge and complex.
+	- Added examples/mimetypes.tar.gz as very simple set-up
+
 version 0.04: Thu May  1 13:25:37 CEST 2003
 
 	Improvements:

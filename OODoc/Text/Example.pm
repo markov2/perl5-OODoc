@@ -19,17 +19,11 @@ Each M<OODoc::Text> element can have a list of examples,
 which are each captured in a separate object as described
 in this manual page.
 
-=cut
-
-#-------------------------------------------
-
 =chapter METHODS
 
-=cut
-
-#-------------------------------------------
-
 =c_method new OPTIONS
+
+=default type  C<'Example'>
 
 =cut
 

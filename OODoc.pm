@@ -142,10 +142,10 @@ Returns two array references: the first with files to process, and the second
 with files which do not need to be processed.  WHICH comes from
 M<processFiles(select)> and the LIST are files from a manifest.
 
-=error do not understand your file selection
+=error use regex, code reference or array for file selection
 
-The C<files> option is not understood.  You may specify an ARRAY, regular
-expression, or a code reference.
+The M<processFiles(select)> option is not understood.  You may specify
+an ARRAY, regular expression, or a code reference.
 
 =warning no file $fn to include in the distribution
 
@@ -161,7 +161,7 @@ sub selectFiles($@)
       = ref $files eq 'Regexp' ? sub { $_[0] =~ $files }
       : ref $files eq 'CODE'   ? $files
       : ref $files eq 'ARRAY'  ? $files
-      : croak "ERROR: do not understand your file selection";
+      : croak "ERROR: use regex, code reference or array for file selection";
 
     return ($select, []) if ref $select eq 'ARRAY';
 
@@ -370,13 +370,15 @@ sub getPackageRelations()
     my @sources  = map {$_->source} @manuals;
 
     foreach my $fn (@sources)
-    {    eval { require $fn };
+    {    next unless $fn =~ m/\.pm$/;
+         eval { require $fn };
          die "ERROR: problems compiling $fn:\n$@"
            if $@;
     }
 
     foreach my $manual (@manuals)
-    {   if($manual->name ne $manual->package)     # autoloaded code
+    {
+        if($manual->name ne $manual->package)  # autoloaded code
         {   my $main = $self->mainManual("$manual");
             $main->extraCode($manual) if defined $main;
             next;

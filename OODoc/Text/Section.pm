@@ -17,28 +17,21 @@ OODoc::Text::Section - collects the text of one section within a chapter
  my $chapter = $section->chapter;
  my @subsect = $section->subsections;
 
- my $index   = $section->subsection('INDEX');  # returns subsection
+ my $index   = $section->subsection('INDEX');
 
  my $index   = OODoc::Text::SubSection->new(...);
- $section->subsection($index);                 # set subsection
+ $section->subsection($index);           # add subsection
 
 =chapter DESCRIPTION
 
-=cut
-
-#-------------------------------------------
-
 =chapter METHODS
-
-=cut
-
-#-------------------------------------------
 
 =c_method new OPTIONS
 
 =requires chapter   OBJECT
-=default  container <chapter>
-=default  level     2
+=default  container M<new(chapter)>
+=default  level     C<2>
+=default  type      C<'Section'>
 
 =cut
 
@@ -53,6 +46,18 @@ sub init($)
     $self->{OTS_subsections} = [];
     $self;
 }
+
+#-------------------------------------------
+
+=section Location
+
+=method chapter
+
+Returns the chapter object for this section.
+
+=cut
+
+sub chapter() { shift->container }
 
 #-------------------------------------------
 
@@ -86,10 +91,6 @@ sub all($@)
 #-------------------------------------------
 
 =section Subsections
-
-=cut
-
-#-------------------------------------------
 
 =method subsection NAME|OBJECT
 
@@ -130,41 +131,8 @@ sub subsections(;@)
 
 #-------------------------------------------
 
-=section Container
+=section Commonly used functions
 
 =cut
-
-#-------------------------------------------
-
-=method chapter
-
-Returns the chapter object for this section.
-
-=cut
-
-sub chapter() { shift->container }
-
-#-------------------------------------------
-
-=section Collecting Information
-
-=cut
-
-#-------------------------------------------
-
-=method allExamples
-
-Returns a list of all example, which are OODoc::Text::Example
-objects, enclosed in the section and its subsections.
-
-=cut
-
-sub allExamples()
-{   my $self = shift;
-
-    ( $self->examples
-    , map {$_->examples} $self->subsections
-    );
-}
 
 1;

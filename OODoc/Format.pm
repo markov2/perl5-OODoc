@@ -372,7 +372,7 @@ sub createOtherPages(@) {shift}
 =method showSubroutines OPTIONS
 
 =option  subroutines ARRAY
-=default subroutines []
+=default subroutines C<[]>
 
 =option  output  FILE
 =default output  <selected filehandle>
@@ -380,22 +380,22 @@ sub createOtherPages(@) {shift}
 =requires manual  MANUAL
 
 =option  show_subs_index 'NO'|'NAMES'|'USE'
-=default show_subs_index 'NO'
+=default show_subs_index C<'NO'>
 
 =option  show_inherited_subs 'NO'|'NAMES'|'USE'|'EXPAND'
-=default show_inherited_subs 'USE'
+=default show_inherited_subs C<'USE'>
 
 =option  show_described_subs 'NO'|'NAMES'|'USE'|'EXPAND'
-=default show_described_subs 'EXPAND'
+=default show_described_subs C<'EXPAND'>
 
 =option  show_option_table 'NO'|'DESCRIBED'|'INHERITED'|'ALL'
-=default show_option_table 'ALL'
+=default show_option_table C<'ALL'>
 
 =option  show_inherited_options 'NO'|'LIST'|'USE'|'EXPAND'
-=default show_inherited_options 'USE'
+=default show_inherited_options C<'USE'>
 
 =option  show_described_options 'NO'|'LIST'|'USE'|'EXPAND'
-=default show_described_options 'EXPAND'
+=default show_described_options C<'EXPAND'>
 
 =cut
 
@@ -651,8 +651,12 @@ sub showOptionTable(@)
     my @rows;
     foreach (@$options)
     {   my ($option, $default) = @$_;
+        my $optman = $option->manual;
+        my $link   = $manual->inherited($option)
+                   ? $self->link(undef, $optman)
+                   : '';
         push @rows, [ $self->cleanup($manual, $option->name)
-                    , ($manual->inherited($option) ? $option->manual : '')
+                    , $link
                     , $self->cleanup($manual, $default->value)
                     ];
     }
@@ -747,6 +751,13 @@ still has to be cleaned-up before inclusion.
 
 sub createInheritance($)
 {   my ($self, $package) = @_;
+
+    if($package->name ne $package->package)
+    {   # This is extra code....
+        my $from = $package->package;
+        return "\n $package\n    contains extra code for\n    M<$from>\n";
+    }
+
     my $output;
     my @supers  = $package->superClasses;
 
@@ -757,7 +768,7 @@ sub createInheritance($)
 
     if(my @extras = $package->extraCode)
     {   $output .= "\n $package has extra code in\n";
-        $output .= "   M<$_>\n" foreach @extras;
+        $output .= "   M<$_>\n" foreach sort @extras;
     }
 
     foreach (@supers)

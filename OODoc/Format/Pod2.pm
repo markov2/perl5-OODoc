@@ -38,7 +38,7 @@ first need to install L<Bundle::Text::MagicTemplate>.
 
 =cut
 
-=c_method createManual OPTIONS
+=method createManual OPTIONS
 
 =option  template FILENAME
 =default template <in code>

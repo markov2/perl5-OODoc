@@ -29,10 +29,6 @@ objects and convert it into manual pages.
 
 =chapter OVERLOADED
 
-=cut
-
-#-------------------------------------------
-
 =overload '==' and '!='
 
 Numeric comparison is used to compare to objects whether they are
@@ -59,14 +55,10 @@ use overload '=='   => sub {$_[0]->unique == $_[1]->unique}
 
 =chapter METHODS
 
-=cut
-
-#-------------------------------------------
-
 =c_method new OPTIONS
 
 =option  name STRING
-=default name C<undef>
+=default name undef
 
 The name contains the main data about the text piece.
 
@@ -79,7 +71,7 @@ All text objects except chapters are contained in some other object.
 The type of this text element.  This is used for debugging only.
 
 =option  description STRING
-=default description ''
+=default description C<''>
 
 The text which is contained in the body of this text item.  Often, this
 is filled in later by M<openDescription()>.
@@ -183,12 +175,19 @@ sub container(;$)
 
 =section Location
 
-=method manual
-Returns the manual object which contains this text element.
+=method manual [NAME]
+
+Without a NAME, the manual of the text object is returned. With a NAME,
+the manual with that name is returned, even when that does not have a
+relation to the object: it calls M<OODoc::Object::manual()>.
 
 =cut
 
-sub manual() { shift->container->manual }
+sub manual(;$)
+{   my $self = shift;
+    @_ ? $self->SUPER::manual(@_)
+       : $self->container->manual;
+}
 
 #-------------------------------------------
 

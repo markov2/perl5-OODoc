@@ -18,20 +18,26 @@ OODoc::Manifest - maintain the information inside a manifest file.
 
 =chapter DESCRIPTION
 
+=chapter OVERLOADED
+
+=overload @{}
+
+Referencing this object as array will produce all filenames from the
+manifest.
+
 =cut
+
+use overload '@{}' => sub { [ shift->files ] };
+use overload bool  => sub {1};
 
 #-------------------------------------------
 
 =chapter METHODS
 
-=cut
-
-#-------------------------------------------
-
 =c_method new OPTIONS
 
 =option  filename FILENAME
-=default filename C<undef>
+=default filename undef
 
 The filename where the manifest is in.  When the name is not defined,
 the data will not be written.
@@ -52,17 +58,7 @@ sub init($)
 
 #-------------------------------------------
 
-=overload @{}
-
-Referencing this object as array will produce all filenames from the
-manifest.
-
-=cut
-
-use overload '@{}' => sub { [ shift->files ] };
-use overload bool  => sub {1};
-
-#-------------------------------------------
+=section Attributes
 
 =method filename
 
@@ -73,6 +69,38 @@ The name of the file which is read or will be written.
 sub filename() {shift->{OM_filename}}
 
 #-------------------------------------------
+
+=section The manifest list
+
+=method files
+
+Returns an unsorted list with all filenames in this manifest.
+
+=cut
+
+sub files() { keys %{shift->{O_files}} }
+
+#-------------------------------------------
+
+=method add FILENAMES
+
+Adds the FILENAMES to the manifest, doubles are ignored.
+
+=cut
+
+sub add($)
+{   my $self = shift;
+    while(@_)
+    {   my $filename = shift;
+        $self->modified(1) unless exists $self->{O_file}{$filename};
+        $self->{O_files}{$filename}++;
+    }
+    $self;
+}
+
+#-------------------------------------------
+
+=section Internals
 
 =method read
 
@@ -113,34 +141,6 @@ sub modified(;$)
 
 #-------------------------------------------
 
-=method files
-
-Returns an unsorted list with all filenames in this manifest.
-
-=cut
-
-sub files() { keys %{shift->{O_files}} }
-
-#-------------------------------------------
-
-=method add FILENAMES
-
-Adds the FILENAMES to the manifest, doubles are ignored.
-
-=cut
-
-sub add($)
-{   my $self = shift;
-    while(@_)
-    {   my $filename = shift;
-        $self->modified(1) unless exists $self->{O_file}{$filename};
-        $self->{O_files}{$filename}++;
-    }
-    $self;
-}
-
-#-------------------------------------------
-
 =method write
 
 Write the MANIFEST file if it has changed.  The file will automatically
@@ -166,5 +166,9 @@ sub write()
 sub DESTROY() { shift->write }
 
 #-------------------------------------------
+
+=section Commonly used functions
+
+=cut
 
 1;

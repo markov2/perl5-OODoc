@@ -15,19 +15,19 @@ VERBOSE=$1
 DIST=/tmp/OODoc;    # where the module's distribution is being built
 
 #### Other constants
-SOURCES=public_html/source
-RAW=public_html/raw
+SOURCES=public_html/oodoc/source
+RAW=public_html/oodoc/raw
 MANIFESTS="MANIFEST MANIFEST.extra"
+EXAMPLE_OODOC=examples/oodoc.tar.gz
 
 [ -d $DIST ] || mkdir $DIST || exit $?
-
 
 #
 # Produce oodoc example
 #
 
 [ -n "$VERBOSE" ] && echo "* Packaging OODoc setup as example";
-tar -czf examples/oodoc.tar.gz mkdist mkdoc README.oodoc html || exit $?
+tar -czf $EXAMPLE_OODOC README.oodoc mkdist mkdoc html || exit $?
 
 #
 # Produce the manual pages using OODoc
@@ -53,7 +53,7 @@ tar -czf examples/oodoc.tar.gz mkdist mkdoc README.oodoc html || exit $?
 # Publish distribution on the private website
 #
 
-DISTNAME=$(cd $DIST; ls -t *.tar.gz | tail -1)
+DISTNAME=$(cd $DIST; ls -rt *.tar.gz | tail -1)
 [ -n "$VERBOSE" ] && echo "* Publishing $DISTNAME"
 
 [ -d $SOURCES ] || mkdir $SOURCES || exit $?
@@ -87,7 +87,7 @@ fi
 
 ( cd $RAW
   [ -n "$VERBOSE" ] && ls -l $RAWNAME
-  ln -sf $RAWNAME raw-current.tar.gz || exit $?
+  ln -sf $RAWNAME raw-current.tar.bz2 || exit $?
 )
 
 exit 0

@@ -15,30 +15,21 @@ OODoc::Text::Option - one option for one subroutine
 
 =chapter DESCRIPTION
 
-Each OODoc::Text::Subroutine can have a list of options, which are each
+Each M<OODoc::Text::Subroutine> can have a list of options, which are each
 captured in a separate object as described in this manual page.
 
-=cut
-
-#-------------------------------------------
-
 =chapter METHODS
-
-=cut
-
-#-------------------------------------------
 
 =c_method new OPTIONS
 
 =requires subroutine OBJECT
-
 The subroutine in which this option lives.
 
 =requires parameters STRING
-
 An informal short description of the valid values for this option.
 
-=default  container <subroutine>
+=default  container M<new(subroutine)>
+=default  type      C<'Option'>
 
 =cut
 
@@ -55,6 +46,8 @@ sub init($)
 }
 
 #-------------------------------------------
+
+=section Attributes
 
 =method subroutine
 

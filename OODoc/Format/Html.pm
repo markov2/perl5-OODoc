@@ -89,6 +89,7 @@ at all: these simple strings are to be cleaned from paragraph information.
 sub cleanupString($$)
 {   my $self = shift;
     my $text = $self->cleanup(@_);
+    $text =~ s!</p>\s*<p>!<br />!gs;
     $text =~ s!\</?p\>!!g;
     $text;
 }
@@ -363,14 +364,32 @@ sub showStructureExpand(@)
     my $output   = $args{output}  or confess;
     my $manual   = $args{manual}  or confess;
 
+    # Produce own chapter description
+
     my $descr   = $self->cleanup($manual, $text->description);
-    (my $id     = $text->name) =~ s/\W+/_/g;
     my $unique  = $text->unique;
+    (my $id     = $name) =~ s/\W+/_/g;
 
     $output->print(
         qq[\n<h$level id="$id"><a name="$unique">$name</a></h$level>\n$descr]
                   );
+
     $self->mark($manual, $unique);
+
+    # Link to inherited documentation.
+
+    my $super = $text;
+    while($super = $super->extends)
+    {   last if $super->description !~ m/^\s*$/;
+    }
+
+    if(defined $super)
+    {   my $superman = $super->manual;   #  :-)
+        $output->print( "<p>See ", $self->link($superman, $super), " in "
+                      , $self->link(undef, $superman), "</p>\n");
+    }
+
+    # Show the subroutines and examples.
 
     $self->showSubroutines(%args, subroutines => [$text->subroutines]);
     $self->showExamples(%args, examples => [$text->examples])
@@ -507,7 +526,7 @@ sub showSubroutineUse(@)
     my $class      = $manual->package;
 
     my $call       = qq[<b><a name="$unique">$name</a></b>];
-    $call         .= "($paramlist)" if length $paramlist;
+    $call         .= "(&nbsp;$paramlist&nbsp;)" if length $paramlist;
     $self->mark($manual, $unique);
 
     my $use
@@ -515,6 +534,7 @@ sub showSubroutineUse(@)
       : $type eq 'c_method' ? qq[\$class-&gt;$call]
       : $type eq 'ci_method'? qq[\$obj-&gt;$call<br />\$class-&gt;$call]
       : $type eq 'overload' ? qq[overload: $call]
+      : $type eq 'function' ? qq[$call]
       : $type eq 'tie'      ? $call
       :                       '';
 
@@ -609,7 +629,7 @@ sub showOptionExpand(@)
     $self->showOptionUse(%args);
 
     my $where = $option->findDescriptionObject or return $self;
-    my $descr = $self->cleanup($manual, $where->description);
+    my $descr = $self->cleanupString($manual, $where->description);
 
     $output->print( qq[<dd>$descr</dd>\n] )
         if length $descr;
@@ -883,6 +903,8 @@ sub templateInheritance(@)
 
     my $manual  = $args->{manual} or confess;
     my $output  = $self->cleanup($manual, $self->createInheritance($manual));
+    return unless length $output;
+
     for($output)
     {   s#<pre>\n*(.*)</pre>\n*#$1#s;            # over-eager cleanup
         s#^( +)#'&nbsp;' x length($1)#gme;
@@ -1174,10 +1196,10 @@ sub templateList($$)
                 $output .= qq[<li>$link$count\n];
             }
             elsif($show_sec eq 'NAME')
-            {   $output .= qq[<li>unsorted$count\n];
+            {   $output .= qq[<li>];
             }
 
-            $output .= qq[<br />\n] . $self->indexListSubroutines($manual,@subs)
+            $output .= $self->indexListSubroutines($manual,@subs)
                 if @subs && $show_sub eq 'LIST';
         }
         else
@@ -1189,7 +1211,10 @@ sub templateList($$)
         foreach my $section (@sections)
         {   my @subs  = $sorted->($selected->($section->all('subroutines')));
 
-            my $count = $show_sub eq 'COUNT' && @subs ? ' ('.@subs.')' : '';
+            my $count = ! @subs              ? ''
+                      : $show_sub eq 'COUNT' ? ' ('.@subs.')'
+                      :                        ': ';
+
             if($show_sec eq 'LINK')
             {   my $link = $self->link($manual, $section, $section->niceName);
                 $output .= qq[<li>$link$count\n];
@@ -1198,7 +1223,7 @@ sub templateList($$)
             {   $output .= qq[<li>$section$count\n];
             }
 
-            $output .= qq[<br />\n] . $self->indexListSubroutines($manual,@subs)
+            $output .= $self->indexListSubroutines($manual,@subs)
                 if $show_sub eq 'LIST' && @subs;
 
             $output .= qq[</li>\n];
@@ -1217,7 +1242,7 @@ sub indexListSubroutines(@)
 {   my $self   = shift;
     my $manual = shift;
     
-    join ",\n    "
+    join ",\n"
        , map { $self->link($manual, $_, $_) }
             @_;
 }

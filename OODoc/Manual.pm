@@ -25,15 +25,10 @@ OODoc::Manual - one manual about a package
 
 =chapter DESCRIPTION
 
-=cut
+The C<OODoc::Manual> object contains information of a singel manual page.
+More than one manual can be related to a single package.
 
-#-------------------------------------------
-
-=chapter METHODS
-
-=cut
-
-#-------------------------------------------
+=chapter OVERLOADED
 
 =overload stringification
 
@@ -64,6 +59,8 @@ use overload cmp  => sub {$_[0]->name cmp "$_[1]"};
 
 #-------------------------------------------
 
+=chapter METHODS
+
 =c_method new OPTIONS
 
 =requires parser OBJECT
@@ -83,12 +80,12 @@ string which explains where the data came from.
 =requires version STRING
 
 =option  stripped STRING
-=default stripped C<undef>
+=default stripped undef
 
 The file where the stripped code is written to.
 
 =option  pure_pod BOOLEAN
-=default pure_pod 0
+=default pure_pod <false>
 
 Some documentation is stored in files which look like a module,
 but do not contain any code.  Their filenames usually end with C<.pod>.
@@ -132,6 +129,8 @@ sub init($)
 }
 
 #-------------------------------------------
+
+=section Attributes
 
 =method package
 
@@ -192,6 +191,8 @@ Returns whether this package has real code related to it.
 sub isPurePod() {shift->{OP_pure_pod}}
 
 #-------------------------------------------
+
+=section Collected
 
 =method chapter NAME|OBJECT
 
@@ -270,24 +271,6 @@ sub name()
    
 }
 
-#-------------------------------------------
-
-=method all METHOD, PARAMETERS
-
-Call M<OODoc::Text::Structure::all()> on all chapters, passing the METHOD
-and PARAMETERS.  In practice, this means that you can simply collect
-kinds of information from various parts within the manual page.
-
-=example
-
- my @diags = $manual->all('diagnostics');
-
-=cut
-
-sub all($@)
-{   my $self = shift;
-    map { $_->all(@_) } $self->chapters;
-}
 
 #-------------------------------------------
 
@@ -308,44 +291,27 @@ sub subroutines() { shift->all('subroutines') }
 
 =method subroutine NAME
 
-Returns the subroutine with the specified NAME as object reference.
+Returns the subroutine with the specified NAME as object reference.  When
+the manual is part of a package description which is spread over multiple
+manuals, then these other manuals will be searched as well.
 
 =cut
 
 sub subroutine($)
 {   my ($self, $name) = @_;
     my $sub;
-    foreach my $chapter ($self->chapters)
-    {   $sub = first {defined $_} $chapter->all(subroutine => $name);
-        last if defined $sub;
+
+    my $package = $self->package;
+    my @parts   = defined $package ? $self->manualsForPackage($package) : $self;
+
+    foreach my $part (@parts)
+    {   foreach my $chapter ($part->chapters)
+        {   $sub = first {defined $_} $chapter->all(subroutine => $name);
+            return $sub if defined $sub;
+        }
     }
-    $sub;
-}
 
-#-------------------------------------------
-
-=method inherited SUBROUTINE|OPTION
-
-Returns whether the SUBROUTINE or OPTION was defined by this manual page,
-or inherited from it.
-
-=cut
-
-sub inherited($) {$_[0]->name ne $_[1]->manual->name}
-
-#-------------------------------------------
-
-=method ownSubroutines
-
-Returns only the subroutines which are described in this manual page
-itself.  M<subroutines()> returns them all.
-
-=cut
-
-sub ownSubroutines
-{   my $self = shift;
-    my $me   = $self->name;
-    grep {not $self->inherited($_)} $self->subroutines;
+    ();
 }
 
 #-------------------------------------------
@@ -397,31 +363,10 @@ sub diagnostics(@)
     grep {$_->type =~ $select} @diag;
 }
 
-#-------------------------------------------
-
-=method collectPackageRelations
-
-=cut
-
-sub collectPackageRelations()
-{   my $self = shift;
-    return $self if $self->isPurePod;
-
-    my $name = $self->package;
-    my %return;
-
-    # The @ISA / use base
-    {  no strict 'refs';
-       $return{isa} = [ @{"${name}::ISA"} ];
-    }
-
-    # Support for Object::Realize::Later
-    $return{realizes} = $name->willRealize if $name->can('willRealize');
-
-    %return;
-}
 
 #-------------------------------------------
+
+=section Inheritance knowledge
 
 =method superClasses [PACKAGES]
 
@@ -485,19 +430,91 @@ sub realizers(;@)
 
 #-------------------------------------------
 
-=method extraCode [PACKAGES]
+=method extraCode
 
-Returns a list of manuals which contain extra code for this package
-When PACKAGES (names or objects) are specified, they are added first.
+Returns a list of manuals which contain extra code for this package.
 
 =cut
 
-sub extraCode(;@)
+sub extraCode()
 {   my $self = shift;
-    push @{$self->{OP_extra_code}}, @_;
-    @{$self->{OP_extra_code}};
+    my $name = $self->name;
+
+    $self->package eq $name
+    ? grep {$_->name ne $name} $self->manualsForPackage($name)
+    : ();
 }
 
+#-------------------------------------------
+
+=method all METHOD, PARAMETERS
+
+Call M<OODoc::Text::Structure::all()> on all chapters, passing the METHOD
+and PARAMETERS.  In practice, this means that you can simply collect
+kinds of information from various parts within the manual page.
+
+=example
+
+ my @diags = $manual->all('diagnostics');
+
+=cut
+
+sub all($@)
+{   my $self = shift;
+    map { $_->all(@_) } $self->chapters;
+}
+
+#-------------------------------------------
+
+=method inherited SUBROUTINE|OPTION
+
+Returns whether the SUBROUTINE or OPTION was defined by this manual page,
+or inherited from it.
+
+=cut
+
+sub inherited($) {$_[0]->name ne $_[1]->manual->name}
+
+#-------------------------------------------
+
+=method ownSubroutines
+
+Returns only the subroutines which are described in this manual page
+itself.  M<subroutines()> returns them all.
+
+=cut
+
+sub ownSubroutines
+{   my $self = shift;
+    my $me   = $self->name;
+    grep {not $self->inherited($_)} $self->subroutines;
+}
+
+#-------------------------------------------
+
+=section Processing
+
+=method collectPackageRelations
+
+=cut
+
+sub collectPackageRelations()
+{   my $self = shift;
+    return () if $self->isPurePod;
+
+    my $name = $self->package;
+    my %return;
+
+    # The @ISA / use base
+    {  no strict 'refs';
+       $return{isa} = [ @{"${name}::ISA"} ];
+    }
+
+    # Support for Object::Realize::Later
+    $return{realizes} = $name->willRealize if $name->can('willRealize');
+
+    %return;
+}
 #-------------------------------------------
 
 =method expand
@@ -516,10 +533,9 @@ sub expand()
     # classes which are external are ignored.
     #
 
-    my @supers  = map { ($_, $_->extraCode) }
-                     reverse     # multiple inheritance, first isa wins
-                         grep { ref $_ }
-                            $self->superClasses;
+    my @supers  = reverse     # multiple inheritance, first isa wins
+                      grep { ref $_ }
+                          $self->superClasses;
 
     $_->expand for @supers;
 
@@ -567,7 +583,10 @@ sub expand()
     # Give all the inherited subroutines a new location in this manual.
     #
 
-    my %extended  = map { ($_->name => $_) } $self->subroutines;
+    my %extended  = map { ($_->name => $_) }
+                       map { $_->subroutines }
+                          ($self, $self->extraCode);
+
     my @inherited = map { $_->subroutines  } @supers;
     my %location;
 
@@ -596,7 +615,8 @@ sub expand()
         }
     }
 
-    confess "Huh? $_\n" for keys %location;
+    warn "ERROR: Section without location in $self: $_\n"
+        for keys %location;
 
     $self->{OP_is_expanded} = 1;
     $self;
@@ -616,10 +636,10 @@ Merging is a complicated task, because the order of both lists should be
 kept as well as possible.
 
 =option  this ARRAY
-=default this []
+=default this C<[]>
 
 =option  super ARRAY
-=default super []
+=default super C<[]>
 
 =requires container OBJECT
 
@@ -738,6 +758,8 @@ sub mostDetailedLocation($)
 
 #-------------------------------------------
 
+=section Tracing
+
 =method stats
 
 Returns a string which displays some stats about the manual.
@@ -768,5 +790,9 @@ STATS
 }
 
 #-------------------------------------------
+
+=section Commonly used functions
+
+=cut
 
 1;

@@ -23,5 +23,6 @@ OODoc/Text/Structure.pm
 OODoc/Text/SubSection.pm
 OODoc/Text/Subroutine.pm
 README.examples
+examples/mimetypes.tar.gz
 examples/oodoc.tar.gz
 t/00works.t

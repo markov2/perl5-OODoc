@@ -24,13 +24,11 @@ for all of the other classes.
 
 #-------------------------------------------
 
+=chapter OVERLOADED
+
 =chapter METHODS
 
-=section Initiation
-
-=cut
-
-#-------------------------------------------
+=section Constructors
 
 =c_method new OPTIONS
 
@@ -75,7 +73,7 @@ sub init($)
 
 #-------------------------------------------
 
-=section Collected
+=section Inheritance knowledge
 
 =method extends [OBJECT]
 
@@ -138,10 +136,6 @@ sub filenameToPackage($)
 All manuals can be reached everywhere in the program: it is a global
 collection.
 
-=cut
-
-#-------------------------------------------
-
 =method addManual MANUAL
 
 The MANUAL will be added to the list of known manuals.  The same package
@@ -157,6 +151,7 @@ to M<manualsForPackage()> or M<mainManual()>.
 =cut
 
 my %packages;
+my %manuals;
 
 sub addManual($)
 {   my ($self, $manual) = @_;
@@ -165,6 +160,7 @@ sub addManual($)
         unless ref $manual && $manual->isa('OODoc::Manual');
 
     push @{$packages{$manual->package}}, $manual;
+    $manuals{$manual->name} = $manual;
     $self;
 }
 
@@ -194,18 +190,27 @@ returned.
 
 sub manualsForPackage($)
 {   my ($self,$name) = @_;
+    $name ||= 'doc';
     defined $packages{$name} ? @{$packages{$name}} : ();
 }
 
 #-------------------------------------------
 
 =method manuals 
-
 All manuals are returned.
 
 =cut
 
-sub manuals() { map { @$_ } values %packages }
+sub manuals() { values %manuals }
+
+#-------------------------------------------
+
+=method manual NAME
+Returns the manual with the specified name, or else C<undef>.
+
+=cut
+
+sub manual($) { $manuals{ $_[1] } }
 
 #-------------------------------------------
 

@@ -89,5 +89,11 @@ sub cleanup($$$)
     $string;
 }
 
+#-------------------------------------------
+
+=section Commonly used functions
+
+=cut
+
 1;
 

@@ -15,19 +15,11 @@ OODoc::Text::Default - one default for an option in one subroutine
 
 =chapter DESCRIPTION
 
-Each OODoc::Text::Subroutine can have a list of options, which have
+Each M<OODoc::Text::Subroutine> can have a list of options, which have
 default values which are each captured in a separate object as described
 in this manual page.
 
-=cut
-
-#-------------------------------------------
-
 =chapter METHODS
-
-=cut
-
-#-------------------------------------------
 
 =c_method new OPTIONS
 
@@ -39,7 +31,8 @@ The subroutine in which this option lives.
 
 The value which is related to this default.
 
-=default container <subroutine>
+=default container M<new(subroutine)>
+=default type      C<'Default'>
 
 =cut
 
@@ -57,6 +50,8 @@ sub init($)
 }
 
 #-------------------------------------------
+
+=section Attributes
 
 =method subroutine
 

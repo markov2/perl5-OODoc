@@ -16,23 +16,16 @@ OODoc::Text::Chapter - collects the information of one chapter
 
 =chapter DESCRIPTION
 
-=cut
-
-#-------------------------------------------
-
 =chapter METHODS
-
-=cut
-
-#-------------------------------------------
 
 =c_method new OPTIONS
 
-=default container C<manual>
-=default level     1
+=default container M<new(manual)>
+=default level     C<1>
+=default type      C<'Chapter'>
 
-=option  manual OBJECT
-=default manual C<undef>
+=option  manual    OBJECT
+=default manual    undef
 
 The manual in which this chapter is described.
 
@@ -94,7 +87,7 @@ A chapters consists of a list of sections, which may contain subsections.
 =method section NAME|OBJECT
 
 With a NAME, the section within this chapter with that name is
-returned.  With an OBJECT (which must be a OODoc::Text::Section),
+returned.  With an OBJECT (which must be a M<OODoc::Text::Section>),
 a new section is added to the end of the list.
 
 =cut
@@ -125,23 +118,6 @@ sub sections()
        $_->container($self) for @_;
    }
    @{$self->{OTC_sections}};
-}
-
-#-------------------------------------------
-
-=section Collecting information
-
-=cut
-
-#-------------------------------------------
-
-sub allExamples()
-{   my $self = shift;
-
-    ( $self->examples
-    , map({$_->allExamples} $self->sections)
-    , map({$_->examples}    $self->subroutines)
-    );
 }
 
 #-------------------------------------------

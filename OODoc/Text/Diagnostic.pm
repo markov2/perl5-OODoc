@@ -19,15 +19,7 @@ Each M<OODoc::Text::Subroutine> can have a list of warning and
 error messages, which are each captured in a separate object as described
 in this manual page.
 
-=cut
-
-#-------------------------------------------
-
 =chapter METHODS
-
-=cut
-
-#-------------------------------------------
 
 =c_method new OPTIONS
 
@@ -35,7 +27,8 @@ in this manual page.
 
 The subroutine in which this option lives.
 
-=default container <subroutine>
+=default container M<new(subroutine)>
+=default type      C<'Diagnostic'>
 
 =cut
 

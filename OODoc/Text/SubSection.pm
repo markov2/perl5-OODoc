@@ -22,23 +22,16 @@ A subsection (or head3) is the third level of refining document
 hierarchies.  A subsection must be a part of a section, which is
 part of a chapter.
 
-=cut
-
-#-------------------------------------------
-
 =chapter METHODS
-
-=cut
-
-#-------------------------------------------
 
 =c_method new OPTIONS
 
 =requires section OBJECT
 The section in which this sub-section lives.
 
-=default container <section>
-=default level     3
+=default container M<new(section)>
+=default level     C<3>
+=default type      C<'Subsection'>
 
 =cut
 
@@ -55,18 +48,7 @@ sub init($)
 
 #-------------------------------------------
 
-sub path()
-{   my $self = shift;
-    $self->section->path . '/' . $self->name;
-}
-
-#-------------------------------------------
-
-=section Container
-
-=cut
-
-#-------------------------------------------
+=section Location
 
 =method section
 
@@ -85,6 +67,13 @@ Returns the chapter object for this subsection.
 =cut
 
 sub chapter() { shift->section->chapter }
+
+#-------------------------------------------
+
+sub path()
+{   my $self = shift;
+    $self->section->path . '/' . $self->name;
+}
 
 #-------------------------------------------
 

@@ -30,11 +30,7 @@ provide a structure to the document.
 
 =chapter METHODS
 
-=cut
-
-#-------------------------------------------
-
-=section Initiation
+=section Constructors
 
 =c_method new OPTIONS
 
@@ -84,10 +80,6 @@ sub emptyExtension($)
 
 =section Attributes
 
-=cut
-
-#-------------------------------------------
-
 =method level
 
 Returns the level of the text structure.  Like in pod and html, a chapter
@@ -121,7 +113,8 @@ Represent the location of this chapter, section, or subsection as
 one string, separated by slashes.
 
 =example
- print $subsect->path;  # may print:  METHODS/Container/Search
+ print $subsect->path; 
+    # may print:  METHODS/Container/Search
 
 =cut
 
@@ -144,6 +137,34 @@ returned as list.
 sub all($@)
 {   my ($self, $method) = (shift, shift);
     $self->$method(@_);
+}
+
+#-------------------------------------------
+
+=method isEmpty
+
+Return true if this text structure is only a place holder for something
+found in a super class.  Structured elements are created with
+M<emptyExtension()> on each sub-class pass the idea of order and to
+collect subroutines to be listed.  However, in some cases, nothing
+is to be listed after all, and in that case, this method returns C<true>.
+
+=example
+
+ unless($chapter->isEmpty) ...
+
+=cut
+
+sub isEmpty()
+{   my $self = shift;
+
+    return 1 if $self->description =~ m/^\s*$/;
+    return 0 if $self->examples || $self->subroutines;
+
+    my @nested = $self->isa('OODoc::Text::Capter')  ? $self->sections
+               : $self->isa('OODoc::Text::Section') ? $self->subsections
+               :                                      ();
+    first { ! $_->isEmpty } @nested;
 }
 
 #-------------------------------------------

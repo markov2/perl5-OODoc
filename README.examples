@@ -15,5 +15,11 @@ WARNING: You can not used the examples without modifying them to
 + Examples:
 
 examples/oodoc.tar.gz
-   The setup for the OODoc modules themselves.
+   The setup for the OODoc modules themselves.  This is a quite large
+   set of modules, which causes a large amount of template files.
+   See http://perl.overmeer.net/oodoc/html for its output.
+
+examples/mimetypes.tar.gz
+   About the simplest module you can get.
+   See http://perl.overmeer.net/mimetypes/html for its output.
 
