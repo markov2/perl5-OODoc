@@ -152,7 +152,7 @@ be written when the object leaves scope.
 sub write()
 {   my $self = shift;
     return unless $self->modified;
-    my $filename = $self->filename;
+    my $filename = $self->filename || return $self;
 
     my $file = IO::File->new($filename, "w")
       or die "ERROR: Cannot write manifest $filename: $!\n";

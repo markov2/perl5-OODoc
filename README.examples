@@ -25,5 +25,5 @@ examples/mimetypes.tar.gz
 
 examples/mailbox.tar.gz
    The most complicated module which is controlled by OODoc: the
-   Mail::Box module.  The configuration is slowly growing into a
-   very complex test-case for OODoc.
+   Mail::Box module.  This is by far most complex test case for OODoc,
+   grouping the docs of multiple distributions.

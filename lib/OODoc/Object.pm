@@ -124,6 +124,7 @@ sub mkdirhier($)
 
 sub filenameToPackage($)
 {   my ($thing, $package) = @_;
+    $package =~ s!^lib/!!;
     $package =~ s#/#::#g;
     $package =~ s/\.(pm|pod)$//g;
     $package;

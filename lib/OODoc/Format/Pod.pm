@@ -86,7 +86,7 @@ sub createManual($@)
     my $manual   = $args{manual} or confess;
     my $options  = $args{format_options} || [];
 
-    print $manual->orderedChapters." chapters in $manual\n" if $verbose==3;
+    print $manual->orderedChapters." chapters in $manual\n" if $verbose>=3;
     (my $podname = $manual->source) =~ s/\.pm$/.pod/;
 
     my $podfile  = File::Spec->catfile($self->workdir, $podname);

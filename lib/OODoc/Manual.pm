@@ -90,6 +90,8 @@ The file where the stripped code is written to.
 Some documentation is stored in files which look like a module,
 but do not contain any code.  Their filenames usually end with C<.pod>.
 
+=requires distribution STRING
+
 =error   package name is not specified
 
 You try to instantiate a manual, but have not specified the name
@@ -99,6 +101,9 @@ of the package which is described in this manual, which is required.
 
 You have to specify where you found the information for the manual.  This
 does not need to be the name of an existing file, but usually it will be.
+
+=error  no version is specified for manual $name
+=error  no distribution is specified for manual $name
 
 =cut
 
@@ -114,6 +119,9 @@ sub init($)
 
     $self->{OP_version}  = delete $args->{version}
        or croak "ERROR: no version is specified for manual $name";
+
+    $self->{OP_distr}    = delete $args->{distribution}
+       or croak "ERROR: no distribution is specified for manual $name";
 
     $self->{OP_parser}   = delete $args->{parser}    or confess;
     $self->{OP_stripped} = delete $args->{stripped};
@@ -169,6 +177,16 @@ Returns the version of this manual information.
 =cut
 
 sub version() {shift->{OP_version}}
+
+#-------------------------------------------
+
+=method distribution
+
+Returns the distribution which includes this manual.
+
+=cut
+
+sub distribution() {shift->{OP_distr}}
 
 #-------------------------------------------
 

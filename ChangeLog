@@ -1,4 +1,32 @@
 
+version 0.07: Tue Jul 29 14:06:38 CEST 2003
+
+	Fixes:
+
+	- OODoc::Parser::Markov will add target=_blank to links produced
+	  from L<http://>
+
+	- OODoc::Parser::Markov does not change < into &lt; within
+	  =for :html and =begin :html
+
+	Improvements:
+
+	- Moved all modules into lib/
+
+	- Added everything what is needed to merge the documentation of
+	  multiple modules (especially useful to produce one huge HTML
+	  version of related modules)
+
+	- The version for the distribution is automatically taken from
+	  a file named version or VERSION in the source directory of the
+	  files.
+
+	- L<> links in verbatim for pod is replaced by text, because
+	  most podlaters do not know better.
+
+	- The example of OODoc use with MailBox shows how to combine
+	  multiple modules into one doc tree.
+
 version 0.06: Sun Jul  6 19:44:23 CEST 2003
 
 	Fixes:
@@ -35,6 +63,9 @@ version 0.06: Sun Jul  6 19:44:23 CEST 2003
 
 	- Implemented =begin :html and =for :html understanding for
 	  OODoc/Parser/Markov, for both Html as Pod formatters.
+
+	- The example of MailBox is much more complex, now more than
+	  one distribution is included into MailBox's html website.
 
 version 0.05: Tue May  6 12:19:17 CEST 2003
 

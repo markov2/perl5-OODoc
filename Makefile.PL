@@ -2,7 +2,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile
   ( NAME	 => 'OODoc'
-  , VERSION_FROM => 'OODoc.pm'
+  , VERSION_FROM => 'lib/OODoc.pm'
   , PREREQ_PM    =>
     { Test::More                  => 0.47
     }

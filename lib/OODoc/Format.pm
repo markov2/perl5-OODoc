@@ -65,7 +65,7 @@ L<Bundle::Text::MagicTemplate> and the ability to run cgi scripts.
 
 =requires project STRING
 
-The short name of this project (module), set by M<OODoc::new(module)>.
+The short name of this project (module), set by M<OODoc::new(project)>.
 
 =requires version STRING
 

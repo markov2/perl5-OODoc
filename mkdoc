@@ -6,25 +6,26 @@
 use warnings;
 use strict;
 
-use lib '.';
+use lib 'lib';     # use own current version to produce
 
 use OODoc;
 
 my $verbose      = $ARGV[0] || 0;
 
 ##### Synchronize these constants with the mkdist script.
-my $distribution = '/tmp/OODoc';
+my $workdir = '/tmp/OODoc';
+
+-d $workdir
+|| mkdir $workdir
+|| die "Cannot create directory $workdir: $!\n";
 
 ##### Other constants
-my $module       = 'OODoc';
+my $distribution = 'OODoc';
 my $name         = 'Object Oriented Documentation';
-my $version      = '0.06';         # Change this for each release!!!
 
 my $pod_format   = 'pod2';         # install Bundle::Text::MagicTemplate first
 #my $pod_format  = 'pod';          # runs out-of-the-box
 my $html_format  = 'html';
-
-print "*** Producing $module version $version\n" if $verbose;
 
 my $web          = 'public_html';
 my $website      = 'http://perl.overmeer.net/oodoc/';
@@ -38,10 +39,12 @@ my $css          = "$html_root/oodoc.css";
 #
 
 my $doc  = OODoc->new
- ( module     => $name
- , version    => $version
- , verbose    => $verbose
+ ( distribution => $distribution
+ , verbose      => $verbose
  );
+
+my $version = $doc->version;
+print "*** Producing $distribution version $version\n" if $verbose;
 
 #
 # Reading all the manual pages
@@ -50,7 +53,7 @@ my $doc  = OODoc->new
 #
 
 print "* Processing files\n" if $verbose;
-$doc->processFiles(workdir => $distribution);
+$doc->processFiles(workdir => $workdir);
 
 #
 # Prepare the collected information
@@ -70,12 +73,12 @@ print "* Creating POD\n" if $verbose;
 
 $doc->create
   ( $pod_format
-  , workdir => $distribution
-  , append => <<TEXT);
+  , workdir => $workdir
+  , append  => <<TEXT);
 
 =head1 REFERENCES
 
-See the $module website at L<$website> for more details.
+See the $distribution website at L<$website> for more details.
 
 =head1 COPYRIGHTS
 

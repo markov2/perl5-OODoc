@@ -178,6 +178,7 @@ sub findMatchingRule($)
 =option  output FILENAME
 =default output devnull
 
+=requires distribution STRING
 =requires version STRING
 
 =error no input file to parse specified
@@ -209,7 +210,8 @@ sub parse(@)
        or croak "ERROR: no input file to parse specified";
 
     my $output  = $args{output} || File::Spec->devnull;
-    my $version = $args{version} or confess;
+    my $version = $args{version}      or confess;
+    my $distr   = $args{distribution} or confess;
 
     my $in     = IO::File->new($input, 'r')
        or die "ERROR: cannot read document from $input: $!\n";
@@ -230,7 +232,9 @@ sub parse(@)
          , pure_pod => 1
          , source   => $input
          , parser   => $self
-         , version  => $version
+
+         , distribution => $distr
+         , version      => $version
          );
 
         push @manuals, $manual;
@@ -253,7 +257,9 @@ sub parse(@)
              , source   => $input
              , stripped => $output
              , parser   => $self
-             , version  => $version
+
+             , distribution => $distr
+             , version      => $version
              );
             push @manuals, $manual;
             $self->currentManual($manual);
@@ -759,11 +765,21 @@ sub forgotCut($$$$)
 
 =method decomposeM MANUAL, LINK
 
-=warning package $link is not on your system, but linked to in $manual
+=warning module $name is not on your system, but linked to in $manual
+
+The module can not be found.  This may be an error at your part (usually
+a typo) or you didn't install the module on purpose.  This message will
+also be produced if some defined package is stored in one file together
+with an other module or when compilation errors are encountered.
 
 =warning subroutine $name is not defined by $package, but linked to in $manual
 
 =warning option "$name" is not defined for subroutine $name in $package, but is linked to in $manual
+
+=error compilation problems for module $link $@
+If the report is about a syntax error involving 'require', then you
+may have created a link to a module with a name which is not acceptable
+to Perl.  It is not easy to find the location of that problem.
 
 =cut
 
@@ -776,11 +792,15 @@ sub decomposeM($$)
 
     my $man;
        if(not length($link)) { $man = $manual }
-    elsif($man = $self->manual($link)) { ; }
+    elsif(defined($man = $self->manual($link))) { ; }
     else
-    {   eval "require $link";
-        warn "WARNING: package $link is not on your system, but linked to in $manual\n"
-           if $@;
+    {   eval "{require $link}";
+        if(! $@)  { ; }
+        elsif($@ =~ m/Can't locate/ )
+        {  warn "WARNING: module $link is not on your system, but linked to in $manual\n";
+           }
+        else
+        {  warn "ERROR: compilation problems for module $link\n  $@" }
         $man = $link;
     }
 
@@ -900,7 +920,11 @@ sub cleanupPod($$$)
         next if $protect;
 
         $lines[$i] =~
-             s/\bM\<([^>]*)\>/$self->cleanupPodLink($formatter,$manual,$1)/ge;
+             s/\bM\<([^>]*)\>/$self->cleanupPodM($formatter,$manual,$1)/ge;
+
+        $lines[$i] =~
+             s/\bL\<([^>]*)\>/$self->cleanupPodL($formatter,$manual,$1)/ge
+                if substr($lines[$i], 0, 1) eq ' ';
 
         # permit losing blank lines around pod statements.
         if(substr($lines[$i], 0, 1) eq '=')
@@ -932,11 +956,11 @@ sub cleanupPod($$$)
 
 #-------------------------------------------
 
-=method cleanupPodLink FORMATTER, MANUAL, LINK
+=method cleanupPodM FORMATTER, MANUAL, LINK
 
 =cut
 
-sub cleanupPodLink($$$)
+sub cleanupPodM($$$)
 {   my ($self, $formatter, $manual, $link) = @_;
     my ($toman, $to) = $self->decomposeM($manual, $link);
     ref $to ? $formatter->link($toman, $to, $link) : $to;
@@ -944,12 +968,38 @@ sub cleanupPodLink($$$)
 
 #-------------------------------------------
 
-=method cleanupHtml FORMATTER, MANUAL, STRING
+=method cleanupPodL FORMATTER, MANUAL, LINK
+
+The C<L> markups for C<OODoc::Parser::Markov> have the same syntax
+as standard POD has, however most standard pod-laters do no accept
+links in verbatim blocks.  Therefore, the links have to be
+translated in their text in such a case.  The translation itself
+is done in by this method.
 
 =cut
 
-sub cleanupHtml($$$)
-{   my ($self, $formatter, $manual, $string) = @_;
+sub cleanupPodL($$$)
+{   my ($self, $formatter, $manual, $link) = @_;
+    my ($toman, $to, $href, $text) = $self->decomposeL($manual, $link);
+    $text;
+}
+
+#-------------------------------------------
+
+=section Commonly used functions
+
+
+#-------------------------------------------
+
+=method cleanupHtml FORMATTER, MANUAL, STRING, [IS_HTML]
+
+Some changes will not be made when IS_HTML is C<true>, for instance,
+a "E<lt>" will stay that way, not being translated in a "E<amp>lt;".
+
+=cut
+
+sub cleanupHtml($$$;$)
+{   my ($self, $formatter, $manual, $string, $is_html) = @_;
     return '' unless defined $string && length $string;
 
     if($string =~ m/(?:\A|\n)                   # start of line
@@ -964,9 +1014,13 @@ sub cleanupHtml($$$)
                     /xs
       )
     {   my ($before, $type, $capture, $after) = ($`, lc($1), $2, $');
-        if($type =~ s/^\:(text|html)\b// )
-        {   $type    = $1;
-            $capture = $self->cleanupHtml($formatter, $manual, $capture);
+        if($type =~ m/^\:(text|pod)\b/ )
+        {   $type    = 'text';
+            $capture = $self->cleanupPod($formatter, $manual, $capture);
+        }
+        elsif($type =~ m/^\:html\b/ )
+        {   $type    = 'html';
+            $capture = $self->cleanupHtml($formatter, $manual, $capture, 1);
         }
 
         my $take = $type eq 'text' ? "<pre>\n". $capture . "</pre>\n"
@@ -979,8 +1033,11 @@ sub cleanupHtml($$$)
     }
 
     for($string)
-    {   s#\&#\&amp;#g;
-        s#(?<!\b[LFCIBEM])\<#&lt;#g;
+    {   unless($is_html)
+        {   s#\&#\&amp;#g;
+            s#(?<!\b[LFCIBEM])\<#&lt;#g;
+            s#\-\>#-\&gt;#g;
+        }
         s/\bM\<([^>]*)\>/$self->cleanupHtmlM($formatter, $manual, $1)/ge;
         s/\bL\<([^>]*)\>/$self->cleanupHtmlL($formatter, $manual, $1)/ge;
         s#\bF\<([^>]*)\>#<a href="$url_coderoot"/$1>$1</a>#g;
@@ -988,7 +1045,6 @@ sub cleanupHtml($$$)
         s#\bI\<([^>]*)\>#<em>$1</em>#g;
         s#\bB\<([^>]*)\>#<b>$1</b>#g;
         s#\bE\<([^>]*)\>#\&$1;#g;
-        s#\-\>#-\&gt;#g;
         s#^\=over\s+\d+\s*#\n<ul>\n#gms;
         s#(?:\A|\n)\=item\s*(?:\*\s*)?([^\n]*)#\n<li><b>$1</b><br />#gms;
         s#(?:\A|\s*)\=back\b#\n</ul>#gms;
@@ -1001,6 +1057,8 @@ sub cleanupHtml($$$)
           $label =~ s/\W+/_/g;
           qq[<h$level class="$title"><a name="$label">$title</a></h$level>];
          #ge;
+
+        next if $is_html;
 
         s!(?:(?:^|\n)
               [^\ \t\n]+[^\n]*      # line starting with blank: para
@@ -1041,7 +1099,7 @@ sub cleanupHtmlL($$$)
 {   my ($self, $formatter, $manual, $link) = @_;
     my ($toman, $to, $href, $text) = $self->decomposeL($manual, $link);
 
-     defined $href ? qq[<a href="$href">$text</a>]
+     defined $href ? qq[<a href="$href" target="_blank">$text</a>]
    : !defined $to  ? $text
    : ref $to       ? $formatter->link($toman, $to, $text)
    :                 qq[<a href="$to">$text</a>]

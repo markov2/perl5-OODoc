@@ -728,6 +728,7 @@ our %producers =
  , list        => 'templateList'
  , manual      => 'templateManual'
  , meta        => 'templateMeta'
+ , distribution=> 'templateDistribution'
  , name        => 'templateName'
  , project     => 'templateProject'
  , title       => 'templateTitle'
@@ -799,6 +800,20 @@ sub templateManual($$)
        or confess "ERROR: not a manual, so no manual name for $args->{template}\n";
 
     $self->cleanupString($manual, $manual->name);
+}
+
+#-------------------------------------------
+
+=method templateDistribution ATTRS, ARGS
+
+The name of the distribution which contains the manual page at hand.
+
+=cut
+
+sub templateDistribution($$)
+{   my ($self, $attr, $args) = @_;
+    my $manual  = $args->{manual};
+    defined $manual ? $manual->distribution : '';
 }
 
 #-------------------------------------------
