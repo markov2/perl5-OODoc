@@ -122,6 +122,17 @@ sub path() { confess "Not implemented" }
 
 #-------------------------------------------
 
+=method findEntry NAME
+
+Find the chapter, section or subsection with this NAME.  The object found
+is returned.
+
+=cut
+
+sub findEntry($) { confess "Not implemented" }
+
+#-------------------------------------------
+
 =section Collected
 
 =method all METHOD, PARAMETERS

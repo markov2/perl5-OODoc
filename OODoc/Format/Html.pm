@@ -267,24 +267,26 @@ sub createOtherPages(@)
         print "create $cooked\n" if $verbose > 2;
         $manifest->add($cooked);
 
-        unless($raw =~ $process)
-        {   copy($raw, $cooked)
-               or die "ERROR: Copy from $raw to $cooked failed: $!\n";
+        if($raw =~ $process)
+        {   $self->mkdirhier(dirname $cooked);
+            my $output  = IO::File->new($cooked, "w")
+                or die "ERROR: cannot write html other file at $cooked: $!";
 
-            next;
-        }
+            my $options = [];
+            $self->format
+             ( manual   => undef
+             , output   => $output
+             , template => $raw
+             , @$options
+             );
+         }
+         else
+         {   copy($raw, $cooked)
+                or die "ERROR: Copy from $raw to $cooked failed: $!\n";
+         }
 
-        $self->mkdirhier(dirname $cooked);
-        my $output  = IO::File->new($cooked, "w")
-            or die "ERROR: cannot write html other file at $cooked: $!";
-
-        my $options = [];
-        $self->format
-         ( manual   => undef
-         , output   => $output
-         , template => $raw
-         , @$options
-         );
+         my $rawmode = (stat $raw)[2] & 07777;
+         chmod $rawmode, $cooked or confess;
     }
 
     $self;

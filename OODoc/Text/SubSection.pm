@@ -48,6 +48,13 @@ sub init($)
 
 #-------------------------------------------
 
+sub findEntry($)
+{  my ($self, $name) = @_;
+   $self->name eq $name ? $self : ();
+}
+
+#-------------------------------------------
+
 =section Location
 
 =method section

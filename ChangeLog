@@ -1,4 +1,41 @@
 
+version 0.06: Sun Jul  6 19:44:23 CEST 2003
+
+	Fixes:
+
+	- OODoc::Parser::Markov mutulated ampersants in the HTML output:
+          was: & --> \amp;    became:   & --> \&amp;
+
+	- filenames in MANIFEST file made relative to that file
+
+	- make head1 really equivalent to chapter
+
+	- OODoc::Parser::Markov does add blank lines to output POD if
+	  the author did not include them around pod statements.  Superfluous
+	  blanks are removed.
+
+	Improvements:
+
+	- OODoc::Format::Html copies mode of template file.
+
+	- Included Mail::Box example set-up, which will grow to become
+	  the most complicated demonstration of possibilities.
+
+	- Support of L<> in OODoc::Parser::Markov with all features
+	  defined by perlpod.
+
+	- $chapter->findEntry looks for chapters, sections, subsections
+	  with a certain name: an index entry.
+
+	- Implemented =begin/=end understanding for OODoc/Parser/Markov
+	  for both Html as Pod formatters.
+
+	- Implemented =for understanding for OODoc/Parser/Markov
+	  for both Html as Pod formatters.
+
+	- Implemented =begin :html and =for :html understanding for
+	  OODoc/Parser/Markov, for both Html as Pod formatters.
+
 version 0.05: Tue May  6 12:19:17 CEST 2003
 
 	The Markov parser syntax has not changed, but nearly everything

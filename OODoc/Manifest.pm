@@ -7,6 +7,7 @@ use warnings;
 
 use Carp;
 use IO::File;
+use File::Basename 'dirname';
 
 =chapter NAME
 
@@ -91,9 +92,9 @@ Adds the FILENAMES to the manifest, doubles are ignored.
 sub add($)
 {   my $self = shift;
     while(@_)
-    {   my $filename = shift;
-        $self->modified(1) unless exists $self->{O_file}{$filename};
-        $self->{O_files}{$filename}++;
+    {   my $add = $self->relative(shift);
+        $self->modified(1) unless exists $self->{O_file}{$add};
+        $self->{O_files}{$add}++;
     }
     $self;
 }
@@ -164,6 +165,39 @@ sub write()
 }
 
 sub DESTROY() { shift->write }
+
+#-------------------------------------------
+
+=method relative FILENAME
+
+Returns the name of the file relative to the location of the MANIFEST
+file.  The MANIFEST file should always be in top of the directory tree,
+so the FILENAME should be in the same directory and below.
+
+=warning MANIFEST file $name lists filename outside (sub)directory: $file
+
+The MANIFEST file of a distributed package should be located in the top
+directory of that packages.  All files of the distribution are in that
+same directory, or one of its sub-directories, otherwise they will not
+be packaged.
+
+=cut
+
+sub relative($)
+{   my ($self, $filename) = @_;
+    my $dir = dirname $self->filename;
+    return $filename if $dir eq '.';
+
+    if(substr($filename, 0, length($dir)+1) eq "$dir/")
+    {   substr $filename, 0, length($dir)+1, '';
+        return $filename;
+    }
+
+    warn "WARNING: MANIFEST file ".$self->filename
+            . " lists filename outside (sub)directory: $filename\n";
+
+    $filename;
+}
 
 #-------------------------------------------
 

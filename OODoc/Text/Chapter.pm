@@ -69,6 +69,20 @@ sub findSubroutine($)
 
 #-------------------------------------------
 
+sub findEntry($)
+{   my ($self, $name) = @_;
+    return $self if $self->name eq $name;
+
+    foreach my $section ($self->sections)
+    {   my $entry = $section->findEntry($name);
+        return $entry if defined $entry;
+    }
+
+    ();
+}
+
+#-------------------------------------------
+
 sub all($@)
 {   my $self = shift;
     ($self->SUPER::all(@_), map {$_->all(@_)} $self->sections);

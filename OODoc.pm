@@ -39,17 +39,13 @@ the output of the formatters to your taste using templates, although
 it is not donfigurable in full extend.
 
 Please contribute ideas.  Have a look at the main website of this
-project at C<http://perl.overmeer.net/oodoc/>.
+project at L<http://perl.overmeer.net/oodoc/>.
 
 =cut
 
 #-------------------------------------------
 
 =chapter METHODS
-
-=cut
-
-#-------------------------------------------
 
 =c_method new OPTIONS
 

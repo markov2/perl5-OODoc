@@ -23,3 +23,7 @@ examples/mimetypes.tar.gz
    About the simplest module you can get.
    See http://perl.overmeer.net/mimetypes/html for its output.
 
+examples/mailbox.tar.gz
+   The most complicated module which is controlled by OODoc: the
+   Mail::Box module.  The configuration is slowly growing into a
+   very complex test-case for OODoc.
