@@ -657,15 +657,15 @@ COMMERCIAL
      $self;
  }
  
-=subsection Configuring with Text::MagicTemplate
+=subsection Configuring with Template::Magic
 
 When using 'pod2' in stead of 'pod' when M<OODoc::create()> is called,
 the M<OODoc::Format::Pod2> will be used.   It's nearly a drop-in
 replacement by its default behavior.  When you specify
 your own template file, every thing can be made.
 
-See the manual page of M<Text::MagicTemplate>.  You have to install
-M<Bundle::Text::MagicTemplate> to get it to work.
+See the manual page of M<Template::Magic>.  You have to install
+M<Bundle::Template::Magic> to get it to work.
 
 =example formatting with template
 

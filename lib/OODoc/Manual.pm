@@ -267,11 +267,17 @@ sub chapters(@)
 
 Returns the name of the manual, which is found in the NAME chapter.
 
-=error no name in manual in $source
-
+=error No chapter NAME in manual in $source
 Each documentation part requires a chapter NAME which starts with
 the manual name followed by a dash.  Apparently, this was not found
 in the indicated file.
+
+=error The NAME chapter does not have the right format in $source
+The NAME chapter is used to figure-out what name the manual page must
+have.  The standard format contains only one line, containing the
+manual's name, one dash ('-'), and then a brief explanation. For instance:
+  =chapter NAME
+  OODoc::Manual - one manual about a package
 
 =cut
 
@@ -279,14 +285,15 @@ sub name()
 {   my $self    = shift;
     return $self->{OP_name} if defined $self->{OP_name};
 
-    my $chapter = $self->chapter('NAME') or return ();
-    my $text    = $chapter->description;
+    my $chapter = $self->chapter('NAME')
+        or die "ERROR: No chapter NAME in manual ".$self->source."\n";
 
-    die "ERROR: No name in manual ".$self->source."\n"
-       unless $text =~ m/^\s*(\S*)\s*\-\s*/;
+    my $text   = $chapter->description || '';
+    $text =~ m/^\s*(\S+)\s*\-\s/
+        or die "ERROR: The NAME chapter does not have the right format in "
+             , $self->source, "\n";
 
-    $self->{OP_name} = $1
-   
+    $self->{OP_name} = $1;
 }
 
 
@@ -504,7 +511,7 @@ itself.  M<subroutines()> returns them all.
 
 sub ownSubroutines
 {   my $self = shift;
-    my $me   = $self->name;
+    my $me   = $self->name || return 0;
     grep {not $self->inherited($_)} $self->subroutines;
 }
 
@@ -786,9 +793,9 @@ Returns a string which displays some stats about the manual.
 
 sub stats()
 {   my $self     = shift;
+    my $chapters = $self->chapters || return;
     my $subs     = $self->ownSubroutines;
     my $diags    = $self->diagnostics;
-    my $chapters = $self->chapters;
     my $examples = $self->examples;
 
     my $manual   = $self->name;

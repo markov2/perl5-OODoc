@@ -15,7 +15,7 @@ use File::Basename qw/basename dirname/;
 use File::Copy     'copy';
 use POSIX          'strftime';
 
-use Text::MagicTemplate;
+use Template::Magic;
 
 =chapter NAME
 
@@ -31,7 +31,7 @@ OODoc::Format::Html - Produce HTML pages from the doc tree
 
 =chapter DESCRIPTION
 
-Create manual pages in the HTML syntax, using the M<Text::MagicTemplate>
+Create manual pages in the HTML syntax, using the M<Template::Magic>
 template system.  Producing HTML is more complicated than producing
 POD, because one manual page may be spread over multiple output files.
 
@@ -347,7 +347,7 @@ sub expandTemplate($$)
               }, $loc
             );
     }
-    elsif(-f $loc) { push @result, $loc, $defaults }
+    elsif(-f $loc) { push @result, $loc => $defaults }
     else { croak "ERROR: cannot find template source $loc." }
 
     @result;
@@ -739,7 +739,7 @@ sub format(@)
 {   my ($self, %args) = @_;
     my $output    = delete $args{output};
 
-    my %permitted;
+    my %permitted = ();
     while(my ($tag, $method) = each %producers)
     {   $permitted{$tag}
           = sub { my $zone = shift;
@@ -747,11 +747,10 @@ sub format(@)
                 };
     }
 
-    my $template  = Text::MagicTemplate->new
-     ( { -markers   => 'HTML'
-       , -behaviors => 'HTML'
-       , -lookups   => \%permitted
-       }
+    my $template  = Template::Magic->new
+     ( markers   => 'HTML'
+     , behaviors => 'HTML'
+     , lookups   => [ \%permitted ]
      );
 
     my $created = $template->output($args{template});
@@ -865,13 +864,13 @@ sub templateName($$)
        or die "ERROR: not a manual, so no name for $args->{template}\n";
 
     my $chapter = $manual->chapter('NAME')
-       or die "ERROR: cannot find chapter NAME in manual $manual";
+       or die "ERROR: cannot find chapter NAME in manual ",$manual->source,"\n";
 
     my $descr   = $chapter->description;
 
     return $1 if $descr =~ m/^\s*\S+\s*\-\s*(.*?)\s*$/;
    
-    die "ERROR: chapter NAME in manual $manual has illegal shape";
+    die "ERROR: chapter NAME in manual $manual has illegal shape\n";
 }
 
 #-------------------------------------------
@@ -958,7 +957,8 @@ sub templateChapter($$)
     croak "ERROR: chapter without name in template"
        unless defined $name;
 
-    my $manual  = $args->{manual} or confess;
+    my $manual  = $args->{manual};
+    defined $manual or confess;
     my $chapter = $manual->chapter($name) or return '';
 
     my $out     = '';
@@ -1143,7 +1143,7 @@ should the subroutines be listed within the chapter.
 
 The LIST contains a I<underscore> separated set of subroutine types which are
 selected to be displayed, for instance C<method_tie_function>. The separator
-underscore is used because M<Text::MagicTemplate> does not accept commas
+underscore is used because M<Template::Magic> does not accept commas
 in the tag parameter list, which is a pity.
 
 =error no group named as attribute for index

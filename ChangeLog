@@ -2,6 +2,14 @@
 All changes where made by Mark Overmeer <oodoc@overmeer.net>, unless
 explicitly stated differently.
 
+version 0.10: Wed Jan 21 09:48:08 CET 2004
+
+	Fixes:
+
+	- Packages without manuals are skipped.
+
+	- Text::MagicTemplate has been renamed to Template::Magic::HTML
+
 version 0.09: Tue Sep 30 09:59:06 CEST 2003
 
 	Fixes:

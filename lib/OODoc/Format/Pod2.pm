@@ -9,7 +9,7 @@ use Carp;
 use File::Spec;
 use IO::Scalar;
 
-use Text::MagicTemplate;
+use Template::Magic;
 
 =chapter NAME
 
@@ -25,10 +25,10 @@ OODoc::Format::Pod2 - Produce POD pages from the doc tree with a template
 
 =chapter DESCRIPTION
 
-Create manual pages in the POD syntax, using the M<Text::MagicTemplate>
+Create manual pages in the POD syntax, using the M<Template::Magic>
 template system.  It may be a bit simpler to configure the outcome
 using the template, than using M<OODoc::Format::Pod>, however you
-first need to install L<Bundle::Text::MagicTemplate>.
+first need to install L<Bundle::Template::Magic>.
 
 =cut
 
@@ -75,7 +75,7 @@ sub formatManual(@)
      , comment     => sub { '' }
      );
 
-    my $template  = Text::MagicTemplate->new
+    my $template  = Template::Magic->new
      ( { -lookups => \%permitted }
      );
 

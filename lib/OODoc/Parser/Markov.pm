@@ -69,6 +69,8 @@ my @default_rules =
  , [ '=examples'   => 'docExample'    ]
  , [ '=error'      => 'docDiagnostic' ]
  , [ '=warning'    => 'docDiagnostic' ]
+ , [ '=notice'     => 'docDiagnostic' ]
+ , [ '=debug'      => 'docDiagnostic' ]
 
  # deprecated
  , [ '=head1'      => 'docChapter'    ]
@@ -109,10 +111,6 @@ sub init($)
 #-------------------------------------------
 
 =section Parsing a file
-
-=cut
-
-#-------------------------------------------
 
 =method rule (STRING|REGEX), (METHOD|CODE)
 
@@ -782,7 +780,7 @@ way, this may indicate that the NAME chapter of the manual page in that
 module differs from the package name.  Often, this is a typo in the
 NAME... probably a difference in used cases.
 
-=error compilation problems for module $link $@
+=error compilation problems for module $link in $module: $@
 If the report is about a syntax error involving 'require', then you
 may have created a link to a module with a name which is not acceptable
 to Perl.  It is not easy to find the location of that problem.
@@ -800,13 +798,15 @@ sub decomposeM($$)
        if(not length($link)) { $man = $manual }
     elsif(defined($man = $self->manual($link))) { ; }
     else
-    {   eval "{require $link}";
+    {   eval "no warnings; require $link";
         if(! $@)  { ; }
         elsif($@ =~ m/Can't locate/ )
         {  warn "WARNING: module $link is not on your system, but linked to in $manual\n";
-           }
+        }
         else
-        {  warn "ERROR: compilation problems for module $link\n  $@" }
+        {  warn "ERROR: compilation problems for module $link in $manual:\n$@";
+           warn " Did you use an 'M' tag on something which is not a module?\n";
+        }
         $man = $link;
     }
 

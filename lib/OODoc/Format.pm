@@ -42,12 +42,12 @@ Object Oriented programmers.
 This formatter uses the same methods to generate the manual page as
 defined by M<OODoc::Format::Pod>, but the general layout of the page
 can be configured using templates.
-You have to install L<Bundle::Text::MagicTemplate> to use this feature.
+You have to install L<Bundle::Template::Magic> to use this feature.
 
 =item * M<OODoc::Format::Html>
 
 Produce HTML by filling in templates. This module requires
-L<Bundle::Text::MagicTemplate> and the ability to run cgi scripts.
+L<Bundle::Template::Magic> and the ability to run cgi scripts.
 
 =back
 
@@ -809,20 +809,15 @@ sub showSuperSupers($)
 
 #-------------------------------------------
 
-=section Text::MagicTemplate
+=section Template::Magic
 
-Support methods for implementations which are based on L<Text::MagicTemplate>.
+Support methods for implementations which are based on L<Template::Magic>.
 
 =method zoneGetParameters ZONE|STRING
 
-Takes a Text::MagicTemplate::Zone object, which is produced by
-L<Text::MagicTemplateX::Core> to process the text after the
+Takes a Template::Magic::Zone object to process the text after the
 tag.  You may also specify a string, for instance a modified
 attribute list.  The return is a list of key-value pairs with data.
-
-The parameters are either old style (before MagicTemplate 2.1)
-(where only one blank is permitted between words, and no special
-characters allowed), or new style (more flexible).
 
 =examples of valid arguments
 

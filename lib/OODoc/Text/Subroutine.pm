@@ -229,7 +229,7 @@ sub option($)
 
 =method findOption NAME
 
-Does a little more thorrow job than M<option()> bu searching the inherited
+Does a little more thorough job than M<option()> bu searching the inherited
 options for this subroutine as well.
 
 =cut
