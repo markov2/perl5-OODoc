@@ -1,0 +1,26 @@
+
+version 0.04: Thu May  1 13:25:37 CEST 2003
+
+	Improvements:
+	- Producing HTML
+	- Added examples/oodoc.tar.gz and accompanying files
+	- Renamed OODoc::Format::PodTemplate into OODoc::Format::Pod2,
+	  because there may be more template based formatters into POD
+	  later.
+
+version 0.03: Wed Apr  2 14:47:00 CEST 2003
+
+	Improvements:
+	- Added OODoc::Format::PodTemplate
+	- Minor reorderings in OODoc::Format::Pod
+
+version 0.02: Tue Apr  1 13:52:33 CEST 2003
+
+	Improvements:
+	- handling of format_options
+	- appending text to POD
+	- documentation about POD configuration
+
+version 0.01: March 30, 2003
+
+	Initial implementation
