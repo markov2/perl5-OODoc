@@ -402,6 +402,7 @@ sub showSubroutineUse(@)
      : $type eq 'c_method' ? qq[$class-E<gt>B<$name>$params]
      : $type eq 'ci_method'? qq[\$obj-E<gt>B<$name>$params\n\n]
                            . qq[$class-E<gt>B<$name>$params]
+     : $type eq 'function' ? qq[B<$name>$params]
      : $type eq 'overload' ? qq[overload: B<$name>$params]
      : $type eq 'tie'      ? qq[B<$name>$params]
      :                       '';

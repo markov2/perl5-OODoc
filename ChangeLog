@@ -1,4 +1,23 @@
 
+version 0.08: Mon Sep  8 17:12:02 CEST 2003
+
+	Fixes:
+
+	- Adapted to Text::MagicTemplate release 2.11, which is not
+	  compatible with older versions :-(
+
+	- OODoc::Format::Pod(2) could not format =function
+ 
+	- When the same distribution was created for the second time
+	  in a row, some files could be missing from the MANIFEST.
+
+	Improvements:
+
+	- Added Object::Realize::Later to the examples (orl.tar.gz).
+	  It can't get any simpler.
+
+	- Added Bundle::Text::MagicTemplate to the pre-requisits
+
 version 0.07: Tue Jul 29 14:06:38 CEST 2003
 
 	Fixes:

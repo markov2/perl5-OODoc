@@ -397,7 +397,7 @@ sub showStructureExpand(@)
     $self->showExamples(%args, examples => [$text->examples])
          if $examples eq 'EXPAND';
 
-    return $self;
+    $self;
 }
 
 #-------------------------------------------
@@ -741,7 +741,10 @@ sub format(@)
 
     my %permitted;
     while(my ($tag, $method) = each %producers)
-    {   $permitted{$tag} = sub { $self->$method(\@_, \%args) };
+    {   $permitted{$tag}
+          = sub { my $zone = shift;
+                  $self->$method($zone, \%args);
+                };
     }
 
     my $template  = Text::MagicTemplate->new
@@ -757,25 +760,25 @@ sub format(@)
 
 #-------------------------------------------
 
-=method templateTitle ATTRS, ARGS
+=method templateTitle ZONE, ARGS
 
 =cut
 
 sub templateProject($$)
-{   my ($self, $attr, $args) = @_;
+{   my ($self, $zone, $args) = @_;
     $self->project;
 }
 
 #-------------------------------------------
 
-=method templateTitle ATTRS, ARGS
+=method templateTitle ZONE, ARGS
 
 =error not a manual, so no automatic title in $template
 
 =cut
 
 sub templateTitle($$)
-{   my ($self, $attr, $args) = @_;
+{   my ($self, $zone, $args) = @_;
 
     my $manual = $args->{manual}
        or die "ERROR: not a manual, so no automatic title in $args->{template}\n";
@@ -787,14 +790,14 @@ sub templateTitle($$)
 
 #-------------------------------------------
 
-=method templateManual ATTRS, ARGS
+=method templateManual ZONE, ARGS
 
 =error not a manual, so no manual name for $template
 
 =cut
 
 sub templateManual($$)
-{   my ($self, $attr, $args) = @_;
+{   my ($self, $zone, $args) = @_;
 
     my $manual = $args->{manual}
        or confess "ERROR: not a manual, so no manual name for $args->{template}\n";
@@ -804,21 +807,21 @@ sub templateManual($$)
 
 #-------------------------------------------
 
-=method templateDistribution ATTRS, ARGS
+=method templateDistribution ZONE, ARGS
 
 The name of the distribution which contains the manual page at hand.
 
 =cut
 
 sub templateDistribution($$)
-{   my ($self, $attr, $args) = @_;
+{   my ($self, $zone, $args) = @_;
     my $manual  = $args->{manual};
     defined $manual ? $manual->distribution : '';
 }
 
 #-------------------------------------------
 
-=method templateVersion ATTRS, ARGS
+=method templateVersion ZONE, ARGS
 
 The version is taken from the manual (which means that you may have
 a different version number per manual) when a manual is being formatted,
@@ -827,25 +830,25 @@ and otherwise the project total version.
 =cut
 
 sub templateVersion($$)
-{   my ($self, $attr, $args) = @_;
+{   my ($self, $zone, $args) = @_;
     my $manual  = $args->{manual};
     defined $manual ? $manual->version : $self->version;
 }
 
 #-------------------------------------------
 
-=method templateDate ATTRS, ARGS
+=method templateDate ZONE, ARGS
 
 =cut
 
 sub templateDate($$)
-{   my ($self, $attr, $args) = @_;
+{   my ($self, $zone, $args) = @_;
     strftime "%Y/%m/%d", localtime;
 }
 
 #-------------------------------------------
 
-=method templateName ATTRS, ARGS
+=method templateName ZONE, ARGS
 
 =error not a manual, so no name for $template
 
@@ -856,7 +859,7 @@ sub templateDate($$)
 =cut
 
 sub templateName($$)
-{   my ($self, $attr, $args) = @_;
+{   my ($self, $zone, $args) = @_;
 
     my $manual = $args->{manual}
        or die "ERROR: not a manual, so no name for $args->{template}\n";
@@ -873,7 +876,7 @@ sub templateName($$)
 
 #-------------------------------------------
 
-=method templateHref ATTRS, ARGS
+=method templateHref ZONE, ARGS
 
 =cut
 
@@ -886,10 +889,8 @@ our %path_lookup =
  );
 
 sub templateHref($$)
-{   my ($self, $attr, $args) = @_;
-    my ($capture, $flags) = @$attr;
-
-    my ($to, $window) = split " ", $flags;
+{   my ($self, $zone, $args) = @_;
+    my ($to, $window) = split " ", $zone->attributes;
     my $path   = $path_lookup{$to} || warn "missing path for $to";
 
     qq[<a href="$self->{OFH_html}/$path" target="_top">];
@@ -897,30 +898,31 @@ sub templateHref($$)
 
 #-------------------------------------------
 
-=method templateMeta ATTRS, ARGS
+=method templateMeta ZONE, ARGS
 
-ARGS is a reference to a hash with options.  ATTR contains the attributes
-in the template.
+ARGS is a reference to a hash with options.  ZONE contains the attributes
+in the template.  Use M<new(html_meta_data)> to set the result of this
+method, or extend its implementation.
 
 =cut
 
 sub templateMeta($$)
-{   my ($self, $attr, $args) = @_;
+{   my ($self, $zone, $args) = @_;
     $self->{OFH_meta};
 }
 
 #-------------------------------------------
 
-=method templateInheritance ATTRS, ARGS
+=method templateInheritance ZONE, ARGS
 
 =cut
 
 sub templateInheritance(@)
-{   my ($self, $attr, $args) = @_;
+{   my ($self, $zone, $args) = @_;
 
     my $manual  = $args->{manual} or confess;
     my $output  = $self->cleanup($manual, $self->createInheritance($manual));
-    return unless length $output;
+    return '' unless length $output;
 
     for($output)
     {   s#<pre>\n*(.*)</pre>\n*#$1#s;            # over-eager cleanup
@@ -944,17 +946,17 @@ erroneous, because it requires a chapter name.
 =cut
 
 sub templateChapter($$)
-{   my ($self, $attr, $args) = @_;
-    my ($contained, $attributes) = @$attr;
-    my $name = $attributes =~ s/^\s*(\w+)\b// ? $1 : undef;
-
-    croak "ERROR: chapter without name in template"
-       unless defined $name;
-
+{   my ($self, $zone, $args) = @_;
+    my $contained = $zone->content;
     warn "WARNING: no meaning for container $contained in chapter block\n"
         if defined $contained && length $contained;
 
-    my @attrs   = split " ", $attributes;
+    my $attr    = $zone->attributes;
+    my $name    = $attr =~ s/^\s*(\w+)\s*\,?\s*// ? $1 : undef;
+    my @attrs   = $self->zoneGetParameters($attr);
+
+    croak "ERROR: chapter without name in template"
+       unless defined $name;
 
     my $manual  = $args->{manual} or confess;
     my $chapter = $manual->chapter($name) or return '';
@@ -968,7 +970,7 @@ sub templateChapter($$)
 
 #-------------------------------------------
 
-=method templateIndex ATTRS, ARGS
+=method templateIndex ZONE, ARGS
 
 The I<index> template is called with one keyword, which tells the
 kind of index to be built.  Valid values are C<MANUALS>,
@@ -994,10 +996,10 @@ as any non-word character or underscore.
 =option  type 'ALL'|STRING
 =default type 'ALL'
 
-The types of objects which are to be selected, which is not applicable
-to all kinds of indexes.  The STRING may contain an I<underscore> separated
-list of types, for instance C<method_tie> when subroutines are listed
-or C<error> for diagnostics.
+The types of objects which are to be selected, which is not applicable to
+all kinds of indexes.  The STRING may contain an I<underscore> or I<pipe>
+separated list of types, for instance C<method|tie> when subroutines
+are listed or C<error> for diagnostics.
 
 =option  table_columns INTEGER
 =default table_columns 2
@@ -1011,16 +1013,18 @@ Produce a table with that number of columns.
 =cut
 
 sub templateIndex($$)
-{   my ($self, $attr, $args) = @_;
-    my ($contained, $attributes) = @$attr;
-    my $group    = $attributes =~ s/^\s*(\w+)\b// ? $1 : undef;
-    my %opts     = split " ", $attributes;
+{   my ($self, $zone, $args) = @_;
 
+    my $contained = $zone->content;
+    warn "WARNING: no meaning for container $contained in list block\n"
+        if defined $contained && length $contained;
+
+    my $attrs  = $zone->attributes;
+    my $group  = $attrs =~ s/^\s*(\w+)\s*\,?\s*// ? $1 : undef;
     die "ERROR: no group named as attribute for list\n"
        unless defined $group;
 
-    warn "WARNING: no meaning for container $contained in list block\n"
-        if defined $contained && length $contained;
+    my %opts   = $self->zoneGetParameters($attrs);
 
     my $start  = $opts{starting_with} || $args->{starting_with} ||'ALL';
     my $types  = $opts{type}          || $args->{type}          ||'ALL';
@@ -1033,7 +1037,7 @@ sub templateIndex($$)
     }
     unless($types eq 'ALL')
     {   my @take   = map { $_ eq 'method' ? '.*method' : $_ }
-                         split /_/, $types;
+                         split /[_|]/, $types;
         local $"   = ')|(';
         my $regexp = qr/^(@take)$/i;
         my $before = $select;
@@ -1116,10 +1120,10 @@ DIAG
 
 #-------------------------------------------
 
-=method templateList ATTRS, ARGS
+=method templateList ZONE, ARGS
 
-The ATTRS (which originate from the template file) start with the
-name of a chapter or C<'ALL'>.  The rest of the ATTRS
+The ZONE (which originate from the template file) start with the
+name of a chapter or C<'ALL'>.  The rest of the ZONE
 are interpreted as argument list which overrule the OPTIONS.
 
 =requires manual MANUAL
@@ -1154,16 +1158,17 @@ be built.
 =cut
 
 sub templateList($$)
-{   my ($self, $attr, $args) = @_;
-    my ($contained, $attributes) = @$attr;
-    my $group    = $attributes =~ s/^\s*(\w+)\b// ? $1 : undef;
-    my %opts     = split " ", $attributes;
+{   my ($self, $zone, $args) = @_;
+    my $contained = $zone->content;
+    warn "WARNING: no meaning for container $contained in index block\n"
+        if defined $contained && length $contained;
+
+    my $attrs    = $zone->attributes;
+    my $group    = $attrs =~ s/^\s*(\w+)\s*\,?// ? $1 : undef;
+    my %opts     = $self->zoneGetParameters($attrs);
 
     die "ERROR: no group named as attribute for index\n"
        unless defined $group;
-
-    warn "WARNING: no meaning for container $contained in index block\n"
-        if defined $contained && length $contained;
 
     my $show_sub = $opts{show_subroutines}||$args->{show_subroutines}||'LIST';
     my $types    = $opts{subroutine_types}||$args->{subroutine_types}||'ALL';
@@ -1174,7 +1179,7 @@ sub templateList($$)
     my $selected = sub { @_ };
     unless($types eq 'ALL')
     {   my @take   = map { $_ eq 'method' ? '.*method' : $_ }
-                         split /_/, $types;
+                         split /[_|]/, $types;
         local $"   = ')|(';
         my $regexp = qr/^(@take)$/;
         $selected  = sub { grep { $_->type =~ $regexp } @_ };
@@ -1191,7 +1196,7 @@ sub templateList($$)
         }
     }
     else  # any chapter
-    {   my $chapter  = $manual->chapter($group) or return;
+    {   my $chapter  = $manual->chapter($group) or return '';
         my $show_sec = $opts{show_sections} ||$args->{show_sections} ||'LINK';
         my @sections = $show_sec eq 'NO' ? () : $chapter->sections;
 

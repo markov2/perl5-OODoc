@@ -68,11 +68,11 @@ sub formatManual(@)
     my $output    = delete $args{output};
 
     my %permitted =
-     ( chapter     => sub {$self->templateChapter(\@_, \%args) }
-     , inheritance => sub {$self->templateInheritance(\@_, \%args) }
-     , diagnostics => sub {$self->templateDiagnostics(\@_, \%args) }
-     , append      => sub {$self->templateAppend(\@_, \%args) }
-     , comment     => sub {}
+     ( chapter     => sub {$self->templateChapter(shift, \%args) }
+     , inheritance => sub {$self->templateInheritance(shift, \%args) }
+     , diagnostics => sub {$self->templateDiagnostics(shift, \%args) }
+     , append      => sub {$self->templateAppend(shift, \%args) }
+     , comment     => sub { '' }
      );
 
     my $template  = Text::MagicTemplate->new
@@ -98,19 +98,20 @@ erroneous, because it requires a chapter name.
 =cut
 
 sub templateChapter($$)
-{   my ($self, $attr, $args) = @_;
-    my ($contained, $attributes) = @$attr;
-    my $name = $attributes =~ s/^\s*(\w+)\b// ? $1 : undef;
+{   my ($self, $zone, $args) = @_;
+    my $contained = $zone->content;
+    warn "WARNING: no meaning for container $contained in chapter block\n"
+        if defined $contained && length $contained;
+
+    my $attrs = $zone->attributes;
+    my $name  = $attrs =~ s/^\s*(\w+)\s*\,?// ? $1 : undef;
 
     croak "ERROR: chapter without name in template.", return ''
        unless defined $name;
 
-    warn "WARNING: no meaning for container $contained in chapter block\n"
-        if defined $contained && length $contained;
-
-    my @attrs = split " ", $attributes;
-
+    my @attrs = $self->zoneGetParameters($attrs);
     my $out   = '';
+
     $self->showOptionalChapter($name, %$args,
        output => IO::Scalar->new(\$out), @attrs);
 
@@ -120,7 +121,7 @@ sub templateChapter($$)
 #-------------------------------------------
 
 sub templateInheritance($$)
-{   my ($self, $attr, $args) = @_;
+{   my ($self, $zone, $args) = @_;
     my $out   = '';
     $self->chapterInheritance(%$args, output => IO::Scalar->new(\$out));
     $out;
@@ -129,7 +130,7 @@ sub templateInheritance($$)
 #-------------------------------------------
 
 sub templateDiagnostics($$)
-{   my ($self, $attr, $args) = @_;
+{   my ($self, $zone, $args) = @_;
     my $out   = '';
     $self->chapterDiagnostics(%$args, output => IO::Scalar->new(\$out));
     $out;
@@ -138,7 +139,7 @@ sub templateDiagnostics($$)
 #-------------------------------------------
 
 sub templateAppend($$)
-{   my ($self, $attr, $args) = @_;
+{   my ($self, $zone, $args) = @_;
     my $out   = '';
     $self->showAppend(%$args, output => IO::Scalar->new(\$out));
     $out;

@@ -360,18 +360,19 @@ sub processFiles(@)
                    :                   $filename;
 
             my $dn = File::Spec->catfile($dest, $fn);
-            next if -e $dn && ( -M $dn < -M $fn ) && ( -s $dn == -s $fn );
-
-            $self->mkdirhier(dirname $dn);
-
             carp "WARNING: no file $fn to include in the distribution", next
                unless -f $fn;
 
-            copy($fn, $dn)
-               or die "ERROR: cannot copy distribution file $fn to $dest: $!\n";
+            unless(-e $dn && ( -M $dn < -M $fn ) && ( -s $dn == -s $fn ))
+            {   $self->mkdirhier(dirname $dn);
+
+                copy($fn, $dn)
+                   or die "ERROR: cannot copy distribution file $fn to $dest: $!\n";
+
+                print "Copied $fn to $dest\n" if $verbose > 2;
+            }
 
             $manout->add($dn);
-            print "Copied $fn to $dest\n" if $verbose > 2;
         }
     }
 
