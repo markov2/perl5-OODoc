@@ -1,0 +1,298 @@
+
+=head1 NAME
+
+OODoc::Text::Chapter - collects the information of one chapter
+
+=head1 INHERITANCE
+
+ OODoc::Text::Chapter
+   is a OODoc::Text::Structure
+   is a OODoc::Text
+   is a OODoc::Object
+
+=head1 SYNOPSIS
+
+
+=head1 DESCRIPTION
+
+
+=head1 METHODS
+
+
+=head2 Sections
+
+A chapters consists of a list of sections, which may contain subsections.
+
+$obj-E<gt>B<section>(NAME|OBJECT)
+
+=over 4
+
+With a NAME, the section within this chapter with that name is
+returned.  With an OBJECT (which must be a OODoc::Text::Section),
+a new section is added to the end of the list.
+
+=back
+
+$obj-E<gt>B<sections>([SECTIONS])
+
+=over 4
+
+Returns a list of all sections in this chapter.
+
+=back
+
+=head2 Collecting information
+
+
+=head2 Attributes
+
+
+$obj-E<gt>B<description>
+
+=over 4
+
+See L<OODoc::Text/"Attributes">
+
+=back
+
+$obj-E<gt>B<findDescriptionObject>
+
+=over 4
+
+See L<OODoc::Text/"Attributes">
+
+=back
+
+$obj-E<gt>B<openDescription>
+
+=over 4
+
+See L<OODoc::Text/"Attributes">
+
+=back
+
+$obj-E<gt>B<type>
+
+=over 4
+
+See L<OODoc::Text/"Attributes">
+
+=back
+
+$obj-E<gt>B<where>
+
+=over 4
+
+See L<OODoc::Text/"Attributes">
+
+=back
+
+=head2 Container
+
+
+$obj-E<gt>B<all>(METHOD, PARAMETERS)
+
+=over 4
+
+See L<OODoc::Text::Structure/"Container">
+
+=back
+
+$obj-E<gt>B<path>
+
+=over 4
+
+See L<OODoc::Text::Structure/"Container">
+
+=back
+
+=head2 Subroutines
+
+Each manual page structure element (chapter, section, and subsection)
+can contain a list of subroutine descriptions.
+
+$obj-E<gt>B<addSubroutine>(OBJECT)
+
+=over 4
+
+See L<OODoc::Text::Structure/"Subroutines">
+
+=back
+
+$obj-E<gt>B<setSubroutines>(OBJECTS)
+
+=over 4
+
+See L<OODoc::Text::Structure/"Subroutines">
+
+=back
+
+$obj-E<gt>B<subroutine>(NAME)
+
+=over 4
+
+See L<OODoc::Text::Structure/"Subroutines">
+
+=back
+
+$obj-E<gt>B<subroutines>
+
+=over 4
+
+See L<OODoc::Text::Structure/"Subroutines">
+
+=back
+
+=head2 Examples
+
+
+$obj-E<gt>B<example>(OBJECT)
+
+=over 4
+
+See L<OODoc::Text/"Examples">
+
+=back
+
+$obj-E<gt>B<examples>
+
+=over 4
+
+See L<OODoc::Text/"Examples">
+
+=back
+
+=head2 Initiation
+
+
+OODoc::Text::Chapter-E<gt>B<new>(OPTIONS)
+
+=over 4
+
+See L<OODoc::Text::Diagnostic/"METHODS">
+
+=back
+
+=head2 Inheritance
+
+
+$obj-E<gt>B<extends>([OBJECT])
+
+=over 4
+
+See L<OODoc::Object/"Inheritance">
+
+=back
+
+=head2 Commonly used functions
+
+
+$obj-E<gt>B<filenameToPackage>(FILENAME)
+
+OODoc::Text::Chapter-E<gt>B<filenameToPackage>(FILENAME)
+
+=over 4
+
+See L<OODoc::Object/"Commonly used functions">
+
+=back
+
+$obj-E<gt>B<mergeObjects>(OPTIONS)
+
+=over 4
+
+See L<OODoc::Object/"Commonly used functions">
+
+=back
+
+$obj-E<gt>B<mkdirhier>(DIRECTORY)
+
+OODoc::Text::Chapter-E<gt>B<mkdirhier>(DIRECTORY)
+
+=over 4
+
+See L<OODoc::Object/"Commonly used functions">
+
+=back
+
+$obj-E<gt>B<unique>
+
+=over 4
+
+See L<OODoc::Text/"METHODS">
+
+=back
+
+=head2 Manual database
+
+All manuals can be reached everywhere in the program: it is a global
+collection.
+
+$obj-E<gt>B<addManual>(MANUAL)
+
+=over 4
+
+See L<OODoc::Object/"Manual database">
+
+=back
+
+$obj-E<gt>B<mainManual>(NAME)
+
+=over 4
+
+See L<OODoc::Object/"Manual database">
+
+=back
+
+$obj-E<gt>B<manuals>
+
+=over 4
+
+See L<OODoc::Object/"Manual database">
+
+=back
+
+$obj-E<gt>B<manualsForPackage>(NAME)
+
+=over 4
+
+See L<OODoc::Object/"Manual database">
+
+=back
+
+$obj-E<gt>B<packageNames>
+
+=over 4
+
+See L<OODoc::Object/"Manual database">
+
+=back
+
+=head1 DIAGNOSTICS
+
+I<Error:> manual definition requires manual object
+
+A call to L<addManual()|OODoc::Object/"Manual database"> expects a new manual object (a L<OODoc::Manual|OODoc::Manual>),
+however an incompatible thing was passed.  Usually, intended was a call
+to L<manualsForPackage()|OODoc::Object/"Manual database"> or L<mainManual()|OODoc::Object/"Manual database">.
+
+I<Warning:> order conflict "$take" before "$insert" in $file line $number
+
+The order of the objects in a sub-class shall be the same as that of
+the super class, otherwise the result of merging of the information
+received from both classes is undertermined.
+
+=head1 REFERENCES
+
+See the OODoc website at L<$website> for more details.
+
+=head1 COPYRIGHTS
+
+Module version $version.
+Written by Mark Overmeer (mark@overmeer.net).  See the ChangeLog for
+other contributors.
+
+Copyright (c) 2001-2002 by the authors. All rights reserved.  This program
+is free software; you can redistribute it and/or modify it under the
+same terms as Perl itself.
+
