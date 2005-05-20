@@ -146,7 +146,7 @@ sub formatManual(@)
     $self->chapterDetails(@_);
     $self->chapterReferences(@_);
     $self->chapterCopyrights(@_);
-    $self->showApppend(@_);
+    $self->showAppend(@_);
     $self;
 }
 

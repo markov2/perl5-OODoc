@@ -2,6 +2,13 @@
 All changes where made by Mark Overmeer <oodoc@overmeer.net>, unless
 explicitly stated differently.
 
+version 0.91: Fri May 20 10:45:37 CEST 2005
+
+	Fixes:
+
+	- in OODoc/Format/Pod.pm, $show->Apppend has one 'p' to many.
+	  [Pontus Bergöö and Carl Humphrey]
+
 version 0.90: Tue Aug 24 09:26:52 CEST 2004
 
 	Fixes:

@@ -752,7 +752,7 @@ STATS
 POD (Perl's standard Plain Old Document format) has a very simple
 syntax.  POD is very simple to learn, and the produced manual pages
 look like normal Unix manual pages.  However, when you start writing
-larger programs, you start seeing the weaker sites of POD.
+larger programs, you start seeing the weaker sides of POD.
 
 One of the main problems with POD is that is using a visual markup
 style: you specify information by how it must be presented to the
