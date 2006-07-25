@@ -236,7 +236,7 @@ sub chapter($)
     if(my $old = $self->{OP_chapter_hash}{$name})
     {   my ($fn,   $ln2) = $it->where;
         my (undef, $ln1) = $old->where;
-        die "ERROR: two chapters name $name in $fn line $ln1 and $ln2\n";
+        die "ERROR: two chapters name $name in $fn line $ln2 and $ln1\n";
     }
 
     $self->{OP_chapter_hash}{$name} = $it;
@@ -267,10 +267,11 @@ sub chapters(@)
 
 Returns the name of the manual, which is found in the NAME chapter.
 
-=error No chapter NAME in manual in $source
-Each documentation part requires a chapter NAME which starts with
+=error No chapter NAME in scope of package $pkg in file $source
+Each documentation part requires a chapter "NAME" which starts with
 the manual name followed by a dash.  Apparently, this was not found
-in the indicated file.
+in the indicated file.  This chapter description must be anywhere
+after the package statement leading the name-space.
 
 =error The NAME chapter does not have the right format in $source
 The NAME chapter is used to figure-out what name the manual page must
@@ -286,7 +287,8 @@ sub name()
     return $self->{OP_name} if defined $self->{OP_name};
 
     my $chapter = $self->chapter('NAME')
-        or die "ERROR: No chapter NAME in manual ".$self->source."\n";
+        or die 'ERROR: No chapter NAME in scope of package ',$self->package
+             , ' in file '.$self->source."\n";
 
     my $text   = $chapter->description || '';
     $text =~ m/^\s*(\S+)\s*\-\s/

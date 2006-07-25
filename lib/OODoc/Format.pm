@@ -78,7 +78,7 @@ The DIRECTORY where the output will be placed.  If it does not exist,
 it will be created for you.
 
 =option  manifest OBJECT
-=default manifest C<undef>
+=default manifest undef
 
 =error formatter has no project name.
 
@@ -166,10 +166,10 @@ for formatting a chapter.
 The manual to be formatted.
 
 =option  append STRING|CODE
-=default append C<undef>
+=default append undef
 
 =option  template LOCATION
-=default template C<undef>
+=default template undef
 
 Some formatters support templates to descibe the output of the pages.
 The valid values for this option differs per formatter.
@@ -346,14 +346,14 @@ support data-files which are not manuals.
 =default verbose  0
 
 =option  source   DIRECTORY
-=default source   C<undef>
+=default source   undef
 
 The location of the DIRECTORY which contains files which are part of
 the produced set of documentation, but not copied per manual page
 but only once.
 
 =option  process  REGEXP
-=default process  C<undef>
+=default process  undef
 
 Selects files to be processed from the source directory.  Other files
 are copied without modification.  What happens with the selected
@@ -368,7 +368,7 @@ sub createOtherPages(@) {shift}
 =method showSubroutines OPTIONS
 
 =option  subroutines ARRAY
-=default subroutines C<[]>
+=default subroutines []
 
 =option  output  FILE
 =default output  <selected filehandle>

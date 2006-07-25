@@ -2,6 +2,26 @@
 All changes where made by Mark Overmeer <oodoc@overmeer.net>, unless
 explicitly stated differently.
 
+version 0.92:
+
+	Fixes:
+
+	- quite a number of typos in the docs.
+
+	Improvements:
+
+	- test of module existence (when used in M<>) has changed, to
+	  be more understandible.
+
+	- improved doc in OODoc and OODoc::Parser
+
+	- adding "in scope of $pkg" to error message about missing NAME
+	  chapter.
+
+	- added examples/markov.pm, as a kind of explenatory template
+	  for the Markov parser, on request by [Pete Stein]
+
+
 version 0.91: Fri May 20 10:45:37 CEST 2005
 
 	Fixes:

@@ -32,7 +32,7 @@ The subroutine in which this option lives.
 The value which is related to this default.
 
 =default container M<new(subroutine)>
-=default type      C<'Default'>
+=default type      'Default'
 
 =cut
 

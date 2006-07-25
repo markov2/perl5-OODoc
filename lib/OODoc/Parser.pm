@@ -17,6 +17,20 @@ OODoc::Parser - base class for all OODoc parsers.
 
 =chapter DESCRIPTION
 
+A parser is used to process files which contain POD or contain code:
+their filename extension is C<pod>, C<pm>, or C<pl> (actually, this
+can be configured).
+
+Currently distributed parsers:
+
+=over 4
+
+=item * M<OODoc::Parser::Markov>
+The Markov parser understands standard POD, but adds logical markup tags
+and the C<M&lt;&gt;> links.
+
+=back
+
 =cut
 
 #-------------------------------------------

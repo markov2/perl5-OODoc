@@ -23,7 +23,7 @@ in this manual page.
 
 =c_method new OPTIONS
 
-=default type  C<'Example'>
+=default type  'Example'
 
 =cut
 

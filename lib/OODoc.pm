@@ -16,7 +16,7 @@ use List::Util 'first';
 
 =chapter NAME
 
-OODoc - object oriented production of code documentation
+OODoc - object oriented production of code related documentation
 
 =chapter SYNOPSIS
 
@@ -29,18 +29,28 @@ OODoc - object oriented production of code documentation
 
 =chapter DESCRIPTION
 
-OODoc stands for "Object Oriented Documentation".  The OO part refers
-to two things: this module simplifies writing documentation for Object
-Oriented programs, and at the same time, it is Object Oriented itself:
-easily extensible.
+OODoc stands for "Object Oriented Documentation": to produce manual-pages
+in HTML or the usual man-page UNIX format, describing Perl programs.  The
+OO part refers to two things: this module simplifies writing documentation
+for Object Oriented programs, and at the same time, it is Object Oriented
+itself: easily extensible.
 
-OODoc is a rather new module, but is developed far enough to be
-useful for most applications.  You have the possibility to modify
-the output of the formatters to your taste using templates, although
-it is not donfigurable in full extend.
+OODoc has been used for small and for very large modules.  It can also
+be used to integrate manual-pages from many modules into one homogeneous
+set.
 
-Please contribute ideas.  Have a look at the main website of this
-project at L<http://perl.overmeer.net/oodoc/>.
+The documentation syntax can be changed, by configuring the parser
+or adding a new one.  The M<OODoc::Parser::Markov> parser understands POD
+and has additional logical markup tags.  See M<OODoc::Parser> about what
+each parser needs to support.
+
+The output is produced by formatters.  The current implementation contains
+two POD formatters and one HTML formatter.  See M<OODoc::Format>.
+
+Do not forget to read the L<DETAILS> section, later on this manual-page to
+get started.  Please contribute ideas.  Have a look at the main website
+of this project at L<http://perl.overmeer.net/oodoc/>.  That is also an
+example of the produced output.
 
 =cut
 
@@ -255,17 +265,17 @@ directory is scanned for a file named C<version> or C<VERSION>. The
 content is used as version value.  If these do not exist, then the
 main OODoc object needs to provide the version.
 
-=error Cannot compile $parser class
+To make C<Makefile.PL> option C<VERSION_FROM> to work with this
+seperate version file, that line should contain C<$VERSION = >.
 
+=error Cannot compile $parser class
 The $parser class does not exist or produces compiler errors.
 
 =error Parser $parser could not be instantiated
-
 Something went wrong while starting the parser object.  Probably there is
 an other error message which will tell you the exact cause.
 
 =error requires a directory to write the distribution to
-
 You have to give a value to C<workdir>, which may be C<undef>.  This
 option is enforced to avoid the accidental omission of the parameter.
 
@@ -275,17 +285,14 @@ their pseudo doc, and then written to the same directory.  That
 directory will be the place where C<make dist> is run later.
 
 =error cannot copy distribution file $fn to $dest: $!
-
 For some reason, a plain file from can not be copied from your source
 tree to the location where the distribution is made.
 
 =warning no file $fn to include in the distribution
-
 Probably your MANIFEST file lists this file which does not exist.  The file
 will be skipped for now, but may cause problems later on.
 
 =error there is no version defined for the source files
-
 Each manual will need a version number.  There are various ways to
 specify one.  For instance, create a file named C<version> or C<VERSION>
 in the top source directory of your distribution, or specify a version
@@ -804,7 +811,7 @@ The final phase can be called more than once: based on the same object
 tree, documents can be produced in various formats.  The initial
 implementation produces POD and HTML.
 
-=section Getting Started
+=section Getting Started from scratch
 
 To use OODoc, you need to create a scripts which helps you producing
 the distribution of your module.  The simpest script look like this:
@@ -821,11 +828,44 @@ the distribution of your module.  The simpest script look like this:
  $doc->create('pod', workdir => $dist); # formatting to POD
 
 The default parser will be used to process the files, see
-M<OODoc::Parser::Markov> for its syntax.  The formatter is
-described in M<OODoc::Format::Pod>.
+M<OODoc::Parser::Markov> for its syntax.  The formatter is described
+in M<OODoc::Format::Pod>.  Once you have this working, you may decide
+to add options to the calls to adapt the result more to your own taste.
 
-Once you have this working, you may decide to add options to the
-calls to adapt the result more to your own taste.
+=section Getting Started by Cloning
+
+A much easier way to start, is to simply pick one of the examples
+which are distributed with OODoc.  They come in three sizes: for a
+small module (mimetypes and orl), an average sized set-up (for OODoc
+itself), and a huge one (mailbox, over 140 packages).
+
+All examples are written by the same person, and therefore follow the
+same set-up.  Copy the files C<mkdoc>, C<mkdist> and C<MANIFEST.extra>
+plus the directory C<html> to the top directory of your distribution.
+Edit all the files, to contain the name of your module.
+
+It expects a C<MANIFEST> file to be present, like standard for Perl
+modules.  That file lists your own code, pod and additional files
+which need to be included in the release.  OODoc will extend this
+file with produced POD files.
+
+The demo-scripts use a C<version> file, which contains something like
+C<< $VERSION = 0.1 >>.  This is not required: you can specify to
+take a version from any file, in the traditional Perl way.  However,
+when you glue multiple modules together into one big HTML documentation
+website (see the mailbox example), then this separate file simplifies
+the production script.
+
+To test the document production, use C<./mkdoc 1>  (C<1> = verbose)
+The output can be found in the specified C<workdir>.  To see them:
+try (on UNIX/Linux)  C<<pod2man xyz.pod | man -l - >>
+
+To get a prepared distribution, use C<./mkdist 1>.  This will first
+produce all documentation, and then run C<make test> and C<make dist>.
+It generates two distributions: the C<module-version.tar.gz> which
+can be uploaded to CPAN, and the C<module-version-raw.tar.gz> which
+is for yourself.  The latter contains the whole setup which is used
+to generate the distribution, so the unprocessed files!
 
 =cut
 

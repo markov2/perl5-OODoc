@@ -30,8 +30,8 @@ part of a chapter.
 The section in which this sub-section lives.
 
 =default container M<new(section)>
-=default level     C<3>
-=default type      C<'Subsection'>
+=default level     3
+=default type      'Subsection'
 
 =cut
 

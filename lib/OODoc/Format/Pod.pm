@@ -1,4 +1,3 @@
-
 package OODoc::Format::Pod;
 use base 'OODoc::Format';
 
@@ -492,10 +491,11 @@ sub writeTable($@)
 {   my ($self, %args) = @_;
 
     my $head   = $args{header} or confess;
-    my @w      = (0) x @$head;
-
+    my $output = $args{output} or confess;
     my $rows   = $args{rows}   or confess;
     return unless @$rows;
+
+    my @w      = (0) x @$head;
 
     foreach my $row ($head, @$rows)
     {   $w[$_] = max $w[$_], length($row->[$_])
@@ -507,11 +507,15 @@ sub writeTable($@)
            foreach 0..$#$rows;
     }
 
-    my $format = " ".join("  ", map { "\%-${_}s" } @w)."\n";
+    pop @w;   # ignore width of last column
 
-    my $output = $args{output}   or confess;
+    my $format = " ".join("  ", map { "\%-${_}s" } @w)."  %s\n";
+    (my $headf = $format) =~ s/ /-/g;
+
+    $output->printf($headf, @$head);
+
     $output->printf($format, @$_)
-       foreach $head, @$rows;
+       foreach @$rows;
 }
 
 #-------------------------------------------
@@ -665,7 +669,7 @@ replacement by its default behavior.  When you specify
 your own template file, every thing can be made.
 
 See the manual page of M<Template::Magic>.  You have to install
-M<Bundle::Template::Magic> to get it to work.
+C<Bundle::Template::Magic> to get it to work.
 
 =example formatting with template
 

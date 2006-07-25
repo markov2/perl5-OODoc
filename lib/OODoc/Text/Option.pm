@@ -29,7 +29,7 @@ The subroutine in which this option lives.
 An informal short description of the valid values for this option.
 
 =default  container M<new(subroutine)>
-=default  type      C<'Option'>
+=default  type      'Option'
 
 =cut
 

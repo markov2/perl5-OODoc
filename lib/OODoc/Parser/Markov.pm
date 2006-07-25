@@ -780,10 +780,11 @@ way, this may indicate that the NAME chapter of the manual page in that
 module differs from the package name.  Often, this is a typo in the
 NAME... probably a difference in used cases.
 
-=error compilation problems for module $link in $module: $@
-If the report is about a syntax error involving 'require', then you
-may have created a link to a module with a name which is not acceptable
-to Perl.  It is not easy to find the location of that problem.
+=warning use problem for module $link in $module; $@
+In an attempt to check the correctness of your naming of a module,
+OODoc will try to compile ("require") the named module.  Apparently,
+the module was found, but something else went wrong.  The exact cause
+is not always easy to find.
 
 =cut
 
@@ -804,7 +805,8 @@ sub decomposeM($$)
         {  warn "WARNING: module $link is not on your system, found in $manual\n";
         }
         else
-        {  warn "ERROR: compilation problems for module $link in $manual:\n$@";
+        {  $@ =~ s/ at \(eval.*//;
+           warn "WARNING: use problem for module $link in $manual;\n$@";
            warn " Did you use an 'M' tag on something which is not a module?\n";
         }
         $man = $link;
@@ -1000,9 +1002,6 @@ sub cleanupPodL($$$)
 
 =section Commonly used functions
 
-
-#-------------------------------------------
-
 =method cleanupHtml FORMATTER, MANUAL, STRING, [IS_HTML]
 
 Some changes will not be made when IS_HTML is C<true>, for instance,
@@ -1149,7 +1148,11 @@ correctness anyway.
 
 A second disadvantage is that you have to backup your sources separately:
 the sources differ from what is published on CPAN, so CPAN is not your
-backup anymore.
+backup anymore.  The example scripts, contained in the distribution, show
+how to produce these "raw" packages.
+
+Finally, a difference with the standard POD process: the manual-page must
+be preceeded with a C<package> keyword.
 
 =section Structural tags
 
@@ -1286,11 +1289,9 @@ I<subsection> a subsection (in that manual, by default the current manual).
 The I<unix-manual> MUST be formatted with its chapter number, for instance
 C<cat(1)>, otherwise a link will be created.  See the following examples
 in the html version of these manual pages:
-
  M E<lt> perldoc E<gt>              illegal: not in distribution
  L E<lt> perldoc E<gt>              L<perldoc>
  L E<lt> perldoc(1perl) E<gt>       L<perldoc(1perl)>
-
  M E<lt> OODoc::Object E<gt>        M<OODoc::Object>
  L E<lt> OODoc::Object E<gt>        L<OODoc::Object>
  L E<lt> OODoc::Object(3pm) E<gt>   L<OODoc::Object(3pm)>

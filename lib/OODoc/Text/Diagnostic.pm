@@ -28,7 +28,7 @@ in this manual page.
 The subroutine in which this option lives.
 
 =default container M<new(subroutine)>
-=default type      C<'Diagnostic'>
+=default type      'Diagnostic'
 
 =cut
 

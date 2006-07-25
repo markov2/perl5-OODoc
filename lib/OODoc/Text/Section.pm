@@ -30,8 +30,8 @@ OODoc::Text::Section - collects the text of one section within a chapter
 
 =requires chapter   OBJECT
 =default  container M<new(chapter)>
-=default  level     C<2>
-=default  type      C<'Section'>
+=default  level     2
+=default  type      'Section'
 
 =cut
 

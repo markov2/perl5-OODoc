@@ -21,8 +21,8 @@ OODoc::Text::Chapter - collects the information of one chapter
 =c_method new OPTIONS
 
 =default container M<new(manual)>
-=default level     C<1>
-=default type      C<'Chapter'>
+=default level     1
+=default type      'Chapter'
 
 =option  manual    OBJECT
 =default manual    undef
