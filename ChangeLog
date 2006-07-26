@@ -2,11 +2,32 @@
 All changes where made by Mark Overmeer <oodoc@overmeer.net>, unless
 explicitly stated differently.
 
-version 0.92:
+version 0.93: Wed Jul 26 12:10:08 CEST 2006
+
+	Fixes:
+
+	- forgot to include examples/markov.pm in the MANIFEST
+
+	- Pod2 formatter did by default not include the FUNCTIONS chapter.
+
+	- Pod2 did not always add a blank line before pod-start.
+
+	Improvements:
+
+	- in Inheritance list, use 'is an' iso 'is a' before vowel
+
+version 0.92: Tue Jul 25 10:50:11 CEST 2006
 
 	Fixes:
 
 	- quite a number of typos in the docs.
+
+	- option lists in produced pod had many blanks at the end of each
+	  line because of superflous padding.
+
+	- Pod::Man bug will cause verbatim text not to be scanned for
+	  C<> and friends unless connected to a non-verbatim block.
+	  Now, this is avoided for the option-list.
 
 	Improvements:
 

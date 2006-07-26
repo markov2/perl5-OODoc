@@ -351,7 +351,8 @@ sub chapterInheritance(@)
 
 sub showSuperSupers($$)
 {   my ($self, $output, $package) = @_;
-    $output->print("   is a $package\n");
+    my $a = $package =~ m/^[aeouy]/i ? 'an' : 'a';
+    $output->print("   is $a $package\n");
     return unless ref $package;  # only the name of the package is known
 
     if(my $realizes = $package->realizes)

@@ -277,7 +277,7 @@ sub parse(@)
             }
         }
         elsif($line =~ m/^=(over|back|item|for|pod|begin|end|head4)\b/ )
-        {   ${$self->{OPM_block}} .= $line;
+        {   ${$self->{OPM_block}} .= "\n". $line;
             $self->inDoc(1);
         }
         elsif(substr($line, 0, 1) eq '=')

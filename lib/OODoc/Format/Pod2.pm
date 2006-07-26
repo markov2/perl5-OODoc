@@ -161,6 +161,7 @@ __DATA__
 {chapter DESCRIPTION}
 {chapter OVERLOADED}
 {chapter METHODS}
+{chapter FUNCTIONS}
 {chapter EXPORTS}
 {diagnostics}
 {chapter DETAILS}
