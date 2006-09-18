@@ -715,7 +715,7 @@ sub showSubroutineDescriptionRefer(@)
 =method format OPTIONS
 
 =option  manual MANUAL
-=default manual C<undef>
+=default manual undef
 
 =cut
 

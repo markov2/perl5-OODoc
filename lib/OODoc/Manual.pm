@@ -669,21 +669,21 @@ Merging is a complicated task, because the order of both lists should be
 kept as well as possible.
 
 =option  this ARRAY
-=default this C<[]>
+=default this []
 
 =option  super ARRAY
-=default super C<[]>
+=default super []
 
 =requires container OBJECT
 
 =option  equal CODE
-=default equal C<sub {"$_[0]" eq "$_[1]"}>
+=default equal sub {"$_[0]" eq "$_[1]"}
 
 Define how can be determined that two objects are the same.  By default,
 the stringification of both objects are compared.
 
 =option  merge CODE
-=default merge C<sub {$_[0]}>
+=default merge sub {$_[0]}
 
 What to call if both lists contain the same object.  These two objects
 will be passed as argument to the code reference.

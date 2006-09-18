@@ -2,6 +2,13 @@
 All changes where made by Mark Overmeer <oodoc@overmeer.net>, unless
 explicitly stated differently.
 
+version 0.94: Mon Sep 18 10:54:39 CEST 2006
+
+	Fixes:
+
+	- tables now created with S<< >>, avoiding the use of a Pod::Man
+	  bug.  Requires podlators 2.0.5
+
 version 0.93: Wed Jul 26 12:10:08 CEST 2006
 
 	Fixes:

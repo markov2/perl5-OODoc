@@ -484,7 +484,7 @@ An array of arrays, each describing a row for the output.  The first row
 is the header.
 
 =option  widths ARRAY
-=default widths C<undef>
+=default widths undef
 
 =cut
 
@@ -496,6 +496,7 @@ sub writeTable($@)
     my $rows   = $args{rows}   or confess;
     return unless @$rows;
 
+    # Compute column widths
     my @w      = (0) x @$head;
 
     foreach my $row ($head, @$rows)
@@ -510,13 +511,14 @@ sub writeTable($@)
 
     pop @w;   # ignore width of last column
 
-    my $format = " ".join("  ", map { "\%-${_}s" } @w)."  %s\n";
-    (my $headf = $format) =~ s/ /-/g;
-
+    # Table head
+    my $headf  = "S<< ".join("--", map { "\%-${_}s" } @w)."--%s >>\n";
     $output->printf($headf, @$head);
 
+    # Table body
+    my $format = "S<< ".join("  ", map { "\%-${_}s" } @w)."  %s >>\n";
     $output->printf($format, @$_)
-       foreach @$rows;
+       for @$rows;
 }
 
 #-------------------------------------------

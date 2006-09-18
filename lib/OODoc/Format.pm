@@ -376,22 +376,22 @@ sub createOtherPages(@) {shift}
 =requires manual  MANUAL
 
 =option  show_subs_index 'NO'|'NAMES'|'USE'
-=default show_subs_index C<'NO'>
+=default show_subs_index 'NO'
 
 =option  show_inherited_subs 'NO'|'NAMES'|'USE'|'EXPAND'
-=default show_inherited_subs C<'USE'>
+=default show_inherited_subs 'USE'
 
 =option  show_described_subs 'NO'|'NAMES'|'USE'|'EXPAND'
-=default show_described_subs C<'EXPAND'>
+=default show_described_subs 'EXPAND'
 
 =option  show_option_table 'NO'|'DESCRIBED'|'INHERITED'|'ALL'
-=default show_option_table C<'ALL'>
+=default show_option_table 'ALL'
 
 =option  show_inherited_options 'NO'|'LIST'|'USE'|'EXPAND'
-=default show_inherited_options C<'USE'>
+=default show_inherited_options 'USE'
 
 =option  show_described_options 'NO'|'LIST'|'USE'|'EXPAND'
-=default show_described_options C<'EXPAND'>
+=default show_described_options 'EXPAND'
 
 =cut
 

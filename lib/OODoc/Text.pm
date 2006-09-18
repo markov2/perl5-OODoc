@@ -71,7 +71,7 @@ All text objects except chapters are contained in some other object.
 The type of this text element.  This is used for debugging only.
 
 =option  description STRING
-=default description C<''>
+=default description ''
 
 The text which is contained in the body of this text item.  Often, this
 is filled in later by M<openDescription()>.
