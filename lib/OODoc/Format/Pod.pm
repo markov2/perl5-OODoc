@@ -6,7 +6,8 @@ use warnings;
 
 use Carp;
 use File::Spec;
-use List::Util 'max';
+use List::Util   qw/max/;
+use Pod::Escapes qw/e2char/;
 
 =chapter NAME
 
@@ -496,10 +497,17 @@ sub writeTable($@)
     my $rows   = $args{rows}   or confess;
     return unless @$rows;
 
+    # Convert all elements to plain text, because markup is not
+    # allowed in verbatim pod blocks.
+    my @rows;
+    foreach my $row (@$rows)
+    {   push @rows, [ map {$self->removeMarkup($_)} @$row ];
+    }
+
     # Compute column widths
     my @w      = (0) x @$head;
 
-    foreach my $row ($head, @$rows)
+    foreach my $row ($head, @rows)
     {   $w[$_] = max $w[$_], length($row->[$_])
            foreach 0..$#$row;
     }
@@ -512,13 +520,90 @@ sub writeTable($@)
     pop @w;   # ignore width of last column
 
     # Table head
-    my $headf  = "S<< ".join("--", map { "\%-${_}s" } @w)."--%s >>\n";
+    my $headf  = " ".join("--", map { "\%-${_}s" } @w)."--%s\n";
     $output->printf($headf, @$head);
 
     # Table body
-    my $format = "S<< ".join("  ", map { "\%-${_}s" } @w)."  %s >>\n";
+    my $format = " ".join("  ", map { "\%-${_}s" } @w)."  %s\n";
     $output->printf($format, @$_)
-       for @$rows;
+       for @rows;
+}
+
+#-------------------------------------------
+
+=method removeMarkup STRING
+There is (AFAIK) no way to get the standard podlators code to remove
+all markup from a string: to simplify a string.  On the other hand,
+you are not allowed to put markup in a verbatim block, but we do have
+that.  So: we have to clean the strings ourselves.
+=cut
+
+sub removeMarkup($)
+{   my ($self, $string) = @_;
+    my $out = $self->_removeMarkup($string);
+    for($out)
+    {   s/^\s+//gm;
+        s/\s+$//gm;
+        s/\s{2,}/ /g;
+        s/\[NB\]/ /g;
+    }
+    $out;
+}
+
+sub _removeMarkup($)
+{   my ($self, $string) = @_;
+
+    my $out = '';
+    while($string =~ s/(.*?)         # before
+                       ([BCEFILSXZ]) # known formatting codes
+                       ([<]+)        # capture ALL starters
+                      //x)
+    {   $out .= $1;
+        my ($tag, $bracks, $brack_count) = ($2, $3, length($3));
+
+        if($string !~ s/^(|.*?[^>])  # contained
+                        [>]{$brack_count}
+                        (?![>])
+                       //xs)
+        {   $out .= "$tag$bracks";
+            next;
+        }
+
+        my $container = $1;
+        if($tag =~ m/[XZ]/) { ; }  # ignore container content
+        elsif($tag =~ m/[BCI]/)    # cannot display, but can be nested
+        {   $out .= $self->_removeMarkup($container);
+        }
+        elsif($tag eq 'E') { $out .= e2char($container) }
+        elsif($tag eq 'F') { $out .= $container }
+        elsif($tag eq 'L')
+        {   if($container =~ m!^\s*([^/|]*)\|!)
+            {    $out .= $self->_removeMarkup($1);
+                 next;
+            }
+   
+            my ($man, $chapter) = ($container, '');
+            if($container =~ m!^\s*([^/]*)/\"([^"]*)\"\s*$!)
+            {   ($man, $chapter) = ($1, $2);
+            }
+            elsif($container =~ m!^\s*([^/]*)/(.*?)\s*$!)
+            {   ($man, $chapter) = ($1, $2);
+            }
+
+            $out .=
+             ( !length $man     ? "section $chapter"
+             : !length $chapter ? $man
+             :                    "$man section $chapter"
+             );
+        }
+        elsif($tag eq 'S')
+        {   my $clean = $self->_removeMarkup($container);
+            $clean =~ s/ /[NB]/g;
+            $out  .= $clean;
+        }
+    }
+
+    $out . $string;
 }
 
 #-------------------------------------------

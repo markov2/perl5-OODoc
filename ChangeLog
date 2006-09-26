@@ -2,6 +2,19 @@
 All changes where made by Mark Overmeer <oodoc@overmeer.net>, unless
 explicitly stated differently.
 
+version 0.95: Tue Sep 26 13:18:49 CEST 2006
+
+	Fixes:
+
+	- Again, the solution with podlators logic doesn't work on
+	  all formatters.  Now I really got fed-up and made a markup
+	  cleaner (tested in t/10nomarkup.t).
+	  Thanks to [Slavan Rezic] for the investigations.
+
+	Improvements:
+
+	- Test the useability of all OODoc pm's in t/00work.t.
+
 version 0.94: Mon Sep 18 10:54:39 CEST 2006
 
 	Fixes:
