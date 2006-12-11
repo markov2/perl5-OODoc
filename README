@@ -1,14 +1,23 @@
+=== OODist README
 
-README about examples
-=====================
+From release 0.96, the OODoc module contains a script named 'oodist',
+which simplifies the creation of pod and HTML enormously.  You do not
+need to create mkdoc and mkdist scripts anymore: simply add a few lines
+to your Makefile.PL is sufficient.
+
+= about the examples
 
 The OODoc module will be used to produce the manuals for many packages
 by the same author.  Some of these modules are small, some are larger.
 The setup for these packages are included in this distribution as
-examples.  They may change a lot between releases of OODoc, which will
-not be reflected in the ChangeLog of OODoc.
+examples.
 
-WARNING: You can not used the examples without modifying them to
+WARNING: Since OODoc v0.96, you can use the oodist script to produce
+         the manual pages.  You do not need the mkdoc and mkdist
+         scripts anymore, but still need the html/* files from these
+         examples.
+
+WARNING: You can not use the examples without modifying them to
          contain your local directory paths.  Be careful!
 
 

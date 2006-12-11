@@ -27,6 +27,8 @@ OODoc - object oriented production of code related documentation
  $doc->create('pod', workdir => $dest);
  $doc->create('html', workdir => '/tmp/html');
 
+or use the oodist script
+
 =chapter DESCRIPTION
 
 OODoc stands for "Object Oriented Documentation": to produce manual-pages
@@ -34,6 +36,22 @@ in HTML or the usual man-page UNIX format, describing Perl programs.  The
 OO part refers to two things: this module simplifies writing documentation
 for Object Oriented programs, and at the same time, it is Object Oriented
 itself: easily extensible.
+
+Before you read any further, decide:
+
+=over 4
+
+=item 1.
+
+to use your own modified version of the mkdist and mkdoc scripts, as provided
+in the examples which come with this module, or
+
+=item 2.
+
+use the oodist, which is less flexible but much simpler, and only requires
+some additions to your Makefile.PL.
+
+=back
 
 OODoc has been used for small and for very large modules.  It can also
 be used to integrate manual-pages from many modules into one homogeneous
@@ -47,7 +65,7 @@ each parser needs to support.
 The output is produced by formatters.  The current implementation contains
 two POD formatters and one HTML formatter.  See M<OODoc::Format>.
 
-Do not forget to read the L<DETAILS> section, later on this manual-page to
+Do not forget to B<read> the L<DETAILS> section, later on this manual-page to
 get started.  Please contribute ideas.  Have a look at the main website
 of this project at L<http://perl.overmeer.net/oodoc/>.  That is also an
 example of the produced output.
@@ -268,6 +286,11 @@ main OODoc object needs to provide the version.
 To make C<Makefile.PL> option C<VERSION_FROM> to work with this
 seperate version file, that line should contain C<$VERSION = >.
 
+=option  notice STRING
+=default notice ''
+Include the string (which may consist of multiple lines) to each of the
+pm files.  This notice usually contains the copyright message.
+
 =error Cannot compile $parser class
 The $parser class does not exist or produces compiler errors.
 
@@ -330,6 +353,9 @@ sub processFiles(@)
         {   die "ERROR: there is no version defined for the source files.\n";
         }
     }
+
+    my $notice = $args{notice} || '';
+    $notice =~ s/^(\#\s)?/# /mg;       # put comments if none
 
     #
     # Split the set of files into those who do need special processing
@@ -422,6 +448,7 @@ sub processFiles(@)
           , output       => $dn
           , distribution => $distr
           , version      => $version
+          , notice       => $notice
           );
 
         if($verbose > 2)
@@ -497,9 +524,8 @@ sub getPackageRelations()
     foreach my $manual (@manuals)
     {    next if $manual->isPurePod;
          eval "require $manual";
-         if($@ && $@ !~ /Can't locate/)
-         {   die "$@";
-         }
+         warn "WARNING: errors from $manual\n"
+            if $@ && $@ !~ /Can't locate/;
     }
 
     foreach my $manual (@manuals)
@@ -732,6 +758,8 @@ sub stats()
     my $realpkg  = $self->packageNames;
 
     my $subs     = map {$_->subroutines} @manuals;
+my @options = map { map {$_->options} $_->subroutines } @manuals;
+    my $options  = @options;
     my $examples = map {$_->examples}    @manuals;
 
     my $diags    = map {$_->diagnostics} @manuals;
@@ -743,6 +771,7 @@ $distribution version $version
   Number of package manuals: $manuals
   Real number of packages:   $realpkg
   documented subroutines:    $subs
+  documented options:        $options
   documented diagnostics:    $diags
   shown examples:            $examples
 STATS
@@ -774,7 +803,7 @@ formatter of the manual page can not help the author of the documentation
 to produce more consistent manual pages.  This is not a problem for small
 distributions, but is much more needed when programs grow larger.
 
-=section How does OODoc work
+=section How OODoc works
 
 Like with POD, you simply mix your documentation with your code.  When
 the module is distributed, this information is stripped from the files
@@ -820,7 +849,7 @@ the distribution of your module.  The simpest script look like this:
  my $dist = '/tmp/abc';
  my $doc  = OODoc->new
   ( distribution => 'E-mail handling'
-  , version       => '0.01'
+  , version      => '0.01'
   );
 
  $doc->processFiles(workdir => $dist);  # parsing

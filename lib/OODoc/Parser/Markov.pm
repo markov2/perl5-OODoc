@@ -78,8 +78,12 @@ my @default_rules =
  , [ '=head3'      => 'docSubSection' ]
 
  # problem spotter
- , [ qr/^(warn|die|carp|confess|croak)/ => 'debugRemains' ]
- , [ qr/^(sub|my|our|package|use)\s/    => 'forgotCut' ]
+ , [ qr/^(warn|die|carp|confess|croak)\s/ => 'debugRemains' ]
+ , [ qr/^( sub \s+ \w
+         | (?:my|our) \s+ [\($@%]
+         | (?:package|use) \s+ \w+\:
+         )
+       /x => 'forgotCut' ]
  );
 
 #-------------------------------------------
@@ -179,6 +183,10 @@ sub findMatchingRule($)
 =requires distribution STRING
 =requires version STRING
 
+=option  notice STRING
+=default notice ''
+Block of text added in from of the output file.
+
 =error no input file to parse specified
 
 The parser needs the name of a file to be read, otherwise it can not
@@ -240,7 +248,8 @@ sub parse(@)
         $self->inDoc(1);
     }
     else
-    {   $self->inDoc(0);
+    {   $out->print($args{notice}) if $args{notice};
+        $self->inDoc(0);
     }
 
     # Read through the file.

@@ -2,6 +2,30 @@
 All changes where made by Mark Overmeer <oodoc@overmeer.net>, unless
 explicitly stated differently.
 
+version 0.96: Mon Dec 11 15:19:12 CET 2006
+
+	Fixes:
+
+	- No "die" but "warn" when a module which is investigated
+	  for docs contains errors or croaks in the code.
+
+	Improvements:
+
+	- Now also reports counts of documented options.
+
+	- added bin/oodist, which avoids the need to write an own script
+	  to produce real POD.
+
+	- use oodist for OODoc, which make mkdist/mkdoc as expired
+	  examples.
+
+	- created README which contains README.examples.
+
+	- check for "code accidentally captured in pod" made more
+	  selective.
+
+	- add a 'notice' to all stripped pm files.
+
 version 0.95: Tue Sep 26 13:18:49 CEST 2006
 
 	Fixes:
