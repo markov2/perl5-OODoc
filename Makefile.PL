@@ -2,7 +2,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile
   ( NAME	 => 'OODoc'
-  , VERSION      => 0.96
+  , VERSION      => 0.97
   , PREREQ_PM    =>
     { Test::More              => 0.47
     , Template::Magic::HTML   => 1.02
@@ -20,7 +20,7 @@ sub MY::postamble { <<'__POSTAMBLE' }
 
 # for DIST
 RAWDIR		= ../public_html/oodoc/raw
-DISTDIR		= ../public_html/oodoc/html
+DISTDIR		= ../public_html/oodoc/source
 LICENSE		= artistic
 
 # for POD

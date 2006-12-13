@@ -354,8 +354,10 @@ sub processFiles(@)
         }
     }
 
-    my $notice = $args{notice} || '';
-    $notice =~ s/^(\#\s)?/# /mg;       # put comments if none
+    my $notice = '';
+    if($notice = $args{notice})
+    {   $notice =~ s/^(\#\s)?/# /mg;       # put comments if none
+    }
 
     #
     # Split the set of files into those who do need special processing
