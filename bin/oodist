@@ -9,12 +9,12 @@ use Cwd           qw/getcwd/;
 use File::Slurp   qw/read_file/;
 use List::Util    qw/first/;
 use File::Copy    qw/move/;
+use OODoc         ();
 
 # In any case, we want modules in this dir to prevail over installed
 # versions of the module.
 my $here    = getcwd;
 unshift @INC, $here, "$here/lib";
-use OODoc         ();   # oodost for oodoc requires this $here
 
 my $verbose = 0;
 my $tmpdir  = $ENV{TMPDIR}         || '/tmp';
@@ -23,7 +23,7 @@ my ($rawdir, $distdir, $license);
 my ($workdir, $podtailfn, $pmheadfn, $extends);
 my ($firstyear, $email, $website);
 my ($html_templates, $html_output, $html_docroot);
-my ($make_pod, $make_dist, $make_raw, $make_html) = (1, 1, 1, 1);
+my ($make_pod, $make_dist, $make_raw, $make_html) = (1, 1, 1, undef);
 
 Getopt::Long::Configure 'bundling';
 GetOptions
@@ -58,7 +58,6 @@ or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
 for more details: F<http://www.gnu.org/icenses/gpl.html>
 __GPL
 
-
 sub read_makefile($);
 sub parse_additional_dists(@);
 sub create_pod($$);
@@ -89,6 +88,9 @@ $html_templates ||= $makefile->{HTML_TEMPLATES} || 'html';
 $html_output    ||= $makefile->{HTML_OUTPUT}    || 'public_html';
 $html_docroot   ||= $makefile->{HTML_DOCROOT}   || '/';
 
+$make_html = -d $html_templates
+   unless defined $make_html;
+
 $workdir   ||= "$tmpdir/$project";
 my @extends = split /\:/, $extends;
 
@@ -96,7 +98,6 @@ my @extends = split /\:/, $extends;
 for($workdir, $rawdir, $distdir, $html_templates, @extends)
 {  $_ = File::Spec->rel2abs($_, $here);
 }
-
 
 print "*** Producing $project version $version\n" if $verbose;
 
@@ -237,13 +238,15 @@ sub create_heads_and_tails($)
     my $today    = strftime "%B %d, %Y", localtime;
     my $year     = strftime "%Y", localtime;
 
-    $year = "$firstyear-$year"
-        if $firstyear && $firstyear != $year;
+    if($firstyear)
+    {   $year = $firstyear =~ m/$year$/ ? $firstyear : "$firstyear-$year";
+    }
 
     my $changelog = first { m/^(?:change|contrib)/i } glob '*';
     my $contrib   = $changelog ? " For contributors see $changelog." : '';
     my $web       = $website ? " Website: F<$website>" : '';
     my $author    = $makefile->{AUTHOR} ? " by $makefile->{AUTHOR}" : '';
+    my $ooversion = $OODoc::VERSION || $ENV{OODOC_VERSION};
 
     my $pmhead
      = defined $pmheadfn  ? read_file $pmheadfn
@@ -251,7 +254,7 @@ sub create_heads_and_tails($)
      : <<__PM_HEAD;
 Copyrights $year$author.$contrib
 See the manual pages for details on the licensing terms.
-Pod stripped from pm file by OODoc $OODoc::VERSION.
+Pod stripped from pm file by OODoc $ooversion.
 __PM_HEAD
 
     my $podtail
@@ -353,7 +356,6 @@ sub create_raw_dist($$)
         system "tar czf $rawfile @manifests"
         and die "ERROR: cannot produce $rawfile: $!\n";
     }
-
 
        [ -d $dest ]
     or mkdir $dest
@@ -527,10 +529,14 @@ and produced pod files will end-up there.
 The email address which can be used to contact the authors.  Used in the
 automatic podtail.
 
-=item . --firstyear| -y <year>
+=item . --firstyear| -y <string>
 
 The first year that a release for this software was made.  Used in the
-automatic podtail.
+automatic podtail.  The specified string can be more complex than a
+simple year, for instance C<1998-2000,2003>.  The last year will be
+automatically added like C<-2006>, which results in C<1998-2000,2003-2006>.
+When the current year is detected at the end of the string, the year will
+not be added again.
 
 =item . --license  | -l ['gpl'|'artistic'|filename]
 

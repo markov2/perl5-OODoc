@@ -2,6 +2,23 @@
 All changes where made by Mark Overmeer <oodoc@overmeer.net>, unless
 explicitly stated differently.
 
+version 0.98: Tue Dec 19 13:45:40 CET 2006
+
+	Fixes:
+
+	- oodist: do not attempt to create HTML if the templates do
+	  no exist.
+
+	Improvements:
+
+	- oodist: firstyear can be more complex.
+
+	- oodist: little work-around with OODOC_VERSION variable to
+	  be able to use raw OODoc version in private development
+	  environment.
+
+	- produced pod will have superfluous blank lines removed.
+
 version 0.97: Wed Dec 13 14:40:19 CET 2006
 
 	Fixes:

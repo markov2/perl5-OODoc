@@ -4,8 +4,8 @@ use base 'OODoc::Format';
 use strict;
 use warnings;
 
-use Carp;
-use File::Spec;
+use File::Spec   ();
+use Carp         qw/confess/;
 use List::Util   qw/max/;
 use Pod::Escapes qw/e2char/;
 
@@ -28,15 +28,7 @@ Create manual pages in the POD syntax.  POD is the standard document
 description syntax for Perl.  POD can be translated to many different
 operating system specific manual systems, like the Unix C<man> system.
 
-=cut
-
-#-------------------------------------------
-
 =chapter METHODS
-
-=cut
-
-#-------------------------------------------
 
 =section Page generation
 
@@ -64,8 +56,6 @@ sub link($$;$)
     : confess "cannot link to a ".ref $object;
 }
 
-#-------------------------------------------
-
 =method createManual OPTIONS
 
 =option  append STRING|CODE
@@ -87,13 +77,15 @@ sub createManual($@)
     my $options  = $args{format_options} || [];
 
     print $manual->orderedChapters." chapters in $manual\n" if $verbose>=3;
-    (my $podname = $manual->source) =~ s/\.pm$/.pod/;
+    my $podname  = my $tmpname = $manual->source;
+    $podname     =~ s/\.pm$/.pod/;
+    $tmpname     =~ s/\.pm$/.tmp/;
 
+    my $tmpfile  = File::Spec->catfile($self->workdir, $tmpname);
     my $podfile  = File::Spec->catfile($self->workdir, $podname);
-    $self->manifest->add($podfile);
 
-    my $output  = IO::File->new($podfile, "w")
-        or die "ERROR: cannot write pod manual at $podfile: $!";
+    my $output  = IO::File->new($tmpfile, "w")
+        or die "ERROR: cannot write prelimary pod manual to $tmpfile: $!";
 
     $self->formatManual
       ( manual => $manual
@@ -102,10 +94,12 @@ sub createManual($@)
       , @$options
       );
 
+    $output->close;
+    $self->cleanupPOD($tmpfile, $podfile);
+    $self->manifest->add($podfile);
+
     $self;
 }
-
-#-------------------------------------------
 
 =method formatManual OPTIONS
 
@@ -150,8 +144,6 @@ sub formatManual(@)
     $self;
 }
 
-#-------------------------------------------
-
 sub showAppend(@)
 {   my ($self, %args) = @_;
     my $append = $args{append};
@@ -165,8 +157,6 @@ sub showAppend(@)
 
     $self;
 }
-
-#-------------------------------------------
 
 sub showStructureExpand(@)
 {   my ($self, %args) = @_;
@@ -189,8 +179,6 @@ sub showStructureExpand(@)
     return $self;
 }
 
-#-------------------------------------------
-
 sub showStructureRefer(@)
 {   my ($self, %args) = @_;
 
@@ -206,8 +194,6 @@ sub showStructureRefer(@)
     $self;
 }
 
-#-------------------------------------------
-
 sub chapterDescription(@)
 {   my ($self, %args) = @_;
 
@@ -222,8 +208,6 @@ sub chapterDescription(@)
     $output->print("\nSee L</DETAILS> chapter below\n");
     $self->showChapterIndex($output, $details, "   ");
 }
-
-#-------------------------------------------
 
 sub chapterDiagnostics(@)
 {   my ($self, %args) = @_;
@@ -246,10 +230,7 @@ sub chapterDiagnostics(@)
     $self;
 }
 
-#-------------------------------------------
-
 =method showChapterIndex FILE, CHAPTER, INDENT
-
 =cut
 
 sub showChapterIndex($$;$)
@@ -264,8 +245,6 @@ sub showChapterIndex($$;$)
     }
     $self;
 }
-
-#-------------------------------------------
 
 sub showExamples(@)
 {   my ($self, %args) = @_;
@@ -283,8 +262,6 @@ sub showExamples(@)
     $self;
 }
 
-#-------------------------------------------
-
 sub showDiagnostics(@)
 {   my ($self, %args) = @_;
     my $diagnostics = $args{diagnostics} or confess;
@@ -301,8 +278,6 @@ sub showDiagnostics(@)
     }
     $self;
 }
-
-#-------------------------------------------
 
 =method chapterInheritance OPTIONS
 
@@ -372,8 +347,6 @@ sub showSuperSupers($$)
     $self;
 }
 
-#-------------------------------------------
-
 sub showSubroutine(@)
 {   my $self = shift;
     $self->SUPER::showSubroutine(@_);
@@ -383,8 +356,6 @@ sub showSubroutine(@)
     $output->print("\n=back\n");
     $self;
 }
-
-#-------------------------------------------
 
 sub showSubroutineUse(@)
 {   my ($self, %args) = @_;
@@ -419,8 +390,6 @@ sub showSubroutineUse(@)
     $self;
 }
 
-#-------------------------------------------
-
 sub showSubroutineName(@)
 {   my ($self, %args) = @_;
     my $subroutine = $args{subroutine} or confess;
@@ -439,8 +408,6 @@ sub showSubroutineName(@)
      );
 }
 
-#-------------------------------------------
-
 sub showOptionUse(@)
 {   my ($self, %args) = @_;
     my $output = $args{output} or confess;
@@ -454,8 +421,6 @@ sub showOptionUse(@)
     $output->print("\n. $option$params\n");
     $self;
 }
-
-#-------------------------------------------
 
 sub showOptionExpand(@)
 {   my ($self, %args) = @_;
@@ -472,8 +437,6 @@ sub showOptionExpand(@)
 
     $self;
 }
-
-#-------------------------------------------
 
 =method writeTable
 
@@ -528,8 +491,6 @@ sub writeTable($@)
     $output->printf($format, @$_)
        for @rows;
 }
-
-#-------------------------------------------
 
 =method removeMarkup STRING
 There is (AFAIK) no way to get the standard podlators code to remove
@@ -606,8 +567,6 @@ sub _removeMarkup($)
     $out . $string;
 }
 
-#-------------------------------------------
-
 sub showSubroutineDescription(@)
 {   my ($self, %args) = @_;
     my $manual  = $args{manual}                   or confess;
@@ -624,8 +583,6 @@ sub showSubroutineDescription(@)
     $self->showSubroutineDescriptionRefer(%args, subroutine => $refer);
 }
 
-#-------------------------------------------
-
 sub showSubroutineDescriptionRefer(@)
 {   my ($self, %args) = @_;
     my $manual  = $args{manual}                   or confess;
@@ -634,11 +591,47 @@ sub showSubroutineDescriptionRefer(@)
     $output->print("\nSee ", $self->link($manual, $subroutine), "\n");
 }
 
-#-------------------------------------------
-
 sub showSubsIndex() {;}
 
-#-------------------------------------------
+=method cleanupPOD IN, OUT
+The POD is produced in the specified IN filename, but may contain some
+garbage, especially a lot of superfluous blanks lines.  Because it is
+quite complex to track double blank lines in the production process,
+we make an extra pass over the POD to remove it afterwards.  Other
+clean-up activities may be implemented later.
+
+=error cannot read prelimary pod from $infn: $!
+=error cannot write final pod to $outfn: $!
+=cut
+
+sub cleanupPOD($$)
+{   my ($self, $infn, $outfn) = @_;
+    my $in = IO::File->new($infn, 'r')
+        or die "ERROR: cannot read prelimary pod from $infn: $!\n";
+
+    my $out = IO::File->new($outfn, 'w')
+        or die "ERROR: cannot write final pod to $outfn: $!\n";
+
+    my $last_is_blank = 1;
+  LINE:
+    while(my $l = $in->getline)
+    {   if($l =~ m/^\s*$/s)
+        {    next LINE if $last_is_blank;
+             $last_is_blank = 1;
+        }
+        else
+        {    $last_is_blank = 0;
+        }
+
+        $out->print($l);
+    }
+
+    $in->close;
+    $out->close
+       or die "ERROR: write to $outfn failed: $!\n";
+
+    $self;
+}
 
 =section Commonly used functions
 

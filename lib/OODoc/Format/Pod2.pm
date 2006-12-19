@@ -30,13 +30,7 @@ template system.  It may be a bit simpler to configure the outcome
 using the template, than using M<OODoc::Format::Pod>, however you
 first need to install L<Bundle::Template::Magic>.
 
-=cut
-
-#-------------------------------------------
-
 =chapter METHODS
-
-=cut
 
 =method createManual OPTIONS
 
@@ -61,8 +55,6 @@ sub createManual(@)
     $self->SUPER::createManual(%args) or return;
 }
 
-#-------------------------------------------
-
 sub formatManual(@)
 {   my ($self, %args) = @_;
     my $output    = delete $args{output};
@@ -83,8 +75,6 @@ sub formatManual(@)
     my $created = $template->output(\$layout);
     $output->print($$created);
 }
-
-#-------------------------------------------
 
 =section Template processing
 
@@ -119,16 +109,12 @@ sub templateChapter($$)
     $out;
 }
 
-#-------------------------------------------
-
 sub templateInheritance($$)
 {   my ($self, $zone, $args) = @_;
     my $out   = '';
     $self->chapterInheritance(%$args, output => IO::Scalar->new(\$out));
     $out;
 }
-
-#-------------------------------------------
 
 sub templateDiagnostics($$)
 {   my ($self, $zone, $args) = @_;
@@ -137,8 +123,6 @@ sub templateDiagnostics($$)
     $out;
 }
 
-#-------------------------------------------
-
 sub templateAppend($$)
 {   my ($self, $zone, $args) = @_;
     my $out   = '';
@@ -146,10 +130,7 @@ sub templateAppend($$)
     $out;
 }
 
-#-------------------------------------------
-
 =section Commonly used functions
-
 =cut
 
 1;
