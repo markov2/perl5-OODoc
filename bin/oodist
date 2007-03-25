@@ -16,13 +16,13 @@ use OODoc         ();
 my $here    = getcwd;
 unshift @INC, $here, "$here/lib";
 
-my $verbose = 0;
 my $tmpdir  = $ENV{TMPDIR}         || '/tmp';
 
+my ($verbose, $test) = (0, 0);
 my ($rawdir, $distdir, $license);
 my ($workdir, $podtailfn, $pmheadfn, $extends);
 my ($firstyear, $email, $website);
-my ($html_templates, $html_output, $html_docroot);
+my ($html_templates, $html_output, $html_docroot, $html_package);
 my ($make_pod, $make_dist, $make_raw, $make_html) = (1, 1, 1, undef);
 
 Getopt::Long::Configure 'bundling';
@@ -36,12 +36,14 @@ GetOptions
  , 'html-docroot=s'   => \$html_docroot
  , 'html-output=s'    => \$html_output
  , 'html-templates=s' => \$html_templates
+ , 'html-package=s'=> \$html_package
  , 'license|l=s'   => \$license
  , 'pod!'          => \$make_pod
- , 'podtail|t=s'   => \$podtailfn
- , 'pmhead|h=s'    => \$pmheadfn
+ , 'podtail'       => \$podtailfn
+ , 'pmhead'        => \$pmheadfn
  , 'raw!'          => \$make_raw
  , 'rawdir|r=s'    => \$rawdir
+ , 'test|t!'       => \$test
  , 'verbose|v!'    => \$verbose
  , 'website|u=s'   => \$website
  , 'workdir|w=s'   => \$workdir
@@ -63,7 +65,11 @@ sub parse_additional_dists(@);
 sub create_pod($$);
 sub create_html($$$$);
 sub create_dist($$);
+sub publish_dist($$);
 sub create_raw_dist($$);
+sub publish_raw_dist($$);
+sub create_html_dist($$);
+sub publish_html_dist($$);
 sub create_heads_and_tails($);
 
 #
@@ -87,6 +93,7 @@ $extends   ||= $makefile->{EXTENDS} || '';;
 $html_templates ||= $makefile->{HTML_TEMPLATES} || 'html';
 $html_output    ||= $makefile->{HTML_OUTPUT}    || 'public_html';
 $html_docroot   ||= $makefile->{HTML_DOCROOT}   || '/';
+$html_package   ||= $makefile->{HTML_PACKAGE};
 
 $make_html = -d $html_templates
    unless defined $make_html;
@@ -95,7 +102,7 @@ $workdir   ||= "$tmpdir/$project";
 my @extends = split /\:/, $extends;
 
 # make directories absolute, because we will chdir
-for($workdir, $rawdir, $distdir, $html_templates, @extends)
+for($workdir, $rawdir, $distdir, $html_package, $html_templates, @extends)
 {  $_ = File::Spec->rel2abs($_, $here);
 }
 
@@ -127,7 +134,7 @@ my $doc  = OODoc->new
 
 print "* Processing files of $project $version\n" if $verbose;
 
-   [ -d $workdir ]
+   -d $workdir
 or mkdir $workdir
 or die "ERROR: cannot create $workdir: $!\n";
 
@@ -148,17 +155,43 @@ create_pod $doc, $podtail
 create_html $doc, $html_templates, $html_output, $html_docroot
    if $make_html;
 
+# Dist package
+
 chdir $workdir
    or die "ERROR: cannot go to my $workdir: $!";
 
-create_dist $distdir, $makefile
+my $temp_distfn = create_dist $distdir, $makefile
    if $make_dist;
+
+if(!$make_dist) {;}
+elsif($test) { print "* test mode: dist not published\n" if $verbose }
+else         { publish_dist $distdir, $temp_distfn }
+
+# RAW package
 
 chdir $here
    or die "ERROR: cannot go back to $here; $!\n";
 
-create_raw_dist $rawdir, $makefile
+my $temp_rawfn = create_raw_dist $rawdir, $makefile
    if $make_raw;
+
+if(!$make_raw) { ; }
+elsif($test) { print "* test mode: raw not published\n" if $verbose }
+else         { publish_raw_dist $rawdir, $temp_rawfn }
+
+# HTML package
+
+if($make_html && $html_package)
+{   chdir $html_output
+        or die "ERROR: cannot go to produced html $html_output\n";
+
+    my $temp_htmlfn = create_html_dist $html_package, $makefile;
+
+    if($test) { print "* test mode: html not published\n" if $verbose }
+    else      { publish_html_dist $html_package, $temp_htmlfn }
+}
+
+print "* Ready\n" if $verbose;
 
 exit 0;
 
@@ -243,23 +276,27 @@ sub create_heads_and_tails($)
     }
 
     my $changelog = first { m/^(?:change|contrib)/i } glob '*';
-    my $contrib   = $changelog ? " For contributors see $changelog." : '';
+
+    my $contrib   = $changelog ? <<__CONTRIB : '';
+For other contributors see $changelog.
+__CONTRIB
+
     my $web       = $website ? " Website: F<$website>" : '';
     my $author    = $makefile->{AUTHOR} ? " by $makefile->{AUTHOR}" : '';
     my $ooversion = $OODoc::VERSION || $ENV{OODOC_VERSION};
 
     my $pmhead
      = defined $pmheadfn  ? read_file $pmheadfn
-     : -f 'PM.HEAD'       ? read_file 'PM.HEAD'
+     : -f 'PMHEAD.txt'    ? read_file 'PMHEAD.txt'
      : <<__PM_HEAD;
-Copyrights $year$author.$contrib
-See the manual pages for details on the licensing terms.
+Copyrights $year$author.
+${contrib}See the manual pages for details on the licensing terms.
 Pod stripped from pm file by OODoc $ooversion.
 __PM_HEAD
 
     my $podtail
      = defined $podtailfn ? read_file $podtailfn
-     : -f 'POD.TAIL'      ? read_file 'POD.TAIL'
+     : -f 'PODTAIL.txt'   ? read_file 'PODTAIL.txt'
      : <<__POD_TAIL;
 
 \=head1 SEE ALSO
@@ -315,16 +352,24 @@ sub create_dist($$)
     system "make dist >/dev/null"
        and die "ERROR: make dist in $workdir failed: $!\n";
 
+    $distfile;
+}
+
+sub publish_dist($$)
+{   my ($dest, $distfile) = @_;
+    return if $dest eq $workdir;
+
+    print "* Distributed package in $dest/$distfile\n"
+       if $verbose;
+
     -f $distfile
        or die "ERROR: cannot find produced $distfile";
 
-    print "* Distributed package in $dest/$distfile\n" if $verbose;
-
-       [ -d $dest ]
+       -d $dest
     or mkdir $dest
     or die "ERROR: cannot create $dest: $!\n";
 
-    $dest eq $workdir || move $distfile, $dest
+    move $distfile, $dest
        or die "ERROR: cannot move $distfile to $dest: $!\n";
 }
 
@@ -351,19 +396,60 @@ sub create_raw_dist($$)
         }
     }
     
-    {   my @manifests = sort keys %manifests;
-        local $" = ' ';
-        system "tar czf $rawfile @manifests"
-        and die "ERROR: cannot produce $rawfile: $!\n";
-    }
+    my @manifests = sort keys %manifests;
+    local $" = ' ';
+    system "tar czf $rawfile @manifests"
+        and die "ERROR: cannot produce $rawfile with tar\n";
 
-       [ -d $dest ]
+    $rawfile;
+}
+
+sub publish_raw_dist($$)
+{   my ($dest, $rawfile) = @_;
+    return if $dest eq $html_output;
+
+       -d $dest
     or mkdir $dest
     or die "ERROR: cannot create $dest: $!\n";
     print "* Raw package to $dest/$rawfile\n" if $verbose;
 
-    $dest eq $here || move $rawfile, $dest
+    move $rawfile, $dest
         or die "ERROR: cannot move $rawfile to $dest: $!\n";
+}
+
+#
+# HTMLPKG
+#
+
+sub create_html_dist($$)
+{   my ($dest, $makefile) = @_;
+
+    my $htmlfile = $makefile->{DISTVNAME}.'-html.tar.gz';
+    print "* Building html package $htmlfile\n" if $verbose;
+
+    unlink $htmlfile;
+
+    local $" = ' ';
+    system "tar czf $htmlfile *"
+        and die "ERROR: cannot produce $htmlfile with tar\n";
+
+    $htmlfile;
+}
+
+sub publish_html_dist($$)
+{   my ($dest, $htmlfile) = @_;
+
+    return if $dest eq $html_output;
+
+       -d $dest
+    or mkdir($dest)
+    or die "ERROR: cannot create $dest: $!\n";
+
+    print "* HTML package to $dest/$htmlfile\n"
+        if $verbose;
+
+    move $htmlfile, $dest
+        or die "ERROR: cannot move $htmlfile to $dest: $!\n";
 }
 
 #
@@ -425,14 +511,15 @@ oodist - create perl distributions with OODoc
    --email    | -e <email>   makefile:EMAIL
    --firstyear| -y <year>    makefile:FIRST_YEAR
    --license  | -l <string>  makefile:LICENSE || $ENV{OODOC_LICENSE} || 'artistic'
-   --pmhead   | -h <file>    'PM.HEAD'  || constructed
-   --podtail  | -t <file>    'POD.TAIL' || constructed
+   --pmhead   | -h <file>    'PMHEAD.txt'  || constructed
+   --podtail  | -t <file>    'PODTAIL.txt' || constructed
    --website  | -u <url>     makefile:WEBSITE
 
   OPTIONS for HTML:
    --html-templates <dir>    makefile:HTML_TEMPLATES || 'html'
    --html-output <dir>       makefile:HTML_OUTPUT    || 'public_html'
    --html-docroot <url>      makefile:HTML_DOCROOT   || '/'
+   --html-package <dir>      makefile:HTML_PACKAGE
 
 =head1 DESCRIPTION
 
@@ -493,8 +580,8 @@ The other OPTIONS in detail
 
 =item . --distdir  | -d <dir>
 
-The location where the final file to be distributed is placed.  By default
-in the source directory.
+The location where the final file to be distributed is placed, by default
+in the source directory.  Ignored when C<--test> is used.
 
 =item . --extends  | -x <path>
 
@@ -508,6 +595,13 @@ The location where a I<raw> version of the distribution is made.  The
 normal distribution contains expanded POD and stripped PM files.  For that
 reason, you can not use it a backup for your files.  If you have co-workers
 on the module, you may wish to give them the originals.
+gnored when C<--test> is used.
+
+=item . --test     | -t
+
+Run in test mode: the raw and real distributions are produced, but not
+moved to their final location.  You will end-up with these archives
+in the work-directory (see C<--workdir>).
 
 =item . --verbose  | --v
 
@@ -517,6 +611,10 @@ Shows what happens during the process.
 
 The processing will take place in a seperate directory: the stripped pm's
 and produced pod files will end-up there.
+
+If not provided, that directory will be named after the project, and
+located in C<$ENV{TMPDIR}>, which defaults to C</tmp>.  For instance
+C</tmp/OODoc/>
 
 =back
 
@@ -544,18 +642,18 @@ The lisense option is a special case: it can contain either the
 strings C<gpl> or C<artistic>, or a filename which is used to
 read the actual license text from.  The default is C<artistic>
 
-=item . --pmhead   | -h <file>
+=item . --pmhead
 
 Each of the stripped C<pm> files will have content of the file
 added at the top.  Each line will get a comment '# ' marker before
 it.  If not specified, a short notice will be produced automatically.
-Implicitly, if a file C<PM.HEAD> exists, that will be used.
+Implicitly, if a file C<PMHEAD.txt> exists, that will be used.
 
-=item . --podtail  | -t <file>
+=item . --podtail
 
 Normally, a trailing text is automatically produced, based on all kinds
 of facts.  However, you can specify your own file. If exists, the content
-is read from a file named C<POD.TAIL>, and no construction is attempted.
+is read from a file named C<PODTAIL.txt>, and no construction is attempted.
 
 =item . --website  | -u <url>
 
@@ -580,5 +678,10 @@ The directory where the produced HTML pages are written to.
 
 The directory which contains the templates for HTML pages which are used
 to construct the html version of the manual-pages.
+
+=item . --html-package <dir>
+
+When specified, the html-output directory will get packaged into a
+a tar achive in this specified directory.
 
 =back

@@ -2,7 +2,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile
   ( NAME	 => 'OODoc'
-  , VERSION      => 0.98
+  , VERSION      => 0.99
   , PREREQ_PM    =>
     { Test::More              => 0.47
     , Template::Magic::HTML   => 1.02
@@ -16,6 +16,7 @@ WriteMakefile
   , ABSTRACT     => 'Object Oriented Documentation'
   );
 
+### used by oodist during production of distribution
 sub MY::postamble { <<'__POSTAMBLE' }
 
 # for DIST

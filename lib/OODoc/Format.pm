@@ -657,10 +657,16 @@ sub showOptionTable(@)
                     ];
     }
 
+    my @header = ('Option', 'Defined in', 'Default');
+    unless(grep {length $_->[1]} @rows)
+    {   # removed empty "defined in" column
+        splice @$_, 1, 1 for @rows, \@header;
+    }
+
     $output->print("\n");
     $self->writeTable
      ( output => $output
-     , header => ['Option', 'Defined in', 'Default']
+     , header => \@header
      , rows   => \@rows
      , widths => [undef, 15, undef]
      );

@@ -1,6 +1,40 @@
 
-All changes where made by Mark Overmeer <oodoc@overmeer.net>, unless
+All changes where made by Mark Overmeer <perl@overmeer.net>, unless
 explicitly stated differently.
+
+version 0.99: Sun Mar 25 17:26:46 CEST 2007
+
+	Fixes:
+
+	- Don't write [ -d $dir ], where you mean -d $dir; this is Perl,
+	  no Shell-script.
+
+	Changes:
+
+	- option podtail and pmhead loose their abbreviation
+
+	- moved DIAGNOSTICS chapter in Pod and Pod2 produced man-pages
+	  to after the DETAILS chapter, which is more conformant to
+	  unix manpages.
+
+	- POD.TAIL renamed to PODTAIL.txt, PM.HEAD renamed to PMHEAD.txt,
+	  both for Windows portability.
+
+	Improvements:
+
+	- in added comment for pm, the copyright and contrib information
+	  split to have both their own line: was often too wide together.
+
+	- new option --test / -t  which will not move the distribution
+	  and its raw counterpart to the final location.
+
+	- Empty "Defined in" columns in option lists are removed
+
+	- Html will show boundary around option list, to distiguish it
+	  cleared from the other method documentation.
+
+	- Package HTML with HTML_PACKAGE/--html-package options in
+	  oodist.
 
 version 0.98: Tue Dec 19 13:45:40 CET 2006
 

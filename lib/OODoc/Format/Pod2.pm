@@ -144,8 +144,8 @@ __DATA__
 {chapter METHODS}
 {chapter FUNCTIONS}
 {chapter EXPORTS}
-{diagnostics}
 {chapter DETAILS}
+{diagnostics}
 {chapter REFERENCES}
 {chapter COPYRIGHTS}
 {comment In stead of append you can also add texts directly}

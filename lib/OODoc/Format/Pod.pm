@@ -136,8 +136,8 @@ sub formatManual(@)
     $self->chapterOverloaded(@_);
     $self->chapterMethods(@_);
     $self->chapterExports(@_);
-    $self->chapterDiagnostics(@_);
     $self->chapterDetails(@_);
+    $self->chapterDiagnostics(@_);
     $self->chapterReferences(@_);
     $self->chapterCopyrights(@_);
     $self->showAppend(@_);
