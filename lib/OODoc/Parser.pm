@@ -24,11 +24,9 @@ can be configured).
 Currently distributed parsers:
 
 =over 4
-
 =item * M<OODoc::Parser::Markov>
 The Markov parser understands standard POD, but adds logical markup tags
 and the C<M&lt;&gt;> links.
-
 =back
 
 =cut
@@ -37,25 +35,18 @@ and the C<M&lt;&gt;> links.
 
 =chapter METHODS
 
-=cut
-
-#-------------------------------------------
-
 =section Parsing a file
 
 =method parse OPTIONS
-
 Parse the specified input file into a code file and an object tree which
 describes the pod.  Returned is a list of package objects which contain
 the docs found in this file.
 
 =requires input FILENAME
-
 The name of the input file.
 
 =option  output FILENAME
 =default output <black hole>
-
 Where to write the produced code to.  If no filename is specified, the
 platform dependend black hole is used (/dev/null on UNIX).
 
@@ -81,7 +72,6 @@ text section M<cleanup()> is called for the final touch.
 =method cleanup FORMATTER, MANUAL, STRING
 
 =error The formatter type $class is not known for cleanup
-
 Text blocks have to get the finishing touch in the final formatting
 phase.  The parser has to fix the text block segments to create a
 formatter dependent output.  Only a few formatters are predefined.
@@ -103,10 +93,7 @@ sub cleanup($$$)
     $string;
 }
 
-#-------------------------------------------
-
 =section Commonly used functions
-
 =cut
 
 1;

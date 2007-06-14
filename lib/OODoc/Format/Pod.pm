@@ -60,14 +60,11 @@ sub link($$;$)
 
 =option  append STRING|CODE
 =default append ''
-
 Text to be added at the end of each manual page.
 See M<formatManual(append)> for an explanation.
 
 =error no package name for pod production
-
 =error cannot write pod manual at $manfile: $!
-
 =cut
 
 sub createManual($@)
@@ -77,9 +74,9 @@ sub createManual($@)
     my $options  = $args{format_options} || [];
 
     print $manual->orderedChapters." chapters in $manual\n" if $verbose>=3;
-    my $podname  = my $tmpname = $manual->source;
+    my $podname  = $manual->source;
     $podname     =~ s/\.pm$/.pod/;
-    $tmpname     =~ s/\.pm$/.tmp/;
+    my $tmpname  =  $podname . 't';
 
     my $tmpfile  = File::Spec->catfile($self->workdir, $tmpname);
     my $podfile  = File::Spec->catfile($self->workdir, $podname);
@@ -122,9 +119,7 @@ Reference, Copyrights, etc chapters at the end of each manual
 page.  See L</Configuring>.
 
 =error no package name for pod production
-
 =error no directory to put pod manual for $name in
-
 =cut
 
 sub formatManual(@)
@@ -416,7 +411,7 @@ sub showOptionUse(@)
     my $params = $option->parameters;
     $params    =~ s/\s+$//;
     $params    =~ s/^\s+//;
-    $params    = " $params" if length $params;
+    $params    = " => $params" if length $params;
  
     $output->print("\n. $option$params\n");
     $self;

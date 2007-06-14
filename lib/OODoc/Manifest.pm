@@ -105,7 +105,7 @@ sub add($)
 
 =method read
 
-Read the manifest file.
+Read the MANIFEST file.  The comments are stripped from the lines.
 
 =error Cannot read manifest file $filename: $!
 
@@ -122,7 +122,7 @@ sub read()
     my @dist = $file->getlines;
     $file->close;
 
-    chomp foreach @dist;
+    s/\s+.*\n?$// for @dist;
     $self->{O_files}{$_}++ foreach @dist;
     $self;
 }

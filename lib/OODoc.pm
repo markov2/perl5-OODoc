@@ -198,7 +198,6 @@ M<processFiles(select)> and the LIST are files from a manifest.
 The M<processFiles(select)> option is not understood.  You may specify
 an ARRAY, regular expression, or a code reference.
 
-
 =cut
 
 sub selectFiles($@)
@@ -403,7 +402,7 @@ sub processFiles(@)
             unless(-e $dn && ( -M $dn < -M $fn ) && ( -s $dn == -s $fn ))
             {   $self->mkdirhier(dirname $dn);
 
-                copy($fn, $dn)
+                copy $fn, $dn
                    or die "ERROR: cannot copy distribution file $fn to $dest: $!\n";
 
                 print "Copied $fn to $dest\n" if $verbose > 2;
@@ -419,7 +418,7 @@ sub processFiles(@)
 
     my $parser = $args{parser} || 'OODoc::Parser::Markov';
     unless(ref $parser)
-    {   eval "{require $parser}";
+    {   eval "require $parser";
         croak "ERROR: Cannot compile $parser class:\n$@"
            if $@;
 

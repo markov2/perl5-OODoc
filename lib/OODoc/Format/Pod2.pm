@@ -36,11 +36,9 @@ first need to install L<Bundle::Template::Magic>.
 
 =option  template FILENAME
 =default template <in code>
-
 The default template is included in the DATA segment of
 M<OODoc::Format::Pod2>.  You may start your own template
 by copying it to a file.
-
 =cut
 
 my $default_template;
@@ -85,7 +83,6 @@ In your template file, a {chapter} statement is used, which is
 erroneous, because it requires a chapter name.
 
 =warning no meaning for container $container in chapter block
-
 =cut
 
 sub templateChapter($$)

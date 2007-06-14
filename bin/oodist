@@ -8,7 +8,10 @@ use POSIX         qw/strftime/;
 use Cwd           qw/getcwd/;
 use File::Slurp   qw/read_file/;
 use List::Util    qw/first/;
-use File::Copy    qw/move/;
+use File::Copy    qw/move copy/;
+use File::Spec    ();
+use Test::Pod;
+
 use OODoc         ();
 
 # In any case, we want modules in this dir to prevail over installed
@@ -20,7 +23,7 @@ my $tmpdir  = $ENV{TMPDIR}         || '/tmp';
 
 my ($verbose, $test) = (0, 0);
 my ($rawdir, $distdir, $license);
-my ($workdir, $podtailfn, $pmheadfn, $extends);
+my ($workdir, $podtailfn, $pmheadfn, $readmefn, $extends);
 my ($firstyear, $email, $website);
 my ($html_templates, $html_output, $html_docroot, $html_package);
 my ($make_pod, $make_dist, $make_raw, $make_html) = (1, 1, 1, undef);
@@ -41,6 +44,7 @@ GetOptions
  , 'pod!'          => \$make_pod
  , 'podtail'       => \$podtailfn
  , 'pmhead'        => \$pmheadfn
+ , 'readme'        => \$readmefn
  , 'raw!'          => \$make_raw
  , 'rawdir|r=s'    => \$rawdir
  , 'test|t!'       => \$test
@@ -60,6 +64,8 @@ or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
 for more details: F<http://www.gnu.org/icenses/gpl.html>
 __GPL
 
+my $ooversion = $OODoc::VERSION || $ENV{OODOC_VERSION};
+
 sub read_makefile($);
 sub parse_additional_dists(@);
 sub create_pod($$);
@@ -71,6 +77,7 @@ sub publish_raw_dist($$);
 sub create_html_dist($$);
 sub publish_html_dist($$);
 sub create_heads_and_tails($);
+sub create_readme($$$);
 
 #
 # collect some project info
@@ -148,6 +155,9 @@ $doc->processFiles
 
 parse_additional_dists @extends
    if $make_pod || $make_html;
+
+create_readme $doc, $readmefn, $workdir
+   unless defined $readmefn && ! length $readmefn;
 
 create_pod $doc, $podtail
    if $make_pod;
@@ -278,12 +288,11 @@ sub create_heads_and_tails($)
     my $changelog = first { m/^(?:change|contrib)/i } glob '*';
 
     my $contrib   = $changelog ? <<__CONTRIB : '';
-For other contributors see $changelog.
+ For other contributors see $changelog.
 __CONTRIB
 
     my $web       = $website ? " Website: F<$website>" : '';
     my $author    = $makefile->{AUTHOR} ? " by $makefile->{AUTHOR}" : '';
-    my $ooversion = $OODoc::VERSION || $ENV{OODOC_VERSION};
 
     my $pmhead
      = defined $pmheadfn  ? read_file $pmheadfn
@@ -315,6 +324,77 @@ __POD_TAIL
    ($pmhead, $podtail);
 }
 
+sub create_readme($$$)
+{   my ($doc, $readmefn, $workdir) = @_;
+    my @toplevel = glob "$workdir/*";
+
+    my $readme   = first { /\breadme$/i } @toplevel;
+    return 1 if $readme;
+
+    print "adding README\n" if $verbose;
+
+    my $manifest = first { /\bmanifest$/i } @toplevel;
+    open MANIFEST, '>>', $manifest
+        or die "ERROR: cannot append to $manifest: $!\n";
+    print MANIFEST "README\n";
+    close MANIFEST;
+
+    $readme      = File::Spec->catfile($workdir, 'README');
+
+    if($readmefn)
+    {   #
+        # user provided README
+        #
+
+        print "copying $readmefn as README\n" if $verbose;
+
+        copy $readmefn, $readme
+            or die "ERROR: cannot copy $readmefn to $readme: $!\n";
+
+        return 1;
+    }
+
+    #
+    # Produce a README text
+    #
+
+    open README, '>', $readme
+        or die "ERROR: cannot write to $readme: $!\n";
+
+    my $date = localtime;
+
+    print README <<__README;
+=== README for $project version $version
+=   Generated on $date by OODoc $ooversion
+
+There are various ways to install this module:
+
+ (1) if you have a command-line, you can do:
+       perl -MCPAN -e 'install <any package from this distribution>'
+
+ (2) if you use Windows, have a look at http://ppm.activestate.com/
+
+ (3) if you have downloaded this module manually (as root/administrator)
+       gzip -d $project-$version.tar.gz
+       tar -xf $project-$version.tar
+       cd $project-$version
+       perl Makefile.PL
+       make          # optional
+       make test     # optional
+       make install
+
+For usage, see the included manual-pages or
+    http://search.cpan.org/dist/$project-$version/
+
+Please report problems to
+    http://rt.cpan.org/Dist/Display.html?Queue=$project
+
+__README
+
+    close README;
+    1;
+}
+
 #
 # Create a distribution
 #
@@ -333,13 +413,13 @@ sub create_dist($$)
        or die "ERROR: cannot reinstate Makefile: $!\n";
 
     print "* Running make\n" if $verbose;
-    system "make >/dev/null"
+    system "make distdir >/dev/null"
        and die "ERROR: make in $workdir failed: $!\n";
 
     if(-d 't' || -d 'tests')
     {   print "* Running tests\n" if $verbose;
-        system "make test"
-           and die "ERROR: make test in $workdir failed: $!\n";
+        system "make disttest"
+            and die "ERROR: make test in $workdir failed: $!\n";
     }
     else
     {   print "* No tests to run\n" if $verbose;
@@ -504,6 +584,7 @@ oodist - create perl distributions with OODoc
    --extends  | -x <path>    empty
    --project  | -p <string>  makefile:DISTNAME
    --rawdir   | -r <dir>     makefile:RAWDIR || $ENV{OODOC_RAWDIR} || <src>
+   --readme        <file>    constructured
    --workdir  | -w <dir>     /tmp/<DISTVNAME>
    --verbose  | -v           true when specified
 
@@ -511,8 +592,8 @@ oodist - create perl distributions with OODoc
    --email    | -e <email>   makefile:EMAIL
    --firstyear| -y <year>    makefile:FIRST_YEAR
    --license  | -l <string>  makefile:LICENSE || $ENV{OODOC_LICENSE} || 'artistic'
-   --pmhead   | -h <file>    'PMHEAD.txt'  || constructed
-   --podtail  | -t <file>    'PODTAIL.txt' || constructed
+   --pmhead   | -h <file>    'PMHEAD.txt'            || constructed
+   --podtail  | -t <file>    'PODTAIL.txt'           || constructed
    --website  | -u <url>     makefile:WEBSITE
 
   OPTIONS for HTML:
@@ -577,6 +658,14 @@ the distribution: the pm files still including the oodoc markup.
 The other OPTIONS in detail
 
 =over 4
+
+=item . --readme <filename>
+
+Copy the specified README file into the distribution, if there is no
+README yet.  The name will be added to the MANIFEST.  If the option
+is not specified, a simple file will be created.  If this option is
+specified, but the filename is empty, then the README will not be
+produced.
 
 =item . --distdir  | -d <dir>
 

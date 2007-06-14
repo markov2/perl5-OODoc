@@ -171,39 +171,33 @@ sub findMatchingRule($)
     ();
 }
 
-#-------------------------------------------
-
 =method parse OPTIONS
 
 =requires input FILENAME
 
-=option  output FILENAME
-=default output devnull
+=option   output FILENAME
+=default  output devnull
 
 =requires distribution STRING
 =requires version STRING
 
-=option  notice STRING
-=default notice ''
+=option   notice STRING
+=default  notice ''
 Block of text added in from of the output file.
 
 =error no input file to parse specified
-
 The parser needs the name of a file to be read, otherwise it can not
 work.
 
 =error cannot read document from $input: $!
-
 The document file can not be processed because it can not be read.  Reading
 is required to be able to build a documentation tree.
 
 =warning doc did not end in $input
-
 When the whole $input was parsed, the documentation part was still open.
 Probably you forgot to terminate it with a C<=cut>.
 
 =warning unknown markup in $file line $number: $line
-
 The standard pod and the extensions made by this parser define a long
 list of markup keys, but yours is not one of these predefined names.
 
@@ -228,10 +222,9 @@ sub parse(@)
     # pure doc files have no package statement included, so it shall
     # be created beforehand.
 
-    my $pure_pod = $input =~ m/\.pod$/;
-
     my ($manual, @manuals);
 
+    my $pure_pod = $input =~ m/\.pod$/;
     if($pure_pod)
     {   $manual = OODoc::Manual->new
          ( package  => $self->filenameToPackage($input)

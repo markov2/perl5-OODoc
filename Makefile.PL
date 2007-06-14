@@ -2,13 +2,14 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile
   ( NAME	 => 'OODoc'
-  , VERSION      => 0.99
+  , VERSION      => '1.00'
   , PREREQ_PM    =>
     { Test::More              => 0.47
     , Template::Magic::HTML   => 1.02
     , Bundle::Template::Magic =>    0
     , Pod::Man                => 2.12
     , File::Slurp             => 9999.12
+    , Test::Pod               => 1.26
     }
   , EXE_FILES    => [ 'bin/oodist' ]
 
@@ -32,6 +33,7 @@ WEBSITE         = http://perl.overmeer.net/oodoc/
 # for HTML
 HTML_OUTPUT	= ../public_html/oodoc/html
 HTML_DOCROOT	= /oodoc/html
+HTML_PACKAGE	= ../public_html/oodoc/htmlpkg
 
 __POSTAMBLE
 

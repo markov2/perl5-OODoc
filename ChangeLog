@@ -2,6 +2,29 @@
 All changes where made by Mark Overmeer <perl@overmeer.net>, unless
 explicitly stated differently.
 
+version 1.00: Thu Jun 14 12:07:08 CEST 2007
+
+	Fixes:
+
+	- OODoc::Manifest skipped MANIFEST lines with comments in them.
+
+	- pure POD files where emptied in the cleanup process.
+
+	Changes:
+
+	- the options with show a '=>' between key and value, to make
+	  it more clear that an option is described.
+
+	Improvements:
+
+	- oodist adds a README when not provided.
+
+	- oodist uses Test::Pod to check correctness of produced
+	  POD files.
+
+	- oodist uses "make distdir" and "make disttest", replacing
+	  "make" and "make test"
+
 version 0.99: Sun Mar 25 17:26:46 CEST 2007
 
 	Fixes:

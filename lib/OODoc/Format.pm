@@ -51,29 +51,18 @@ L<Bundle::Template::Magic> and the ability to run cgi scripts.
 
 =back
 
-=cut
-
-#-------------------------------------------
-
 =chapter METHODS
-
-=cut
-
-#-------------------------------------------
 
 =c_method new OPTIONS
 
 =requires project STRING
-
 The short name of this project (module), set by M<OODoc::new(project)>.
 
 =requires version STRING
-
 Many manual pages will contain the version of the project.  This can
 be any STRING, although blanks are not advised.
 
 =requires workdir DIRECTORY
-
 The DIRECTORY where the output will be placed.  If it does not exist,
 it will be created for you.
 
@@ -81,12 +70,10 @@ it will be created for you.
 =default manifest undef
 
 =error formatter has no project name.
-
 A formatter was created without a name specified for the project at
 hand.  This should be passed with M<new(project)>.
 
 =error no working directory specified.
-
 The formatter has to know where the output can be written.  This
 directory must be provided via M<new(workdir)>, but was not specified.
 
@@ -157,12 +144,10 @@ sub manifest() {shift->{OF_manifest}}
 
 =option  format_options ARRAY
 =default format_options []
-
 An ARRAY which contains a list of options which are the defaults
 for formatting a chapter.
 
 =requires manual MANUAL
-
 The manual to be formatted.
 
 =option  append STRING|CODE
@@ -170,26 +155,20 @@ The manual to be formatted.
 
 =option  template LOCATION
 =default template undef
-
 Some formatters support templates to descibe the output of the pages.
 The valid values for this option differs per formatter.
 
 =requires project STRING
-
 The name of this project, which will appear on many pages.
 
 =cut
 
 sub createManual(@) { confess }
 
-#-------------------------------------------
-
 =method cleanup MANUAL, STRING
-
 Takes the STRING and cleans it up to be in the right format for the
 current formatter.  The cleaning up is parser dependent, and therefore
 the parser of the manual is addressed to do the work.
-
 =cut
 
 sub cleanup($$)
@@ -197,10 +176,7 @@ sub cleanup($$)
     $manual->parser->cleanup($self, $manual, $string);
 }
 
-#-------------------------------------------
-
 =method showChapter OPTIONS
-
 You can pass all OPTIONS about formatting to this method.  They will passed
 to the related methods.  So: the list of options you can pass here is much
 longer: the combination of everything possible for all show* methods.
@@ -220,7 +196,6 @@ to the manual page which describes it.
 
 =option   show_inherited_subsections 'NO'|'REFER'|'EXPAND'
 =default  show_inherited_subsections 'REFER'
-
 =cut
 
 sub showChapter(@)
@@ -266,19 +241,14 @@ sub showChapter(@)
 
 =option   show_chapter_examples 'NO'|'EXPAND'
 =default  show_chapter_examples 'EXPAND'
-
 The I<chapter examples> are all examples which are not subroutine
 related: examples which come at the end of a chapter, section, or
 subsection.
-
 =cut
 
 sub showStructureExpanded(@) {confess}
 
-#-------------------------------------------
-
 =method showStructureRefer OPTIONS
-
 =cut
 
 sub showStructureRefer(@) {confess}
@@ -317,10 +287,7 @@ sub showRequiredChapter($@)
     $self->showChapter(chapter => $chapter, %args);
 }
 
-#-------------------------------------------
-
 =method showOptionalChapter NAME, OPTIONS
-
 =cut
 
 sub showOptionalChapter($@)
@@ -333,10 +300,7 @@ sub showOptionalChapter($@)
     $self->showChapter(chapter => $chapter, %args);
 }
 
-#-------------------------------------------
-
 =method createOtherPages OPTIONS
-
 Create other pages which come with the set of formatted manuals.  What
 the contents of these pages is depends on the formatter.  Some formatters
 simply ignore the functionality of this method as a whole: they do not
@@ -347,14 +311,12 @@ support data-files which are not manuals.
 
 =option  source   DIRECTORY
 =default source   undef
-
 The location of the DIRECTORY which contains files which are part of
 the produced set of documentation, but not copied per manual page
 but only once.
 
 =option  process  REGEXP
 =default process  undef
-
 Selects files to be processed from the source directory.  Other files
 are copied without modification.  What happens with the selected
 files is formatter dependent.
@@ -362,8 +324,6 @@ files is formatter dependent.
 =cut
 
 sub createOtherPages(@) {shift}
-
-#-------------------------------------------
 
 =method showSubroutines OPTIONS
 
@@ -427,8 +387,6 @@ sub showSubroutines(@)
         );
     }
 }
-
-#-------------------------------------------
 
 =method showSubroutine(@)
 
@@ -575,8 +533,6 @@ sub showSubroutine(@)
         if $show_diag eq 'EXPAND';
 }
 
-#-------------------------------------------
-
 =method showExamples OPTIONS
 
 =requires examples ARRAY
@@ -586,8 +542,6 @@ sub showSubroutine(@)
 =cut
 
 sub showExamples(@) {shift}
-
-#-------------------------------------------
 
 =method showSubroutineUse OPTIONS
 
@@ -600,9 +554,6 @@ sub showExamples(@) {shift}
 =cut
 
 sub showSubroutineUse(@) {shift}
-
-
-#-------------------------------------------
 
 =method showSubroutineName OPTIONS
 
@@ -617,8 +568,6 @@ sub showSubroutineUse(@) {shift}
 
 sub showSubroutineName(@) {shift}
 
-#-------------------------------------------
-
 =method showSubroutineDescription OPTIONS
 
 =requires subroutine OBJECT
@@ -627,8 +576,6 @@ sub showSubroutineName(@) {shift}
 =cut
 
 sub showSubroutineDescription(@) {shift}
-
-#-------------------------------------------
 
 =method showOptionTable OPTIONS
 
