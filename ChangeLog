@@ -2,6 +2,12 @@
 All changes where made by Mark Overmeer <perl@overmeer.net>, unless
 explicitly stated differently.
 
+version 1.01: Mon Jun 18 21:28:28 CEST 2007
+
+	Fixes:
+
+	- add IO::Scalar to pre-requisits (thanks to CPAN-testers).
+
 version 1.00: Thu Jun 14 12:07:08 CEST 2007
 
 	Fixes:
