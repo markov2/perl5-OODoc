@@ -475,7 +475,6 @@ sub processFiles(@)
 =section Preparation
 
 =method prepare OPTIONS
-
 Add information to the documentation tree about inheritance relationships
 of the packages.  C<prepare> must be called between M<processFiles()>
 and M<create()>.
@@ -493,20 +492,23 @@ sub prepare(@)
     $self->getPackageRelations;
 
     print "Expand manual contents.\n" if $verbose >1;
-    $self->expandManuals;
+    foreach my $manual ($self->manuals)
+    {   $manual->expand;
+    }
+
+    print "Create inheritance chapter.\n" if $verbose >1;
+    foreach my $manual ($self->manuals)
+    {   $manual->createInheritance;
+    }
 
     $self;
 }
 
-#-------------------------------------------
-
 =method getPackageRelations
-
 Compile all files which contain packages, and then try to find-out
 how they are related.
 
 =error problems compiling $code for package $name: $@
-
 Syntax error in your code, or a problem caused by stripping the file.
 You can run your test-scripts before the files get stripped as long
 as you do not use C<make test>, because that will try to produce
@@ -558,21 +560,9 @@ sub getPackageRelations()
 
 #-------------------------------------------
 
-=method expandManuals
-
-Take all manuals, and fill them with the info all the super classes.  Some
-of this data may actually be used when formatting the manual into pages.
-
-=cut
-
-sub expandManuals() { $_->expand foreach shift->manuals }
-
-#-------------------------------------------
-
 =section Formatter
 
 =method create NAME|CLASS|OBJECT, OPTIONS
-
 Create a manual for the set of manuals read so far.  The manuals are
 produced by different formatters which produce one page at a time.
 Returned is the formatter which is used: it may contain useful information
@@ -586,42 +576,35 @@ or an instantiated formatter.
 
 =option  verbose INTEGER
 =default verbose 0
-
 Debug level, the higher the number, the more details about the process
 you will have.
 
 =requires workdir DIRECTORY
-
 The directory where the output is going to.
 
 =option  format_options ARRAY
 =default format_options []
-
 Formatter dependent initialization options.  See the documentation of
 the formatter which will be used for the possible values.
 
 =option  manual_format ARRAY
 =default manual_format []
-
 Options passed to M<OODoc::Format::createManual(format_options)> when
 a manual page has to be produced.  See the applicable formatter
 manual page for the possible flags and values.
 
 =option  manifest FILENAME|undef
 =default manifest <workdir>/MANIFEST
-
 The names of the produced files are appended to this file.  When undef
 is given, no file will be written for this.
 
 =option  append STRING|CODE
 =default append C<undef>
-
 The value is passed on to M<OODoc::Format::createManual(append)>,
 but the behavior is formatter dependent.
 
 =option  manual_template LOCATION
 =default manual_template C<undef>
-
 Passed to M<OODoc::Format::createManual(template)>, and defines the
 location of the set of pages which has to be created for each manual
 page.  Some formatters do not support templates and the valid values
@@ -629,31 +612,26 @@ are formatter dependent.
 
 =option  other_files DIRECTORY
 =default other_files C<undef>
-
 Other files which have to be copied
 passed to M<OODoc::Format::createOtherPages(source)>.
 
 =option  process_files REGEXP
 =default process_files <formatter dependent>
-
 Selects the files which are to be processed for special markup information.
 Other files, like image files, will be simply copied.  The value will be
 passed to M<OODoc::Format::createOtherPages(process)>.
 
 =option  select CODE|REGEXP
 =default select C<undef>
-
 Produce only the indicated manuals, which is useful in case of merging
 manuals from different distributions.  When a REGEXP is provided, it
 will be checked against the manual name.  The CODE reference will be
 called with a manual as only argument.
 
 =error formatter $name has compilation errors: $@
-
 The formatter which is specified does not compile, so can not be used.
 
 =error requires a directory to write the manuals to
-
 You have to give a value to C<workdir>, which will be used as top directory
 for the produced output.  It does not matter whether there is already some
 stuff in that directory.
@@ -663,6 +641,7 @@ stuff in that directory.
 our %formatters =
  ( pod  => 'OODoc::Format::Pod'
  , pod2 => 'OODoc::Format::Pod2'
+ , pod3 => 'OODoc::Format::Pod3'
  , html => 'OODoc::Format::Html'
  );
 
@@ -743,13 +722,9 @@ sub create($@)
     $format;
 }
 
-#-------------------------------------------
-
 =method stats
-
 Returns a string which contains some statistics about the whole parsed
 document set.
-
 =cut
 
 sub stats()
@@ -759,7 +734,7 @@ sub stats()
     my $realpkg  = $self->packageNames;
 
     my $subs     = map {$_->subroutines} @manuals;
-my @options = map { map {$_->options} $_->subroutines } @manuals;
+    my @options  = map { map {$_->options} $_->subroutines } @manuals;
     my $options  = @options;
     my $examples = map {$_->examples}    @manuals;
 

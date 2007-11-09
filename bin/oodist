@@ -19,7 +19,10 @@ use OODoc         ();
 my $here    = getcwd;
 unshift @INC, $here, "$here/lib";
 
-my $tmpdir  = $ENV{TMPDIR}         || '/tmp';
+#my $format_pod  = 'pod3';
+my $format_pod  = 'pod2';
+my $format_html = 'html';
+my $tmpdir      = $ENV{TMPDIR}         || '/tmp';
 
 my ($verbose, $test) = (0, 0);
 my ($rawdir, $distdir, $license);
@@ -61,7 +64,7 @@ __ARTISTIC
 This program is distributed in the hope that it will be useful, but
 WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
 or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-for more details: F<http://www.gnu.org/icenses/gpl.html>
+for more details: F<http://www.gnu.org/licenses/gpl.html>
 __GPL
 
 my $ooversion = $OODoc::VERSION || $ENV{OODOC_VERSION};
@@ -249,7 +252,7 @@ sub create_pod($$)
     print "* Creating POD files\n" if $verbose;
 
     $doc->create
-      ( 'pod2'
+      ( $format_pod
       , workdir => $workdir
       , select  => sub {my $manual = shift; $manual->distribution eq $project}
       , append  => $podtail
@@ -266,7 +269,7 @@ sub create_html($$$$)
     print "* Creating HTML files in $output\n" if $verbose;
 
     $doc->create
-     ( html =>
+     ( $format_html
      , workdir        => $output
      , format_options => 
         [ html_root      => $url
@@ -583,7 +586,7 @@ oodist - create perl distributions with OODoc
    --distdir  | -d <dir>     makefile:DISTDIR || $ENV{OODOC_DISTDIR} || <src>
    --extends  | -x <path>    empty
    --project  | -p <string>  makefile:DISTNAME
-   --rawdir   | -r <dir>     makefile:RAWDIR || $ENV{OODOC_RAWDIR} || <src>
+   --rawdir   | -r <dir>     makefile:RAWDIR  || $ENV{OODOC_RAWDIR} || <src>
    --readme        <file>    constructured
    --workdir  | -w <dir>     /tmp/<DISTVNAME>
    --verbose  | -v           true when specified
@@ -592,8 +595,8 @@ oodist - create perl distributions with OODoc
    --email    | -e <email>   makefile:EMAIL
    --firstyear| -y <year>    makefile:FIRST_YEAR
    --license  | -l <string>  makefile:LICENSE || $ENV{OODOC_LICENSE} || 'artistic'
-   --pmhead   | -h <file>    'PMHEAD.txt'            || constructed
-   --podtail  | -t <file>    'PODTAIL.txt'           || constructed
+   --pmhead   | -h <file>    'PMHEAD.txt'     || constructed
+   --podtail  | -t <file>    'PODTAIL.txt'    || constructed
    --website  | -u <url>     makefile:WEBSITE
 
   OPTIONS for HTML:

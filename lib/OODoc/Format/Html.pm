@@ -1,6 +1,6 @@
 
 package OODoc::Format::Html;
-use base 'OODoc::Format';
+use base qw/OODoc::Format OODoc::Format::TemplateMagic/;
 
 use strict;
 use warnings;
@@ -19,7 +19,7 @@ use Template::Magic;
 
 =chapter NAME
 
-OODoc::Format::Html - Produce HTML pages from the doc tree
+OODoc::Format::Html - Produce HTML pages using Template::Magic
 
 =chapter SYNOPSIS
 
@@ -35,15 +35,7 @@ Create manual pages in the HTML syntax, using the M<Template::Magic>
 template system.  Producing HTML is more complicated than producing
 POD, because one manual page may be spread over multiple output files.
 
-=cut
-
-#-------------------------------------------
-
 =chapter METHODS
-
-=cut
-
-#-------------------------------------------
 
 =c_method new OPTIONS
 
@@ -362,7 +354,7 @@ sub showStructureExpand(@)
     my $text     = $args{structure} or confess;
 
     my $name     = $text->name;
-    my $level    = $text->level;
+    my $level    = $text->level +1;  # header level, chapter = H2
     my $output   = $args{output}  or confess;
     my $manual   = $args{manual}  or confess;
 
@@ -678,39 +670,31 @@ sub writeTable($@)
 
 sub showSubroutineDescription(@)
 {   my ($self, %args) = @_;
-    my $manual  = $args{manual}                   or confess;
-    my $subroutine = $args{subroutine}            or confess;
+    my $manual     = $args{manual}     or confess;
+    my $subroutine = $args{subroutine} or confess;
 
-    my $text    = $self->cleanup($manual, $subroutine->description);
+    my $text       = $self->cleanup($manual, $subroutine->description);
     return $self unless length $text;
 
-    my $output  = $args{output}                   or confess;
+    my $output     = $args{output}     or confess;
     $output->print($text);
 
-    my $extends = $self->extends                  or return $self;
-    my $refer   = $extends->findDescriptionObject or return $self;
+    my $extends    = $self->extends    or return $self;
+    my $refer      = $extends->findDescriptionObject or return $self;
 
     $output->print("<br />\n");
     $self->showSubroutineDescriptionRefer(%args, subroutine => $refer);
 }
 
-#-------------------------------------------
-
 sub showSubroutineDescriptionRefer(@)
 {   my ($self, %args) = @_;
-    my $manual  = $args{manual}                   or confess;
-    my $subroutine = $args{subroutine}            or confess;
-    my $output  = $args{output}                   or confess;
+    my $manual     = $args{manual}     or confess;
+    my $subroutine = $args{subroutine} or confess;
+    my $output     = $args{output}     or confess;
     $output->print("\nSee ", $self->link($manual, $subroutine), "\n");
 }
 
-#-------------------------------------------
-
 =section Template processing
-
-=cut
-
-#-------------------------------------------
 
 =method format OPTIONS
 
@@ -757,10 +741,7 @@ sub format(@)
     $output->print($$created);
 }
 
-#-------------------------------------------
-
 =method templateTitle ZONE, ARGS
-
 =cut
 
 sub templateProject($$)
@@ -768,12 +749,8 @@ sub templateProject($$)
     $self->project;
 }
 
-#-------------------------------------------
-
 =method templateTitle ZONE, ARGS
-
 =error not a manual, so no automatic title in $template
-
 =cut
 
 sub templateTitle($$)
@@ -787,12 +764,8 @@ sub templateTitle($$)
     $name;
 }
 
-#-------------------------------------------
-
 =method templateManual ZONE, ARGS
-
 =error not a manual, so no manual name for $template
-
 =cut
 
 sub templateManual($$)
@@ -804,12 +777,8 @@ sub templateManual($$)
     $self->cleanupString($manual, $manual->name);
 }
 
-#-------------------------------------------
-
 =method templateDistribution ZONE, ARGS
-
 The name of the distribution which contains the manual page at hand.
-
 =cut
 
 sub templateDistribution($$)
@@ -818,14 +787,10 @@ sub templateDistribution($$)
     defined $manual ? $manual->distribution : '';
 }
 
-#-------------------------------------------
-
 =method templateVersion ZONE, ARGS
-
 The version is taken from the manual (which means that you may have
 a different version number per manual) when a manual is being formatted,
 and otherwise the project total version.
-
 =cut
 
 sub templateVersion($$)
@@ -834,10 +799,7 @@ sub templateVersion($$)
     defined $manual ? $manual->version : $self->version;
 }
 
-#-------------------------------------------
-
 =method templateDate ZONE, ARGS
-
 =cut
 
 sub templateDate($$)
@@ -845,16 +807,10 @@ sub templateDate($$)
     strftime "%Y/%m/%d", localtime;
 }
 
-#-------------------------------------------
-
 =method templateName ZONE, ARGS
-
 =error not a manual, so no name for $template
-
 =error cannot find chapter NAME in manual $name
-
 =error chapter NAME in manual $name has illegal shape
-
 =cut
 
 sub templateName($$)
@@ -873,10 +829,7 @@ sub templateName($$)
     die "ERROR: chapter NAME in manual $manual has illegal shape\n";
 }
 
-#-------------------------------------------
-
 =method templateHref ZONE, ARGS
-
 =cut
 
 our %path_lookup =
@@ -895,14 +848,10 @@ sub templateHref($$)
     qq[<a href="$self->{OFH_html}/$path" target="_top">];
 }
 
-#-------------------------------------------
-
 =method templateMeta ZONE, ARGS
-
 ARGS is a reference to a hash with options.  ZONE contains the attributes
 in the template.  Use M<new(html_meta_data)> to set the result of this
 method, or extend its implementation.
-
 =cut
 
 sub templateMeta($$)
@@ -910,33 +859,37 @@ sub templateMeta($$)
     $self->{OFH_meta};
 }
 
-#-------------------------------------------
-
 =method templateInheritance ZONE, ARGS
-
 =cut
 
 sub templateInheritance(@)
 {   my ($self, $zone, $args) = @_;
 
-    my $manual  = $args->{manual} or confess;
-    my $output  = $self->cleanup($manual, $self->createInheritance($manual));
-    return '' unless length $output;
+    my $manual  = $args->{manual};
+    my $chapter = $manual->chapter('INHERITANCE')
+        or return '';
 
-    for($output)
+    my $out     = '';
+    $self->showChapter
+     ( %$args
+     , chapter => $chapter
+     , output  => IO::Scalar->new(\$out)
+     , $self->zoneGetParameters($zone)
+     );
+
+    for($out)
     {   s#<pre>\s*(.*?)</pre>\n*#\n$1#gs;   # over-eager cleanup
         s#^( +)#'&nbsp;' x length($1)#gme;
         s#$#<br />#gm;
+        s#(</h\d>)(<br />\n?)+#$1\n#;
     }
-    $output;
-}
 
-#-------------------------------------------
+    $out;
+}
 
 =method templateChapter
 
 =error chapter without name in template.
-
 In your template file, a {chapter} statement is used, which is
 erroneous, because it requires a chapter name.
 
@@ -967,8 +920,6 @@ sub templateChapter($$)
 
     $out;
 }
-
-#-------------------------------------------
 
 =method templateIndex ZONE, ARGS
 
@@ -1118,8 +1069,6 @@ DIAG
     $output;
 }
 
-#-------------------------------------------
-
 =method templateList ZONE, ARGS
 
 The ZONE (which originate from the template file) start with the
@@ -1257,8 +1206,6 @@ sub templateList($$)
 
     $output;
 }
-
-#-------------------------------------------
 
 sub indexListSubroutines(@)
 {   my $self   = shift;

@@ -44,15 +44,8 @@ sub init($)
     $self;
 }
 
-#-------------------------------------------
-
 sub manual() {shift->container}
-
-#-------------------------------------------
-
-sub path() {shift->name}
-
-#-------------------------------------------
+sub path()   {shift->name}
 
 sub findSubroutine($)
 {   my ($self, $name) = @_;
@@ -67,8 +60,6 @@ sub findSubroutine($)
     undef;
 }
 
-#-------------------------------------------
-
 sub findEntry($)
 {   my ($self, $name) = @_;
     return $self if $self->name eq $name;
@@ -81,29 +72,18 @@ sub findEntry($)
     ();
 }
 
-#-------------------------------------------
-
 sub all($@)
 {   my $self = shift;
     ($self->SUPER::all(@_), map {$_->all(@_)} $self->sections);
 }
 
-#-------------------------------------------
-
 =section Sections
-
 A chapters consists of a list of sections, which may contain subsections.
 
-=cut
-
-#-------------------------------------------
-
 =method section NAME|OBJECT
-
 With a NAME, the section within this chapter with that name is
 returned.  With an OBJECT (which must be a M<OODoc::Text::Section>),
 a new section is added to the end of the list.
-
 =cut
 
 sub section($)
@@ -117,12 +97,8 @@ sub section($)
     first {$_->name eq $thing} $self->sections;
 }
 
-#-------------------------------------------
-
 =method sections [SECTIONS]
-
 Returns a list of all sections in this chapter.
-
 =cut
 
 sub sections()
@@ -133,7 +109,5 @@ sub sections()
    }
    @{$self->{OTC_sections}};
 }
-
-#-------------------------------------------
 
 1;

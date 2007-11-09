@@ -59,14 +59,10 @@ Returns the chapter object for this section.
 
 sub chapter() { shift->container }
 
-#-------------------------------------------
-
 sub path()
 {   my $self = shift;
     $self->chapter->path . '/' . $self->name;
 }
-
-#-------------------------------------------
 
 sub findSubroutine($)
 {   my ($self, $name) = @_;
@@ -81,16 +77,12 @@ sub findSubroutine($)
     undef;
 }
 
-#-------------------------------------------
-
 sub findEntry($)
 {   my ($self, $name) = @_;
     return $self if $self->name eq $name;
     my $subsect = $self->subsection($name);
     defined $subsect ? $subsect : ();
 }
-
-#-------------------------------------------
 
 sub all($@)
 {   my $self = shift;
@@ -102,7 +94,6 @@ sub all($@)
 =section Subsections
 
 =method subsection NAME|OBJECT
-
 With a NAME, the subsection within this section with that name is
 returned.  With an OBJECT (which must be a OODoc::Text::SubSection),
 a new subsection is added to the end of the list.
@@ -120,12 +111,8 @@ sub subsection($)
     first {$_->name eq $thing} $self->subsections;
 }
 
-#-------------------------------------------
-
 =method subsections [SUBSECTIONS]
-
-Returns a list of all sections in this chapter.
-
+Returns a list of all subsections in this chapter.
 =cut
 
 sub subsections(;@)
@@ -138,10 +125,7 @@ sub subsections(;@)
     @{$self->{OTS_subsections}};
 }
 
-#-------------------------------------------
-
 =section Commonly used functions
-
 =cut
 
 1;

@@ -42,7 +42,15 @@ Object Oriented programmers.
 This formatter uses the same methods to generate the manual page as
 defined by M<OODoc::Format::Pod>, but the general layout of the page
 can be configured using templates.
+
 You have to install L<Bundle::Template::Magic> to use this feature.
+
+=item * M<OODoc::Format::Pod3>
+
+The whole formatter, implemented as template in M<OODoc::Template>, a
+very light weighted template system.
+
+You have to install L<OODoc::Template> to use this feature.
 
 =item * M<OODoc::Format::Html>
 
@@ -257,6 +265,7 @@ sub showStructureRefer(@) {confess}
 
 sub chapterName(@)        {shift->showRequiredChapter(NAME        => @_)}
 sub chapterSynopsis(@)    {shift->showOptionalChapter(SYNOPSIS    => @_)}
+sub chapterInheritance(@) {shift->showOptionalChapter(INHERITANCE => @_)}
 sub chapterDescription(@) {shift->showRequiredChapter(DESCRIPTION => @_)}
 sub chapterOverloaded(@)  {shift->showOptionalChapter(OVERLOADED  => @_)}
 sub chapterMethods(@)     {shift->showOptionalChapter(METHODS     => @_)}
@@ -353,6 +362,12 @@ sub createOtherPages(@) {shift}
 =option  show_described_options 'NO'|'LIST'|'USE'|'EXPAND'
 =default show_described_options 'EXPAND'
 
+=option  show_examples 'NO'|'EXPAND'
+=default show_examples 'EXPAND'
+
+=option  show_diagnostics 'NO'|'EXPAND'
+=default show_diagnostics 'NO'
+
 =cut
 
 sub showSubroutines(@)
@@ -364,12 +379,15 @@ sub showSubroutines(@)
     my $manual = $args{manual} or confess;
     my $output = $args{output}    || select;
 
-    $args{show_subs_index}        ||= 'NO';
-    $args{show_inherited_subs}    ||= 'USE';
-    $args{show_described_subs}    ||= 'EXPAND';
-    $args{show_option_table}      ||= 'ALL';
-    $args{show_inherited_options} ||= 'USE';
+    # list is also in ::Pod3
     $args{show_described_options} ||= 'EXPAND';
+    $args{show_described_subs}    ||= 'EXPAND';
+    $args{show_diagnostics}       ||= 'NO';
+    $args{show_examples}          ||= 'EXPAND';
+    $args{show_inherited_options} ||= 'USE';
+    $args{show_inherited_subs}    ||= 'USE';
+    $args{show_option_table}      ||= 'ALL';
+    $args{show_subs_index}        ||= 'NO';
 
     $self->showSubsIndex(%args, subroutines => \@subs);
 
@@ -410,7 +428,6 @@ sub showSubroutines(@)
 
 =option  show_sub_description 'NO'|'DESCRIBED'|'REFER'|'ALL'
 =default show_sub_description 'DESCRIBED'
-
 Included the description of the use of the subroutines, which
 comes before the options are being explained.  C<NO> will cause
 the description to be ignored, C<DESCRIBED> means that only
@@ -424,7 +441,6 @@ file as well.
 
 =option  show_diagnostics 'NO'|'EXPAND'
 =default show_diagnostics 'NO'
-
 Diagnostics (error and warning messages) are defined per subroutine,
 but are usually not listed with the subroutine.  The POD formatter's
 default behavior, for instance, puts them all in a separate DIAGNOSTICS
@@ -439,8 +455,8 @@ sub showSubroutine(@)
 {   my ($self, %args) = @_;
 
     my $subroutine = $args{subroutine} or confess;
-    my $manual = $args{manual}         or confess;
-    my $output = $args{output}    || select;
+    my $manual = $args{manual} or confess;
+    my $output = $args{output} || select;
 
     #
     # Method use
@@ -544,32 +560,27 @@ sub showSubroutine(@)
 sub showExamples(@) {shift}
 
 =method showSubroutineUse OPTIONS
-
 =requires subroutine OBJECT
 =requires manual OBJECT
 =requires output FILE
 
 =warning unknown subroutine type $type for $name in $manual
-
 =cut
 
 sub showSubroutineUse(@) {shift}
 
 =method showSubroutineName OPTIONS
-
 =requires subroutine OBJECT
 =requires manual OBJECT
 =requires output FILE
 
 =option  last BOOLEAN
 =default last 0
-
 =cut
 
 sub showSubroutineName(@) {shift}
 
 =method showSubroutineDescription OPTIONS
-
 =requires subroutine OBJECT
 =requires manual OBJECT
 =requires output FILE
@@ -578,11 +589,9 @@ sub showSubroutineName(@) {shift}
 sub showSubroutineDescription(@) {shift}
 
 =method showOptionTable OPTIONS
-
 =requires options ARRAY
 =requires manual OBJECT
 =requires output FILE
-
 =cut
 
 sub showOptionTable(@)
@@ -621,10 +630,7 @@ sub showOptionTable(@)
     $self
 }
 
-#-------------------------------------------
-
 =method showOptions OPTIONS
-
 The options shown are B<not> the OPTIONS passed as argument, but the
 options which belong to the subroutine being displayed.
 
@@ -661,146 +667,25 @@ sub showOptions(@)
     $self;
 }
 
-#-------------------------------------------
-
 =method showOptionUse OPTIONS
-
 =requires option OBJECT
 =requires default OBJECT
 =requires output FILE
 =requires manual OBJECT
-
 =cut
 
 sub showOptionUse(@) {shift}
 
-#-------------------------------------------
-
 =method showOptionExpand OPTIONS
-
 =requires option OBJECT
 =requires default OBJECT
 =requires output FILE
 =requires manual OBJECT
-
 =cut
 
 sub showOptionExpand(@) {shift}
 
-#-------------------------------------------
-
-=method createInheritance MANUAL
-
-Create the text which represents the inheritance relationships of
-a certain package.  More than one MANUAL can be defined for one
-package, and will each produce the same text.  The returned string
-still has to be cleaned-up before inclusion.
-
-=cut
-
-sub createInheritance($)
-{   my ($self, $package) = @_;
-
-    if($package->name ne $package->package)
-    {   # This is extra code....
-        my $from = $package->package;
-        return "\n $package\n    contains extra code for\n    M<$from>\n";
-    }
-
-    my $output;
-    my @supers  = $package->superClasses;
-
-    if(my $realized = $package->realizes)
-    {   $output .= "\n $package realizes a M<$realized>\n";
-        @supers = $realized->superClasses if ref $realized;
-    }
-
-    if(my @extras = $package->extraCode)
-    {   $output .= "\n $package has extra code in\n";
-        $output .= "   M<$_>\n" foreach sort @extras;
-    }
-
-    foreach (@supers)
-    {   $output .= "\n $package\n";
-        $output .= $self->showSuperSupers($_);
-    }
-
-    if(my @subclasses = $package->subClasses)
-    {   $output .= "\n $package is extended by\n";
-        $output .= "   M<$_>\n" foreach sort @subclasses;
-    }
-
-    if(my @realized = $package->realizers)
-    {   $output .= "\n $package is realized by\n";
-        $output .= "   M<$_>\n" foreach sort @realized;
-    }
-
-    $output;
-}
-
-sub showSuperSupers($)
-{   my ($self, $package) = @_;
-    my $output = "   is a M<$package>\n";
-    return $output
-        unless ref $package;  # only the name of the package is known
-
-    if(my $realizes = $package->realizes)
-    {   $output .= $self->showSuperSupers($realizes);
-        return $output;
-    }
-
-    my @supers = $package->superClasses or return $output;
-    $output .= $self->showSuperSupers(shift @supers);
-
-    foreach(@supers)
-    {   $output .= "\n\n   $package also extends M<$_>\n";
-        $output .= $self->showSuperSupers($_);
-    }
-
-    $output;
-}
-
-#-------------------------------------------
-
-=section Template::Magic
-
-Support methods for implementations which are based on L<Template::Magic>.
-
-=method zoneGetParameters ZONE|STRING
-
-Takes a Template::Magic::Zone object to process the text after the
-tag.  You may also specify a string, for instance a modified
-attribute list.  The return is a list of key-value pairs with data.
-
-=examples of valid arguments
-
- <!--{examples expand NO list ALL}-->   # old style
- <!--{examples expand => NO, list => ALL}-->
- <!--{examples expand => NO,
-         list => ALL}-->
-
-=cut
-
-sub zoneGetParameters($)
-{   my ($self, $zone) = @_;
-    my $param = ref $zone ? $zone->attributes : $zone;
-    $param =~ s/^\s+//;
-    $param =~ s/\s+$//;
-
-    return () unless length $param;
-
-    return split / /, $param       # old style
-       unless $param =~ m/[^\s\w]/;
-
-    # new style
-    my @params = split /\s*\,\s*/, $param;
-    map { (split /\s*\=\>\s*/, $_, 2) } @params;
-}
-
-#-------------------------------------------
-
 =section Commonly used functions
-
 =cut
 
 1;

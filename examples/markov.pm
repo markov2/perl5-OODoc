@@ -20,7 +20,7 @@ my $verbose = 1;
 
 My::Name::Space - just an example
 
-=chapter SYNOPSYS
+=chapter SYNOPSIS
 
  my $obj = My::Name::Space->new;
  $obj->print;
@@ -34,7 +34,7 @@ should be read by everyone.  All less import things are kept in a
 chapter named DETAILS after the explanation of functions and stuff such
 that important things come first.
 
-=chapter OVERLOADING
+=chapter OVERLOADED
 =chapter FUNCTIONS
 =chapter METHODS
 take whatever you need in the order you wish to define it (order of the

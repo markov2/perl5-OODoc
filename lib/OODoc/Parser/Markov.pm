@@ -8,6 +8,7 @@ use warnings;
 use OODoc::Text::Chapter;
 use OODoc::Text::Section;
 use OODoc::Text::SubSection;
+use OODoc::Text::SubSubSection;
 use OODoc::Text::Subroutine;
 use OODoc::Text::Option;
 use OODoc::Text::Default;
@@ -40,12 +41,7 @@ part and a documentation tree.  The code is written to a directory
 where the module distribution is built, the documenation tree is
 later formatted into manual pages.
 
-=cut
-
-#-------------------------------------------
-
 =chapter METHODS
-
 =cut
 
 #-------------------------------------------
@@ -55,6 +51,7 @@ my @default_rules =
  , [ '=chapter'    => 'docChapter'    ]
  , [ '=section'    => 'docSection'    ]
  , [ '=subsection' => 'docSubSection' ]
+ , [ '=subsubsection' => 'docSubSubSection' ]
  , [ '=method'     => 'docSubroutine' ]
  , [ '=i_method'   => 'docSubroutine' ]
  , [ '=c_method'   => 'docSubroutine' ]
@@ -297,6 +294,9 @@ sub parse(@)
             }
             $$block  .= $line;
         }
+        elsif($line eq "__DATA__\n")  # flush rest file
+        {   $out->print($line, $in->getlines);
+        }
         else
         {   $out->print($line);
         }
@@ -423,9 +423,7 @@ sub closeChapter()
 # SECTION
 
 =error section $name outside chapter in $file line $number
-
 Sections must be contained in chapters.
-
 =cut
 
 sub docSection($$$$)
@@ -474,8 +472,8 @@ sub docSubSection($$$$)
     $self->closeSubSection;
 
     my $section = $self->{OPM_section};
-    die "ERROR: subsection $line outside section in $fn line $ln\n"
-       unless defined $section;
+    defined $section
+        or die "ERROR: subsection $line outside section in $fn line $ln\n";
 
     my $subsection = $self->{OPM_subsection} = OODoc::Text::SubSection->new
      ( name     => $line
@@ -491,6 +489,45 @@ sub docSubSection($$$$)
 sub closeSubSection()
 {   my $self       = shift;
     my $subsection = delete $self->{OPM_subsection};
+    $self;
+}
+
+
+#-------------------------------------------
+# SUBSECTION
+
+=error subsubsection $name outside subsection in $file line $number
+Subsubsections are only allowed in a chapter when it is nested within
+a subsection.
+
+=cut
+
+sub docSubSubSection($$$$)
+{   my ($self, $match, $line, $fn, $ln) = @_;
+    $line =~ s/^\=(subsubsection|head4)\s+//;
+    $line =~ s/\s+$//;
+
+    $self->closeSubSubSection;
+
+    my $subsection = $self->{OPM_subsection};
+    defined $subsection
+       or die "ERROR: subsubsection $line outside subsection in $fn line $ln\n";
+
+    my $subsubsection
+      = $self->{OPM_subsubsection} = OODoc::Text::SubSubSection->new
+      ( name       => $line
+      , subsection => $subsection
+      , linenr     => $ln
+      );
+
+    $subsection->subsubsection($subsubsection);
+    $self->setBlock($subsubsection->openDescription);
+    $subsubsection;
+}
+
+sub closeSubSubSection()
+{   my $self = shift;
+    delete $self->{OPM_subsubsection};
     $self;
 }
 
@@ -547,11 +584,9 @@ sub closeSubroutine()
 # SUBROUTINE ADDITIONALS
 
 =error option $name outside subroutine in $file line $number
-
 An option is set, however there is not subroutine in scope (yet).
 
 =warning option line incorrect in $file line $number: $line
-
 The shown $line is not in the right format: it should contain at least
 two words being the option name and an abstract description of possible
 values.
@@ -586,13 +621,11 @@ sub docOption($$$$)
 #-------------------------------------------
 
 =error default for option $name outside subroutine in $file line $number
-
 A default is set, however there is not subroutine in scope (yet).  It
 is plausible that the option does not exist either, but that will
 be checked later.
 
 =warning default line incorrect in $file line $number: $line
-
 The shown $line is not in the right format: it should contain at least
 two words being the option name and the default value.
 
@@ -623,8 +656,6 @@ sub docDefault($$$$)
     $sub;
 }
 
-#-------------------------------------------
-
 sub docRequires($$$$)
 {   my ($self, $match, $line, $fn, $ln) = @_;
 
@@ -642,12 +673,10 @@ sub docRequires($$$$)
 # DIAGNOSTICS
 
 =warning no diagnostic message supplied in $file line $number
-
 The start of a diagnostics message was indicated, however not provided
 on the same line.
 
 =error diagnostic $type outside subroutine in $file line $number
-
 It is unclear to which subroutine this diagnostic message belongs.
 
 =cut
@@ -684,7 +713,6 @@ sub docDiagnostic($$$$)
 # EXAMPLE
 
 =error example outside chapter in $file line $number
-
 An example can belong to a subroutine, chapter, section, and subsection.
 Apparently, this example was found before the first chapter started in
 the file.
@@ -698,6 +726,7 @@ sub docExample($$$$)
     $line =~ s/^\#.*//;
 
     my $container = $self->{OPM_subroutine}
+                 || $self->{OPM_subsubsection}
                  || $self->{OPM_subsection}
                  || $self->{OPM_section}
                  || $self->{OPM_chapter};
@@ -739,7 +768,6 @@ sub debugRemains($$$$)
 #-------------------------------------------
 
 =warning You may have accidentally captured code in doc file $fn line $number
-
 Some keywords on the first position of a line are very common for code.
 However, code within doc should start with a blank to indicate pre-formatted
 lines.  This warning may be false.
@@ -759,21 +787,15 @@ sub forgotCut($$$$)
 
 =section Producing manuals
 
-=cut
-
-#-------------------------------------------
-
 =method decomposeM MANUAL, LINK
 
 =warning module $name is not on your system, but linked to in $manual
-
 The module can not be found.  This may be an error at your part (usually
 a typo) or you didn't install the module on purpose.  This message will
 also be produced if some defined package is stored in one file together
 with an other module or when compilation errors are encountered.
 
 =warning subroutine $name is not defined by $package, found in $manual
-
 =warning option "$name" unknow for $name() in $package, found in $manual
 
 =warning no manual for $package (correct casing?)
@@ -851,17 +873,12 @@ sub decomposeM($$)
     ($location, $opt);
 }
 
-#-------------------------------------------
-
 =method decomposeL MANUAL, LINK
-
 Decompose the L-tags.  These tags are described in L<perlpod>, but
 they will not refer to items: only headers.
 
 =warning empty L link in $manual
-
 =warning Manual $manual links to unknown entry "$item" in $manual
-
 =cut
 
 sub decomposeL($$)
@@ -912,10 +929,7 @@ sub decomposeL($$)
     ($man, $dest, undef, $text);
 }
 
-#-------------------------------------------
-
 =method cleanupPod FORMATTER, MANUAL, STRING
-
 =cut
 
 sub cleanupPod($$$)
@@ -970,10 +984,7 @@ sub cleanupPod($$$)
     @lines ? join('', @lines) : '';
 }
 
-#-------------------------------------------
-
 =method cleanupPodM FORMATTER, MANUAL, LINK
-
 =cut
 
 sub cleanupPodM($$$)
@@ -982,16 +993,12 @@ sub cleanupPodM($$$)
     ref $to ? $formatter->link($toman, $to, $link) : $to;
 }
 
-#-------------------------------------------
-
 =method cleanupPodL FORMATTER, MANUAL, LINK
-
 The C<L> markups for C<OODoc::Parser::Markov> have the same syntax
 as standard POD has, however most standard pod-laters do no accept
 links in verbatim blocks.  Therefore, the links have to be
 translated in their text in such a case.  The translation itself
 is done in by this method.
-
 =cut
 
 sub cleanupPodL($$$)
@@ -1005,10 +1012,8 @@ sub cleanupPodL($$$)
 =section Commonly used functions
 
 =method cleanupHtml FORMATTER, MANUAL, STRING, [IS_HTML]
-
 Some changes will not be made when IS_HTML is C<true>, for instance,
 a "E<lt>" will stay that way, not being translated in a "E<amp>lt;".
-
 =cut
 
 sub cleanupHtml($$$;$)
@@ -1090,10 +1095,7 @@ sub cleanupHtml($$$;$)
     $string;
 }
 
-#-------------------------------------------
-
 =method cleanupHtmlM FORMATTER, MANUAL, LINK
-
 =cut
 
 sub cleanupHtmlM($$$)
@@ -1102,10 +1104,7 @@ sub cleanupHtmlM($$$)
     ref $to ? $formatter->link($toman, $to, $link) : $to;
 }
 
-#-------------------------------------------
-
 =method cleanupHtmlL FORMATTER, MANUAL, LINK
-
 =cut
 
 sub cleanupHtmlL($$$)
@@ -1119,8 +1118,6 @@ sub cleanupHtmlL($$$)
 }
 
 #-------------------------------------------
-
-=section Commonly used functions
 
 =chapter DETAILS
 
@@ -1160,9 +1157,10 @@ be preceeded with a C<package> keyword.
 
 =subsection Heading
 
- =chapter    STRING
- =section    STRING
- =subsection STRING
+ =chapter       STRING
+ =section       STRING
+ =subsection    STRING
+ =subsubsection STRING
 
 These text structures are used to group descriptive text and subroutines.
 You can use any name for a chapter, but the formatter expects certain
@@ -1198,9 +1196,9 @@ overrule the one in a subclass.
 
 =subsection Include examples
 
-Examples can be added to chapters, sections, subsections and subroutines.
-They run until the next markup line, so can only come at the end of the
-documentation pieces.
+Examples can be added to chapters, sections, subsections, subsubsections,
+and subroutines.  They run until the next markup line, so can only come
+at the end of the documentation pieces.
 
  =example
  =examples
@@ -1223,10 +1221,10 @@ manual page.
 
 For comfort, all POD markups are supported as well
 
- =head1 Heading Text          (same as =chapter)
- =head2 Heading Text          (same as =section)
- =head3 Heading Text          (same as =subsection)
- =head4 Heading Text
+ =head1 Heading Text   (same as =chapter)
+ =head2 Heading Text   (same as =section)
+ =head3 Heading Text   (same as =subsection)
+ =head4 Heading Text   (same as =subsubsection)
  =over indentlevel
  =item stuff
  =back
@@ -1281,6 +1279,7 @@ The following syntaxes are supported:
  L E<lt> /"subsection" E<gt>
  L E<lt> "section" E<gt>
  L E<lt> "subsection" E<gt>
+ L E<lt> "subsubsection" E<gt>
  L E<lt> unix-manual E<gt>
  L E<lt> url E<gt>
  
@@ -1300,9 +1299,9 @@ in the html version of these manual pages:
 
 =section Grouping subroutines
 
-Subroutine descriptions can be grouped in a chapter, section, or subsection.
-It is very common to have a large number of subroutines, so some structure
-has to be imposed here.
+Subroutine descriptions can be grouped in a chapter, section,
+subsection, or subsubsection.  It is very common to have a large number
+of subroutines, so some structure has to be imposed here.
 
 If you document the same routine in more than one manual page with an
 inheritance relationship, the documentation location shall not conflict.

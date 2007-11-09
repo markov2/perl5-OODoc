@@ -163,11 +163,8 @@ WARN
    $container;
 }
 
-#-------------------------------------------
-
 =method path
 Returns the path of the text structure which contains this subroutine.
-
 =cut
 
 sub path() { shift->container->path }
@@ -197,23 +194,17 @@ sub default($)
 #-------------------------------------------
 
 =method defaults
-
 Returns a list of all defaults as defined by this documentation item in
 one manual.
-
 =cut
 
 sub defaults() { values %{shift->{OTS_defaults}} }
 
-#-------------------------------------------
-
 =method option NAME|OBJECT
-
 In case of a NAME, the option object for this method is looked up.  This
 does not search through super classes, but solely which is defined with
 this subroutine.  When passed an OBJECT of type OODoc::Text::Option
 that will be stored.
-
 =cut
 
 sub option($)
@@ -225,13 +216,10 @@ sub option($)
     $it;
 }
 
-#-------------------------------------------
 
 =method findOption NAME
-
 Does a little more thorough job than M<option()> bu searching the inherited
 options for this subroutine as well.
-
 =cut
 
 sub findOption($)
@@ -243,25 +231,17 @@ sub findOption($)
     $extends->findOption($name);
 }
 
-#-------------------------------------------
-
 =method options
-
 Returns a list of all options as defined by this documentation item in
 one manual.
-
 =cut
 
 sub options() { values %{shift->{OTS_options}} }
 
-#-------------------------------------------
-
 =method diagnostic OBJECT
-
 Add a new diagnostic message (a OODoc::Text::Diagnostic object) to the
 list already in this object.  You can not look for a message because
 these names are without use.
-
 =cut
 
 sub diagnostic($)
@@ -270,22 +250,14 @@ sub diagnostic($)
     $diag;
 }
 
-#-------------------------------------------
-
 =method diagnostics
-
 Returns a list of all diagnostics.
-
 =cut
 
 sub diagnostics() { @{shift->{OTS_diags}} }
 
-#-------------------------------------------
-
 =method collectedOptions
-
 Returns a list of option-default combinations on this subroutine.
-
 =cut
 
 sub collectedOptions(@)

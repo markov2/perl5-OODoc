@@ -7,6 +7,7 @@ use warnings;
 
 use Carp;
 use List::Util 'first';
+use OODoc::Text::Chapter;
 
 =chapter NAME
 
@@ -39,10 +40,7 @@ Used in string context, a manual produces its name.
 use overload '""' => sub { shift->name };
 use overload bool => sub {1};
 
-#-------------------------------------------
-
 =overload cmp
-
 String comparison takes place between a manual name and another
 manual name which may be a manual object or any other string or
 stringifyable object.
@@ -64,16 +62,13 @@ use overload cmp  => sub {$_[0]->name cmp "$_[1]"};
 =c_method new OPTIONS
 
 =requires parser OBJECT
-
 The parser which produces this manual page.  This parameter is needed
 to be able to low-level format the text blocks.
 
 =requires package STRING
-
 The name of the package which is described by this manual.
 
 =requires source STRING
-
 The file where the manual was found in, or in some cases some other
 string which explains where the data came from.
 
@@ -81,30 +76,25 @@ string which explains where the data came from.
 
 =option  stripped STRING
 =default stripped undef
-
 The file where the stripped code is written to.
 
 =option  pure_pod BOOLEAN
 =default pure_pod <false>
-
 Some documentation is stored in files which look like a module,
 but do not contain any code.  Their filenames usually end with C<.pod>.
 
 =requires distribution STRING
 
 =error   package name is not specified
-
 You try to instantiate a manual, but have not specified the name
 of the package which is described in this manual, which is required.
 
 =error   no source filename is specified for manual $name
-
 You have to specify where you found the information for the manual.  This
 does not need to be the name of an existing file, but usually it will be.
 
 =error  no version is specified for manual $name
 =error  no distribution is specified for manual $name
-
 =cut
 
 sub init($)
@@ -115,13 +105,13 @@ sub init($)
        or croak "ERROR: package name is not specified";
 
     $self->{OP_source}   = delete $args->{source}
-       or croak "ERROR: no source filename is specified for manual $name";
+        or croak "ERROR: no source filename is specified for manual $name";
 
     $self->{OP_version}  = delete $args->{version}
-       or croak "ERROR: no version is specified for manual $name";
+        or croak "ERROR: no version is specified for manual $name";
 
     $self->{OP_distr}    = delete $args->{distribution}
-       or croak "ERROR: no distribution is specified for manual $name";
+        or croak "ERROR: no distribution is specified for manual $name";
 
     $self->{OP_parser}   = delete $args->{parser}    or confess;
     $self->{OP_stripped} = delete $args->{stripped};
@@ -141,69 +131,43 @@ sub init($)
 =section Attributes
 
 =method package
-
 Returns the package of the manual.
-
 =cut
 
 sub package() {shift->{OP_package}}
 
-#-------------------------------------------
-
 =method parser
-
 Returns the parser which has produced this manual object.
-
 =cut
 
 sub parser() {shift->{OP_parser}}
 
-#-------------------------------------------
-
 =method source
-
 Returns the source of this manual information.
-
 =cut
 
 sub source() {shift->{OP_source}}
 
-#-------------------------------------------
-
 =method version
-
 Returns the version of this manual information.
-
 =cut
 
 sub version() {shift->{OP_version}}
 
-#-------------------------------------------
-
 =method distribution
-
 Returns the distribution which includes this manual.
-
 =cut
 
 sub distribution() {shift->{OP_distr}}
 
-#-------------------------------------------
-
 =method stripped
-
 The name of the produced stripped package file.
-
 =cut
 
 sub stripped() {shift->{OP_stripped}}
 
-#-------------------------------------------
-
 =method isPurePod
-
 Returns whether this package has real code related to it.
-
 =cut
 
 sub isPurePod() {shift->{OP_pure_pod}}
@@ -213,13 +177,11 @@ sub isPurePod() {shift->{OP_pure_pod}}
 =section Collected
 
 =method chapter NAME|OBJECT
-
 When a NAME (a string) given, the chapter with that name is returned, or
 C<undef> when it is not known.  With an OBJECT, that object is added to
 the list of chapters.
 
-=error two chapters name $name in $filename line $ln1 and $ln2
-
+=error two chapters named $name in $filename line $ln1 and $ln2
 The indicated file contains two chapters with the same name, which
 is not permitted.  Join the contents of both parts.
 
@@ -227,16 +189,17 @@ is not permitted.  Join the contents of both parts.
 
 sub chapter($)
 {   my ($self, $it) = @_;
-    return $self->{OP_chapter_hash}{$it} unless ref $it;
+    ref $it
+        or return $self->{OP_chapter_hash}{$it};
 
-    confess "$it is not a chapter"
-       unless $it->isa("OODoc::Text::Chapter");
+    $it->isa("OODoc::Text::Chapter")
+        or confess "ERROR: $it is not a chapter";
 
     my $name = $it->name;
     if(my $old = $self->{OP_chapter_hash}{$name})
     {   my ($fn,   $ln2) = $it->where;
         my (undef, $ln1) = $old->where;
-        die "ERROR: two chapters name $name in $fn line $ln2 and $ln1\n";
+        die "ERROR: two chapters named $name in $fn line $ln2 and $ln1\n";
     }
 
     $self->{OP_chapter_hash}{$name} = $it;
@@ -244,12 +207,8 @@ sub chapter($)
     $it;
 }
 
-#-------------------------------------------
-
 =method chapters [CHAPTERS]
-
 Returns the ordered list of chapter object for this manual.
-
 =cut
 
 sub chapters(@)
@@ -261,10 +220,7 @@ sub chapters(@)
     @{$self->{OP_chapters}};
 }
 
-#-------------------------------------------
-
 =method name
-
 Returns the name of the manual, which is found in the NAME chapter.
 
 =error No chapter NAME in scope of package $pkg in file $source
@@ -299,29 +255,21 @@ sub name()
 }
 
 
-#-------------------------------------------
-
 =method subroutines
-
 All subroutines of all chapters within this manual together, especially
 useful for counting.
 
 =example
-
  print scalar $manual->subroutines;
 
 =cut
 
 sub subroutines() { shift->all('subroutines') }
 
-#-------------------------------------------
-
 =method subroutine NAME
-
 Returns the subroutine with the specified NAME as object reference.  When
 the manual is part of a package description which is spread over multiple
 manuals, then these other manuals will be searched as well.
-
 =cut
 
 sub subroutine($)
@@ -341,15 +289,11 @@ sub subroutine($)
     ();
 }
 
-#-------------------------------------------
-
 =method examples
-
 All examples of all chapters within this manual together, especially
 useful for counting.
 
 =example
-
  print scalar $manual->examples;
 
 =cut
@@ -361,15 +305,11 @@ sub examples()
     );
 }
 
-#-------------------------------------------
-
 =method diagnostics OPTIONS
-
 All diagnostic messages of all chapters for this manual together.
 
 =option  select ARRAY
 =default select []
-
 Select only the diagnostic message of the specified types (case
 insensitive).  Without any type, all are selected.
 
@@ -396,10 +336,8 @@ sub diagnostics(@)
 =section Inheritance knowledge
 
 =method superClasses [PACKAGES]
-
 Returns the super classes for this package.  PACKAGES (names or objects)
 will be added to the list of superclasses first.
-
 =cut
 
 sub superClasses(;@)
@@ -408,14 +346,10 @@ sub superClasses(;@)
     @{$self->{OP_isa}};
 }
 
-#-------------------------------------------
-
 =method realizes [PACKAGE]
-
 Returns the class into which this class can be realized.  This is
 a trick of the Object::Realize::Later module.  The PACKAGE (name or
 object) will be set first, if specified.
-
 =cut
 
 sub realizes(;$)
@@ -423,14 +357,10 @@ sub realizes(;$)
     @_ ? ($self->{OP_realizes} = shift) : $self->{OP_realizes};
 }
 
-#-------------------------------------------
-
 =method subClasses [PACKAGES]
-
 Returns the names of all sub-classes (extensions) of this package.
 When PACKAGES (names or objects) are specified, they are first added
 to the list.
-
 =cut
 
 sub subClasses(;@)
@@ -439,14 +369,10 @@ sub subClasses(;@)
     @{$self->{OP_subclasses}};
 }
 
-#-------------------------------------------
-
 =method realizers [PACKAGES]
-
 Returns a list of packages which can realize into this object
 using Object::Realize::Later magic.  When PACKAGES (names or objects)
 are specified, they are added first.
-
 =cut
 
 sub realizers(;@)
@@ -455,12 +381,8 @@ sub realizers(;@)
     @{$self->{OP_realizers}};
 }
 
-#-------------------------------------------
-
 =method extraCode
-
 Returns a list of manuals which contain extra code for this package.
-
 =cut
 
 sub extraCode()
@@ -472,16 +394,12 @@ sub extraCode()
     : ();
 }
 
-#-------------------------------------------
-
 =method all METHOD, PARAMETERS
-
 Call M<OODoc::Text::Structure::all()> on all chapters, passing the METHOD
 and PARAMETERS.  In practice, this means that you can simply collect
 kinds of information from various parts within the manual page.
 
 =example
-
  my @diags = $manual->all('diagnostics');
 
 =cut
@@ -491,24 +409,16 @@ sub all($@)
     map { $_->all(@_) } $self->chapters;
 }
 
-#-------------------------------------------
-
 =method inherited SUBROUTINE|OPTION
-
 Returns whether the SUBROUTINE or OPTION was defined by this manual page,
 or inherited from it.
-
 =cut
 
 sub inherited($) {$_[0]->name ne $_[1]->manual->name}
 
-#-------------------------------------------
-
 =method ownSubroutines
-
 Returns only the subroutines which are described in this manual page
 itself.  M<subroutines()> returns them all.
-
 =cut
 
 sub ownSubroutines
@@ -522,7 +432,6 @@ sub ownSubroutines
 =section Processing
 
 =method collectPackageRelations
-
 =cut
 
 sub collectPackageRelations()
@@ -542,12 +451,9 @@ sub collectPackageRelations()
 
     %return;
 }
-#-------------------------------------------
 
 =method expand
-
 Add the information of lower level manuals into this one.
-
 =cut
 
 sub expand()
@@ -655,10 +561,7 @@ sub expand()
     $self;
 }
 
-#-------------------------------------------
-
 =method mergeStructure OPTIONS
-
 Merge two lists of structured text objects: "this" list and "super" list.
 The "this" objects are defined on this level of inheritance, where the
 "super" objects are from an inheritence level higher (super class).
@@ -678,18 +581,15 @@ kept as well as possible.
 
 =option  equal CODE
 =default equal sub {"$_[0]" eq "$_[1]"}
-
 Define how can be determined that two objects are the same.  By default,
 the stringification of both objects are compared.
 
 =option  merge CODE
 =default merge sub {$_[0]}
-
 What to call if both lists contain the same object.  These two objects
 will be passed as argument to the code reference.
 
 =warning order conflict "$take" before "$insert" in $file line $number
-
 The order of the objects in a sub-class shall be the same as that of
 the super class, otherwise the result of merging of the information
 received from both classes is undertermined.
@@ -735,17 +635,13 @@ sub mergeStructure(@)
     (@joined, @this);
 }
 
-#-------------------------------------------
-
 =method mostDetailedLocation OBJECT
-
 The OBJECT (a text element) is lccated in some subsection, section or
 chapter.  But the OBJECT may also be an extension to a piece of
 documentation which is described in a super class with a location in
 more detail.  The most detailed location for the description is returned.
 
 =warning subroutine $name location conflict: $here and $there
-
 Finding the optimal location to list a subroutine description is
 a harsh job: information from various manual pages is being used.
 
@@ -789,14 +685,88 @@ sub mostDetailedLocation($)
    $path1;
 }
 
+=method createInheritance
+Create the text which represents the inheritance relationships of
+a certain package.  More than one MANUAL can be defined for one
+package, and will each produce the same text.  The returned string
+still has to be cleaned-up before inclusion.
+=cut
+
+sub createInheritance()
+{   my $self = shift;
+
+    if($self->name ne $self->package)
+    {   # This is extra code....
+        my $from = $self->package;
+        return "\n $self\n    contains extra code for\n    M<$from>\n";
+    }
+
+    my $output;
+    my @supers  = $self->superClasses;
+
+    if(my $realized = $self->realizes)
+    {   $output .= "\n $self realizes a M<$realized>\n";
+        @supers = $realized->superClasses if ref $realized;
+    }
+
+    if(my @extras = $self->extraCode)
+    {   $output .= "\n $self has extra code in\n";
+        $output .= "   M<$_>\n" foreach sort @extras;
+    }
+
+    foreach my $super (@supers)
+    {   $output .= "\n $self\n";
+        $output .= $self->createSuperSupers($super);
+    }
+
+    if(my @subclasses = $self->subClasses)
+    {   $output .= "\n $self is extended by\n";
+        $output .= "   M<$_>\n" foreach sort @subclasses;
+    }
+
+    if(my @realized = $self->realizers)
+    {   $output .= "\n $self is realized by\n";
+        $output .= "   M<$_>\n" foreach sort @realized;
+    }
+
+    my $chapter = OODoc::Text::Chapter->new
+      ( name        => 'INHERITANCE'
+      , manual      => $self
+      , linenr      => -1
+      , description => $output
+      );
+
+    $self->chapter($chapter);
+}
+
+sub createSuperSupers($)
+{   my ($self, $package) = @_;
+    my $output = "   is a M<$package>\n";
+    return $output
+        unless ref $package;  # only the name of the package is known
+
+    if(my $realizes = $package->realizes)
+    {   $output .= $self->createSuperSupers($realizes);
+        return $output;
+    }
+
+    my @supers = $package->superClasses or return $output;
+    $output   .= $self->createSuperSupers(shift @supers);
+
+    foreach(@supers)
+    {   $output .= "\n\n   $package also extends M<$_>\n";
+        $output .= $self->createSuperSupers($_);
+    }
+
+    $output;
+}
+
 #-------------------------------------------
 
 =section Tracing
 
 =method stats
-
 Returns a string which displays some stats about the manual.
-
 =cut
 
 sub stats()
@@ -827,7 +797,6 @@ STATS
 #-------------------------------------------
 
 =section Commonly used functions
-
 =cut
 
 1;

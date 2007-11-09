@@ -2,7 +2,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile
   ( NAME	 => 'OODoc'
-  , VERSION      => '1.01'
+  , VERSION      => '1.02'
   , PREREQ_PM    =>
     { Test::More              => 0.47
     , Template::Magic::HTML   => 1.02
@@ -11,11 +11,13 @@ WriteMakefile
     , File::Slurp             => 9999.12
     , Test::Pod               => 1.26
     , IO::Scalar              => 2.110
+    , OODoc::Template         => 0.12
     }
   , EXE_FILES    => [ 'bin/oodist' ]
 
   , AUTHOR       => 'Mark Overmeer'
   , ABSTRACT     => 'Object Oriented Documentation'
+  , LICENSE      => 'perl'
   );
 
 ### used by oodist during production of distribution
@@ -30,6 +32,7 @@ LICENSE		= artistic
 FIRST_YEAR      = 2003
 EMAIL           = oodoc@overmeer.net
 WEBSITE         = http://perl.overmeer.net/oodoc/
+EXTENDS         = ../OODocTemplate
 
 # for HTML
 HTML_OUTPUT	= ../public_html/oodoc/html

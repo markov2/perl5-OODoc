@@ -42,11 +42,9 @@ sub init($)
     $args->{level}     ||= 3;
 
     $self->SUPER::init($args) or return;
-
+    $self->{OTS_subsubsections} = [];
     $self;
 }
-
-#-------------------------------------------
 
 sub findEntry($)
 {  my ($self, $name) = @_;
@@ -58,24 +56,16 @@ sub findEntry($)
 =section Location
 
 =method section
-
 Returns the section object for this subsection.
-
 =cut
 
 sub section() { shift->container }
 
-#-------------------------------------------
-
 =method chapter
-
 Returns the chapter object for this subsection.
-
 =cut
 
 sub chapter() { shift->section->chapter }
-
-#-------------------------------------------
 
 sub path()
 {   my $self = shift;
@@ -83,5 +73,44 @@ sub path()
 }
 
 #-------------------------------------------
+
+=section Subsubsections
+
+=method subsubsection NAME|OBJECT
+With a NAME, the subsubsection within this subsection with that name is
+returned.  With an OBJECT (which must be a OODoc::Text::SubSubSection),
+a new subsubsection is added to the end of the list.
+
+=cut
+
+sub subsubsection($)
+{   my ($self, $thing) = @_;
+
+    if(ref $thing)
+    {   push @{$self->{OTS_subsubsections}}, $thing;
+        return $thing;
+    }
+
+    first {$_->name eq $thing} $self->subsubsections;
+}
+
+=method subsubsections [SUBSUBSECTIONS]
+Returns a list of all subsubsections in this chapter.
+=cut
+
+sub subsubsections(;@)
+{   my $self = shift;
+    if(@_)
+    {   $self->{OTS_subsubsections} = [ @_ ];
+        $_->container($self) for @_;
+    }
+
+    @{$self->{OTS_subsubsections}};
+}
+
+=section Commonly used functions
+=cut
+
+1;
 
 1;

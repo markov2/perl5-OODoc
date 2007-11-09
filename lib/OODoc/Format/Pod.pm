@@ -92,7 +92,10 @@ sub createManual($@)
       );
 
     $output->close;
+
     $self->cleanupPOD($tmpfile, $podfile);
+    unlink $tmpfile;
+
     $self->manifest->add($podfile);
 
     $self;
@@ -251,7 +254,7 @@ sub showExamples(@)
 
     foreach my $example (@$examples)
     {   my $name    = $self->cleanup($manual, $example->name);
-        $output->print("\nI<Example:> $name\n\n");
+        $output->print("\nexample: $name\n\n");
         $output->print($self->cleanup($manual, $example->description));
     }
     $self;
@@ -268,77 +271,10 @@ sub showDiagnostics(@)
     foreach my $diag (sort @$diagnostics)
     {   my $name    = $self->cleanup($manual, $diag->name);
         my $type    = $diag->type;
-        $output->print("\nI<$type:> $name\n\n");
+        $output->print("\n$type: $name\n\n=over 4\n\n");
         $output->print($self->cleanup($manual, $diag->description));
+        $output->print("\n\n=back\n\n");
     }
-    $self;
-}
-
-=method chapterInheritance OPTIONS
-
-Produces the chapter which shows inheritance relationships.
-
-=requires manual OBJECT
-=requires output IO::File
-
-=cut
-
-sub chapterInheritance(@)
-{   my ($self, %args) = @_;
-
-    my $package  = $args{manual} or confess;
-    my $output   = $args{output} or confess;
-
-    my $realized = $package->realizes;
-    my @supers   = (ref $realized ? $realized : $package)->superClasses;
-
-    return unless $realized || @supers;
-
-    $output->print("\n=head1 INHERITANCE\n");
-
-    $output->print("\n $package realizes a $realized\n")
-       if $realized;
-
-    if(my @extras = $package->extraCode)
-    {   $output->print("\n $package has extra code in\n");
-        $output->print("   $_\n") foreach @extras;
-    }
-
-    foreach (@supers)
-    {   $output->print("\n $package\n");
-        $self->showSuperSupers($output, $_);
-    }
-
-    if(my @subclasses = $package->subClasses)
-    {   $output->print("\n $package is extended by\n");
-        $output->print("   $_\n") foreach sort @subclasses;
-    }
-
-    if(my @realized = $package->realizers)
-    {   $output->print("\n $package is realized by\n");
-        $output->print("   $_\n") foreach sort @realized;
-    }
-}
-
-sub showSuperSupers($$)
-{   my ($self, $output, $package) = @_;
-    my $a = $package =~ m/^[aeouy]/i ? 'an' : 'a';
-    $output->print("   is $a $package\n");
-    return unless ref $package;  # only the name of the package is known
-
-    if(my $realizes = $package->realizes)
-    {   $self->showSuperSupers($output, $realizes);
-        return $self;
-    }
-
-    my @supers = $package->superClasses or return;
-    $self->showSuperSupers($output, shift @supers);
-
-    foreach(@supers)
-    {   $output->print("\n\n   $package also extends $_\n");
-        $self->showSuperSupers($output, $_);
-    }
-
     $self;
 }
 
@@ -358,6 +294,18 @@ sub showSubroutineUse(@)
     my $manual     = $args{manual}     or confess;
     my $output     = $args{output}     or confess;
 
+    my $use        = $self->subroutineUse($manual, $subroutine);
+
+    $output->print( qq[\n$use\n\n=over 4\n] );
+
+    $output->print("\nSee ". $self->link($manual, $subroutine)."\n")
+        if $manual->inherited($subroutine);
+
+    $self;
+}
+
+sub subroutineUse($$)
+{   my ($self, $manual, $subroutine) = @_;
     my $type       = $subroutine->type;
     my $name       = $self->cleanup($manual, $subroutine->name);
     my $paramlist  = $self->cleanup($manual, $subroutine->parameters);
@@ -374,15 +322,10 @@ sub showSubroutineUse(@)
      : $type eq 'tie'      ? qq[B<$name>$params]
      :                       '';
 
-    warn "WARNING: unknown subroutine type $type for $name in $manual"
-       unless length $use;
+    length $use
+        or warn "WARNING: unknown subroutine type $type for $name in $manual";
 
-    $output->print( qq[\n$use\n\n=over 4\n] );
-
-    $output->print("\nSee ". $self->link($manual, $subroutine)."\n")
-        if $manual->inherited($subroutine);
-
-    $self;
+    $use;
 }
 
 sub showSubroutineName(@)
@@ -611,11 +554,11 @@ sub cleanupPOD($$)
   LINE:
     while(my $l = $in->getline)
     {   if($l =~ m/^\s*$/s)
-        {    next LINE if $last_is_blank;
-             $last_is_blank = 1;
+        {   next LINE if $last_is_blank;
+            $last_is_blank = 1;
         }
         else
-        {    $last_is_blank = 0;
+        {   $last_is_blank = 0;
         }
 
         $out->print($l);
@@ -694,7 +637,7 @@ pages.
  sub chapterInheritance(@) {shift};
 
 The C<MyPod> package is extending the standard POD generator, by overruling
-the default behavior of M<chapterInheritance()> by producing nothing.
+the default behavior of C<chapterInheritance()> by producing nothing.
 
 =example changing the chapter's output
 

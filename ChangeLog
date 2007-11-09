@@ -2,6 +2,38 @@
 All changes where made by Mark Overmeer <perl@overmeer.net>, unless
 explicitly stated differently.
 
+version 1.02: Fri Nov  9 11:04:39 CET 2007
+
+	Fixes:
+
+	- check for OODoc::Text::Structure::isEmpty() was flawed.
+
+	- stop parsing a pm file when a __DATA__ line is found.
+
+	- fixed typos in example
+
+	Changes:
+
+	- make the default for examples screem less in manual-pages:
+	  change format from "I<Example:>" into "example:"
+
+	- the explanation of diagnostics in POD get indented.
+
+	- extracted Template::Magic helpers from OODoc::Format into
+	  OODoc::Format::TemplateMagic
+
+	- in HTML, chapters become H2, not H1.  etc
+
+	Improvements:
+
+	- implemented OODoc::Format::Pod3 which uses OODoc::Template
+	  this is the new default for oodist.
+
+	- added subsubsections/head4
+
+	- the inheritence information is added as chapter to the
+	  manual page before the formatters get their turn.
+
 version 1.01: Mon Jun 18 21:28:28 CEST 2007
 
 	Fixes:

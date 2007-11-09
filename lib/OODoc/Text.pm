@@ -23,24 +23,17 @@ build a tree of these OODoc::Text objects from it. Then, any formatter
 (implemented by the M<OODoc::Format> classes) can take this tree of text
 objects and convert it into manual pages.
 
-=cut
-
-#-------------------------------------------
-
 =chapter OVERLOADED
 
 =overload '==' and '!='
-
 Numeric comparison is used to compare to objects whether they are
 identical.  String comparison is overloaded to compare the names
 of the objects.
 
 =overload '""' (stringification)
-
 Returned is the name of the text object.
 
 =overload 'cmp' (string comparison)
-
 Names are compared.
 
 =cut
@@ -59,27 +52,22 @@ use overload '=='   => sub {$_[0]->unique == $_[1]->unique}
 
 =option  name STRING
 =default name undef
-
 The name contains the main data about the text piece.
 
 =requires container OBJECT
-
 All text objects except chapters are contained in some other object.
 
 =requires type STRING
-
 The type of this text element.  This is used for debugging only.
 
 =option  description STRING
 =default description ''
-
 The text which is contained in the body of this text item.  Often, this
 is filled in later by M<openDescription()>.
 
 =requires linenr INTEGER
 
 =error no text container specified for the $type object
-
 Each text element is encapsulated by an other text element, except
 chapters.  A value must be known for this C<container> option to
 define the elements relative location.
@@ -112,41 +100,26 @@ sub init($)
 
 =section Attributes
 
-=cut
-
-#-------------------------------------------
-
 =method name
-
 The name of this text element.  Stringification is overloaded to call
 this name method.
 
 =examples
-
  print $text->name;
  print $text;   # via overload
-
 =cut
 
 sub name() {shift->{OT_name}}
 
-#-------------------------------------------
-
 =method type
-
 Returns the type name of this data object.
-
 =cut
 
 sub type() {shift->{OT_type}}
 
-#-------------------------------------------
-
 =method description
-
 Returns the description text for this object.  Nearly all objects
 contains some kind of introductory description.
-
 =cut
 
 sub description()
@@ -157,13 +130,10 @@ sub description()
     join '', @lines;
 }
 
-#-------------------------------------------
-
 =method container [OBJECT]
 The text element which encapsulates the text element at hand.  This
 defines the structure of the documentation.
 Only for chapters, this value will be undefined.
-
 =cut
 
 sub container(;$)
@@ -171,16 +141,12 @@ sub container(;$)
     @_ ? ($self->{OT_container} = shift) : $self->{OT_container};
 }
 
-#-------------------------------------------
-
 =section Location
 
 =method manual [NAME]
-
 Without a NAME, the manual of the text object is returned. With a NAME,
 the manual with that name is returned, even when that does not have a
 relation to the object: it calls M<OODoc::Object::manual()>.
-
 =cut
 
 sub manual(;$)
@@ -188,8 +154,6 @@ sub manual(;$)
     @_ ? $self->SUPER::manual(@_)
        : $self->container->manual;
 }
-
-#-------------------------------------------
 
 =method unique
 Returns a unique id for this text item.  This is the easiest way to
@@ -204,12 +168,9 @@ the same thing. The ids are numeric.
 
 sub unique() {shift->{OT_unique}}
 
-#-------------------------------------------
-
 =method where
 Returns the source of the text item: the filename name and the line
 number of the start of it.
-
 =cut
 
 sub where()
@@ -233,12 +194,9 @@ this object.
 
 sub openDescription() { \shift->{OT_descr} }
 
-#-------------------------------------------
-
 =method findDescriptionObject
 From the current object, search in the extends until an object is found
 which has a content for the description field.
-
 =cut
 
 sub findDescriptionObject()
@@ -249,13 +207,10 @@ sub findDescriptionObject()
     wantarray ? @descr : $descr[0];
 }
 
-#-------------------------------------------
-
 =method example OBJECT
 Add a new example (a OODoc::Text::Example object) to the list already in
 this object.  You can not look for a specific because they have no real
 name (only a sequence number).
-
 =cut
 
 sub example($)
@@ -264,11 +219,8 @@ sub example($)
     $example;
 }
 
-#-------------------------------------------
-
 =method examples
 Returns a list of all examples contained in this text element.
-
 =cut
 
 sub examples() { @{shift->{OT_examples}} }
@@ -276,8 +228,6 @@ sub examples() { @{shift->{OT_examples}} }
 #-------------------------------------------
 
 =section Commonly used functions
-
 =cut
-
 
 1;
