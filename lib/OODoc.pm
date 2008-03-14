@@ -489,7 +489,7 @@ sub prepare(@)
     my $verbose = defined $args{verbose} ? $args{verbose} : $self->{O_verbose};
 
     print "Collect package relations.\n" if $verbose >1;
-    $self->getPackageRelations;
+    $self->getPackageRelations($verbose);
 
     print "Expand manual contents.\n" if $verbose >1;
     foreach my $manual ($self->manuals)
@@ -504,7 +504,7 @@ sub prepare(@)
     $self;
 }
 
-=method getPackageRelations
+=method getPackageRelations VERBOSITY
 Compile all files which contain packages, and then try to find-out
 how they are related.
 
@@ -516,23 +516,31 @@ manual-pages as well...
 
 =cut
 
-sub getPackageRelations()
-{   my $self     = shift;
+sub getPackageRelations($)
+{   my ($self, $verbose) = @_;
     my @manuals  = $self->manuals;  # all
 
     #
     # load all distributions (which are not loaded yet)
     #
 
+    print "Compile all packages\n" if $verbose;
+
     foreach my $manual (@manuals)
     {    next if $manual->isPurePod;
+         print "  require package $manual\n" if $verbose > 1;
+
          eval "require $manual";
-         warn "WARNING: errors from $manual\n"
-            if $@ && $@ !~ /Can't locate/;
+         warn "WARNING: errors from $manual; $@\n"
+            if $@ && $@ !~ /can't locate/i && $@ !~ /attempt to reload/i;
     }
+
+    print "Detect inheritance relationships\n" if $verbose;
 
     foreach my $manual (@manuals)
     {
+         print "  relations for $manual\n" if $verbose > 1;
+
         if($manual->name ne $manual->package)  # autoloaded code
         {   my $main = $self->mainManual("$manual");
             $main->extraCode($manual) if defined $main;

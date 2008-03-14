@@ -463,7 +463,8 @@ sub publish_dist($$)
 sub create_raw_dist($$)
 {   my ($dest, $makefile) = @_;
 
-    my $rawfile = $makefile->{DISTVNAME}.'-raw.tar.gz';
+    my $rawname = $makefile->{DISTVNAME}.'-raw';
+    my $rawfile = $rawname. '.tar.gz';
     print "* Building raw package $rawfile\n" if $verbose;
     
     unlink $rawfile;
@@ -479,11 +480,15 @@ sub create_raw_dist($$)
         }
     }
     
-    my @manifests = sort keys %manifests;
+    my @manifests = map { "$rawname/$_" } sort keys %manifests;
+    symlink '.', $rawname
+        or die "ERROR: cannot create temp symlink $rawname: $!\n";
+
     local $" = ' ';
     system "tar czf $rawfile @manifests"
         and die "ERROR: cannot produce $rawfile with tar\n";
 
+    unlink $rawname;
     $rawfile;
 }
 

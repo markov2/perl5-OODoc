@@ -2,6 +2,29 @@
 All changes where made by Mark Overmeer <perl@overmeer.net>, unless
 explicitly stated differently.
 
+version 1.03: Fri Mar 14 14:27:12 CET 2008
+
+	Changes:
+
+	- In the HTML output, the manual page X::Y::Z will not referred
+	  to under its name, because that causes various problems with
+	  hrefs, and is not portable under Windows.  The packages will
+	  be addressed as X_Y_Z.  Thanks to [Joop Ringelberg] for paving
+	  this path.
+
+	Fixes:
+
+	- fix in HTML front page [Robert.Locke]
+
+	- remove complaints about "Attempt to reload" for Perl5.10
+
+	Improvements:
+
+	- verbosity in the "get package relations" phase.
+
+	- raw package created by oodist will unpack in a sub-dir,
+	  named <pkg>-<version>-raw
+
 version 1.02: Fri Nov  9 11:04:39 CET 2007
 
 	Fixes:

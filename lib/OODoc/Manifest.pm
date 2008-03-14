@@ -185,8 +185,12 @@ be packaged.
 
 sub relative($)
 {   my ($self, $filename) = @_;
+
     my $dir = dirname $self->filename;
     return $filename if $dir eq '.';
+
+    # normalize path for windows
+    s!\\!/!g for $filename, $dir;
 
     if(substr($filename, 0, length($dir)+1) eq "$dir/")
     {   substr $filename, 0, length($dir)+1, '';

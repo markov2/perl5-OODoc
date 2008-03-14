@@ -382,7 +382,7 @@ sub docCut($$$$)
 #-------------------------------------------
 # CHAPTER
 
-=error chapter $name before package statement in $file line $number
+=error chapter `$name' before package statement in $file line $number
 
 A package file can contain more than one package: more than one
 name space.  The docs are sorted after the name space.  Therefore,
@@ -422,7 +422,7 @@ sub closeChapter()
 #-------------------------------------------
 # SECTION
 
-=error section $name outside chapter in $file line $number
+=error section `$name' outside chapter in $file line $number
 Sections must be contained in chapters.
 =cut
 
@@ -434,7 +434,7 @@ sub docSection($$$$)
     $self->closeSection;
 
     my $chapter = $self->{OPM_chapter};
-    die "ERROR: section $line outside chapter in $fn line $ln\n"
+    die "ERROR: section `$line' outside chapter in $fn line $ln\n"
        unless defined $chapter;
 
     my $section = $self->{OPM_section} = OODoc::Text::Section->new
@@ -457,7 +457,7 @@ sub closeSection()
 #-------------------------------------------
 # SUBSECTION
 
-=error subsection $name outside section in $file line $number
+=error subsection `$name' outside section in $file line $number
 
 Subsections are only allowed in a chapter when it is nested within
 a section.
@@ -473,7 +473,7 @@ sub docSubSection($$$$)
 
     my $section = $self->{OPM_section};
     defined $section
-        or die "ERROR: subsection $line outside section in $fn line $ln\n";
+        or die "ERROR: subsection `$line' outside section in $fn line $ln\n";
 
     my $subsection = $self->{OPM_subsection} = OODoc::Text::SubSection->new
      ( name     => $line
@@ -496,7 +496,7 @@ sub closeSubSection()
 #-------------------------------------------
 # SUBSECTION
 
-=error subsubsection $name outside subsection in $file line $number
+=error subsubsection `$name' outside subsection in $file line $number
 Subsubsections are only allowed in a chapter when it is nested within
 a subsection.
 
@@ -511,7 +511,7 @@ sub docSubSubSection($$$$)
 
     my $subsection = $self->{OPM_subsection};
     defined $subsection
-       or die "ERROR: subsubsection $line outside subsection in $fn line $ln\n";
+     or die "ERROR: subsubsection `$line' outside subsection in $fn line $ln\n";
 
     my $subsubsection
       = $self->{OPM_subsubsection} = OODoc::Text::SubSubSection->new
@@ -824,7 +824,7 @@ sub decomposeM($$)
     elsif(defined($man = $self->manual($link))) { ; }
     else
     {   eval "no warnings; require $link";
-        if(! $@)  { ; }
+        if(! $@ || $@ =~ m/attempt to reload/i) { ; }
         elsif($@ =~ m/Can't locate/ )
         {  warn "WARNING: module $link is not on your system, found in $manual\n";
         }
