@@ -2,6 +2,32 @@
 All changes where made by Mark Overmeer <perl@overmeer.net>, unless
 explicitly stated differently.
 
+version 1.04: Thu Jun 12 09:50:01 CEST 2008
+
+	Fixes:
+
+	- recover then temp symlink for raw package already exists.
+
+	- wrong $VERSION insert with Parse::RecDescend output, where
+	  code starts on same name as package statement.
+
+	Changes:
+
+	- variables used in PODTAIL and PMHEAD files will be filled-in.
+
+	Improvements:
+
+	- OODoc::Parser::new(skip_links) can be used to avoid complaints
+	  about external manual which do not have a package file.  Also
+	  SKIP_LINKS in Makefile.PL with oodist.
+
+	- PODTAIL and PMHEAD can also be set in the Makefile.PL
+
+	- Add "SEE ALSO", COPYRIGHTS and LICENSE to the html template
+
+	- Permit chapter names with quotes in HTML template, to allow
+	  blanks and other special characters in the name.
+
 version 1.03: Fri Mar 14 14:27:12 CET 2008
 
 	Changes:

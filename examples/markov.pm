@@ -74,7 +74,7 @@ Again: do not forget the next line!!!
 =cut
 
 1;  # all package should end with this.
-# Usually, the REFERENCES and COPYRIGHTS sections are added by the
-# formatter.  That makes life simple: you do not have to copy things
-# over all manual pages yourself.  Also the DIAGNOSTICS block has to
-# be added by the formatter.
+# Usually, the REFERENCES, COPYRIGHTS and LICENSE sections are added
+# by the formatter: see PODTAIL in oodist.  That makes life simple:
+# you do not have to copy things over all manual pages yourself.
+# Also the DIAGNOSTICS block has to be added by the formatter.

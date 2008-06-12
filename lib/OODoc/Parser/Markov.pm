@@ -83,8 +83,6 @@ my @default_rules =
        /x => 'forgotCut' ]
  );
 
-#-------------------------------------------
-
 =c_method new OPTIONS
 
 =option  additional_rules ARRAY
@@ -247,8 +245,12 @@ sub parse(@)
     while(my $line = $in->getline)
     {   my $ln = $in->input_line_number;
 
-        if($line =~ m/^\s*package\s*([\w\-\:]+)\;/ && ! $self->inDoc)
-        {   my $package = $1;
+        if(!$self->inDoc && $line =~ s/^(\s*package\s*([\w\-\:]+)\;)//)
+        {   $out->print($1);
+            my $package = $2;
+            $out->print("\nuse vars '\$VERSION';\n\$VERSION = '$version';\n");
+            $out->print($line);
+
             $manual = OODoc::Manual->new
              ( package  => $package
              , source   => $input
@@ -260,8 +262,6 @@ sub parse(@)
              );
             push @manuals, $manual;
             $self->currentManual($manual);
-            $out->print($line);
-            $out->print("use vars '\$VERSION';\n\$VERSION = '$version';\n");
         }
         elsif(my($match, $action) = $self->findMatchingRule($line))
         {
@@ -824,7 +824,10 @@ sub decomposeM($$)
     elsif(defined($man = $self->manual($link))) { ; }
     else
     {   eval "no warnings; require $link";
-        if(! $@ || $@ =~ m/attempt to reload/i) { ; }
+        if(  ! $@
+          || $@ =~ m/attempt to reload/i
+          || $self->skipManualLink($link)
+          ) { ; }
         elsif($@ =~ m/Can't locate/ )
         {  warn "WARNING: module $link is not on your system, found in $manual\n";
         }

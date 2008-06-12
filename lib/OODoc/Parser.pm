@@ -6,6 +6,7 @@ use strict;
 use warnings;
 
 use Carp;
+use List::Util qw/first/;
 
 =chapter NAME
 
@@ -34,6 +35,31 @@ and the C<M&lt;&gt;> links.
 #-------------------------------------------
 
 =chapter METHODS
+
+=section Constructors
+
+=c_method new OPTIONS
+
+=option  skip_links ARRAY|REGEXP|STRING
+=default skip_links undef
+The parser should not attempt to load modules which match the REGEXP
+or are equal or sub-namespace of STRING.  More than one of these
+can be passed in an ARRAY.
+=cut
+
+sub init($)
+{   my ($self, $args) = @_;
+    $self->SUPER::init($args) or return;
+
+    my $skip = delete $args->{skip_links} || [];
+    my @skip = map { ref $_ eq 'Regexp' ? $_ : qr/^\Q$_\E(?:\:\:|$)/ }
+       ref $skip eq 'ARRAY' ? @$skip : $skip;
+    $self->{skip_links} = \@skip;
+
+    $self;
+}
+
+#-------------------------------------------
 
 =section Parsing a file
 
@@ -65,9 +91,15 @@ with M<parse()>, but the text blocks not yet.  This is because the
 transformations which are needed are context dependent.  For each
 text section M<cleanup()> is called for the final touch.
 
+=method skipManualLink PACKAGE
+Returns true is the PACKAGE name matches one of the links to be
+skipped, set by M<new(skip_links)>.
 =cut
 
-#-------------------------------------------
+sub skipManualLink($)
+{   my ($self, $package) = @_;
+    (first { $package =~ $_ } @{$self->{skip_links}}) ? 1 : 0;
+}
 
 =method cleanup FORMATTER, MANUAL, STRING
 

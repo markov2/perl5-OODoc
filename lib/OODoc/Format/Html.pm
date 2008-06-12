@@ -912,7 +912,12 @@ sub templateChapter($$)
         if defined $contained && length $contained;
 
     my $attr    = $zone->attributes;
-    my $name    = $attr =~ s/^\s*(\w+)\s*\,?\s*// ? $1 : undef;
+    my $name
+      = $attr =~ s/^\s*(\w+)\s*\,?\s*//       ? $1
+      : $attr =~ s/^\s*\"([^"]*)\"\s*\,?\s*// ? $1
+      : $attr =~ s/^\s*\'([^']*)\'\s*\,?\s*// ? $1
+      : undef;
+
     my @attrs   = $self->zoneGetParameters($attr);
 
     croak "ERROR: chapter without name in template"

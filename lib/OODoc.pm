@@ -156,29 +156,19 @@ sub init($)
 =section Attributes
 
 =method distribution
-
 Returns the nice name for the distribution.
-
 =cut
 
 sub distribution() {shift->{O_distribution}}
 
-#-------------------------------------------
-
 =method version
-
 Returns the version string for the distribution.
-
 =cut
 
 sub version() {shift->{O_version}}
 
-#-------------------------------------------
-
 =method project
-
 Returns the general project description, by default the distribution name.
-
 =cut
 
 sub project() {shift->{O_project}}
@@ -220,12 +210,9 @@ sub selectFiles($@)
     ( \@process, \@copy );
 }
 
-#-------------------------------------------
-
 =method processFiles OPTIONS
 
 =requires workdir DIRECTORY
-
 Specify the directory where the stripped pm-files and the pod files
 will be written to.  Probably the whole distribution is collected on
 that spot.
@@ -237,19 +224,16 @@ created.
 
 =option  verbose INTEGER
 =default verbose <from object>
-
 Tell more about each stage of the processing.  The higher the number,
 the more information you will get.
 
 =option  manifest FILENAME
 =default manifest <source/>'MANIFEST'
-
 The manifest file lists all files which belong to this distribution: packages,
 pods, tests, etc. before the new pod files are created.
 
 =option  select ARRAY|REGEX|CODE
 =default select qr/\.(pod|pm)$/
-
 The files which contain documentation to be processed.  You can provide
 a list of filenames as array reference, a REGEX which is used to select
 names from the manifest file, or a CODE reference which is used to
@@ -258,25 +242,21 @@ Is your pod real pod or should it also be passed through the parser?
 
 =option  source DIRECTORY
 =default source C<'.'>
-
 The location where the files are located.  This is useful when you collect
 the documentation of other distributions into the main one.  Usually in
 combination with an undefined value for C<workdir>.
 
 =option  parser CLASS|OBJECT
 =default parser M<OODoc::Parser::Markov>
-
 The parser CLASS or OBJECT to be used to process the pages.
 
 =option  distribution NAME
 =default distribution <from main OODoc object>
-
 Useful when more than one distribution is merged into one set of
 documentation.
 
 =option  version STRING
 =default version <from source directory or OODoc object>
-
 The version of the distribution.  If not specified, the C<source>
 directory is scanned for a file named C<version> or C<VERSION>. The
 content is used as version value.  If these do not exist, then the
@@ -289,6 +269,10 @@ seperate version file, that line should contain C<$VERSION = >.
 =default notice ''
 Include the string (which may consist of multiple lines) to each of the
 pm files.  This notice usually contains the copyright message.
+
+=option  skip_links ARRAY|STRING|REGEXP
+=default skip_links []
+Passed to M<OODoc::Parser::new(skip_links)>.
 
 =error Cannot compile $parser class
 The $parser class does not exist or produces compiler errors.
@@ -417,12 +401,14 @@ sub processFiles(@)
     #
 
     my $parser = $args{parser} || 'OODoc::Parser::Markov';
+    my $skip_links = delete $args{skip_links};
+
     unless(ref $parser)
     {   eval "require $parser";
         croak "ERROR: Cannot compile $parser class:\n$@"
            if $@;
 
-        $parser = $parser->new
+        $parser = $parser->new(skip_links => $skip_links)
            or croak "ERROR: Parser $parser could not be instantiated";
     }
 
