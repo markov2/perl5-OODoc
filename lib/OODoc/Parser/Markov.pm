@@ -912,8 +912,10 @@ sub decomposeL($$)
            $text .= " entry $item" if defined $item && length $item;
         }
 
-        $dest = "$url_modsearch$man"
-           unless $man =~ m/\(\d.*\)\s*$/;
+        if($man !~ m/\(\d.*\)\s*$/)
+        {   (my $escaped = $man) =~ s/\W+/_/g;
+            $dest = "$url_modsearch$escaped";
+        }
     }
     elsif(!defined $item)
     {   $dest  = $man;

@@ -291,7 +291,9 @@ sub create_heads_and_tails($)
     my $year     = strftime "%Y", localtime;
 
     if($firstyear)
-    {   $year = $firstyear =~ m/$year$/ ? $firstyear : "$firstyear-$year";
+    {   $year = $firstyear =~ m/$year$/ ? $firstyear
+              : $firstyear =~ m/\D$/    ? $firstyear.$year
+              : "$firstyear-$year";
     }
 
     my $changelog = first { m/^(?:change|contrib)/i } glob '*';

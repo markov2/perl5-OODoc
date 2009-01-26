@@ -2,6 +2,20 @@
 All changes where made by Mark Overmeer <perl@overmeer.net>, unless
 explicitly stated differently.
 
+version 1.05: Mon Jan 26 12:57:32 CET 2009
+
+	Fixes:
+
+	- slightly improved copyright date generation.
+
+	- fix L<> links to pages within the set:  :: -> _
+
+	- broken links on front-page. [Offer Kaye]
+
+	Improvements:
+
+	- do not run t/pod.t in devel environment.
+
 version 1.04: Thu Jun 12 09:50:01 CEST 2008
 
 	Fixes:

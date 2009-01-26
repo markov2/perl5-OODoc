@@ -2,7 +2,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile
   ( NAME	 => 'OODoc'
-  , VERSION      => '1.04'
+  , VERSION      => '1.05'
   , PREREQ_PM    =>
     { Test::More              => 0.47
     , Template::Magic::HTML   => 1.02
