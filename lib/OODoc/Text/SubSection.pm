@@ -46,6 +46,14 @@ sub init($)
     $self;
 }
 
+sub emptyExtension($)
+{   my ($self, $container) = @_;
+    my $empty = $self->SUPER::emptyExtension($container);
+    my @subsub = map {$_->emptyExtension($empty)} $self->subsubsections;
+    $empty->subsubsections(@subsub);
+    $empty;
+}
+
 sub findEntry($)
 {  my ($self, $name) = @_;
    $self->name eq $name ? $self : ();

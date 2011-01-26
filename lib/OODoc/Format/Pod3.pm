@@ -56,7 +56,7 @@ sub formatManual(@)
      , manual_obj => delete $args{manual}
      , chapter_order =>
          [ qw/NAME INHERITANCE SYNOPSIS DESCRIPTION OVERLOADED METHODS
-              FUNCTIONS EXPORTS DETAILS DIAGNOSTICS REFERENCES COPYRIGHTS/
+              FUNCTIONS EXPORTS DIAGNOSTICS DETAILS REFERENCES COPYRIGHTS/
          ]
      , %args
      );
@@ -183,8 +183,9 @@ sub subroutines($$$$$$)
       );
 
     close OUT;
-    $out =~ s/\n*$/\n\n/;
+    length $out or return;
 
+    $out =~ s/\n*$/\n\n/;
     ($out);
 }
 

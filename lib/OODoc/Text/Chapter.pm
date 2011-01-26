@@ -44,6 +44,14 @@ sub init($)
     $self;
 }
 
+sub emptyExtension($)
+{   my ($self, $container) = @_;
+    my $empty = $self->SUPER::emptyExtension($container);
+    my @sections = map {$_->emptyExtension($empty)} $self->sections;
+    $empty->sections(@sections);
+    $empty;
+}
+
 sub manual() {shift->container}
 sub path()   {shift->name}
 

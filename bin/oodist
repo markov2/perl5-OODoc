@@ -19,8 +19,7 @@ use OODoc         ();
 my $here    = getcwd;
 unshift @INC, $here, "$here/lib";
 
-#my $format_pod  = 'pod3';
-my $format_pod  = 'pod2';
+my $format_pod  = 'pod3';
 my $format_html = 'html';
 my $tmpdir      = $ENV{TMPDIR}         || '/tmp';
 
@@ -433,13 +432,12 @@ sub create_dist($$)
     system "make distdir >/dev/null"
        and die "ERROR: make in $workdir failed: $!\n";
 
-    if(-d 't' || -d 'tests')
-    {   print "* Running tests\n" if $verbose;
-        system "make disttest"
-            and die "ERROR: make test in $workdir failed: $!\n";
-    }
-    else
-    {   print "* No tests to run\n" if $verbose;
+    foreach my $testdir qw(t tests xt)
+    {   -d $testdir or next;
+
+        print "* Running tests in $testdir\n" if $verbose;
+        system "prove $testdir"
+            and die "ERROR: make test in $testdir failed: $!\n";
     }
 
     my $distfile = $makefile->{DISTVNAME}. '.tar.gz';

@@ -653,15 +653,15 @@ sub showOptions(@)
 
     foreach (@$options)
     {   my ($option, $default) = @$_;
-        my $show
-         = $manual->inherited($option) ? $args{show_inherited_options}
-         :                               $args{show_described_options};
+        my $show = $manual->inherited($option)
+          ? $args{show_inherited_options}
+          : $args{show_described_options};
 
         my $action
-         = $show eq 'USE'   ? 'showOptionUse'
-         : $show eq 'EXPAND'? 'showOptionExpand'
-         : croak "ERROR: illegal show option choice $show";
-
+          = $show eq 'USE'   ? 'showOptionUse'
+          : $show eq 'EXPAND'? 'showOptionExpand'
+          : croak "ERROR: illegal show option choice $show";
+ 
         $self->$action(%args, option => $option, default => $default);
     }
     $self;

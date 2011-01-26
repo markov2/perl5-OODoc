@@ -479,7 +479,8 @@ sub prepare(@)
 
     print "Expand manual contents.\n" if $verbose >1;
     foreach my $manual ($self->manuals)
-    {   $manual->expand;
+    {   print "  expand manual $manual\n" if $verbose > 1;
+        $manual->expand;
     }
 
     print "Create inheritance chapter.\n" if $verbose >1;
@@ -691,7 +692,7 @@ sub create($@)
                 next;
             }
 
-            print "Creating manual $manual with ",ref($format), "\n"
+            print "  creating manual $manual with ",ref($format), "\n"
                 if $verbose > 1;
 
             $format->createManual

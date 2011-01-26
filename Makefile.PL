@@ -2,16 +2,19 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile
   ( NAME	 => 'OODoc'
-  , VERSION      => '1.05'
+  , VERSION      => '1.06'
   , PREREQ_PM    =>
     { Test::More              => 0.47
-    , Template::Magic::HTML   => 1.02
-    , Bundle::Template::Magic =>    0
     , Pod::Man                => 2.12
     , File::Slurp             => 9999.12
     , Test::Pod               => 1.26
     , IO::Scalar              => 2.110
     , OODoc::Template         => 0.12
+
+# modules not supported anymore by the author
+# still needs to be removed from ::Format::HTML
+    , Template::Magic::HTML   => 1.02
+    , Bundle::Template::Magic =>    0
     }
   , EXE_FILES    => [ 'bin/oodist' ]
 

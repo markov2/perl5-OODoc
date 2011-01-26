@@ -62,8 +62,8 @@ sub emptyExtension($)
      , level     => $self->level
      , container => $container
      );
-   $new->extends($self);
-   $new;
+    $new->extends($self);
+    $new;
 }
 
 #-------------------------------------------
@@ -153,7 +153,7 @@ sub isEmpty()
       : $self->isa('OODoc::Text::SubSection') ? $self->subsubsections
       : return 1;
 
-    foreach (@nested) { return 0 if $_->isEmpty }
+    foreach (@nested) { $_->isEmpty or return 0 }
 
     1;
 }

@@ -2,6 +2,33 @@
 All changes where made by Mark Overmeer <perl@overmeer.net>, unless
 explicitly stated differently.
 
+ .... removal of Template::Magick for HTML output in progress
+
+version 1.06: Wed Jan 26 16:08:25 CET 2011
+
+	Changes:
+
+	- oodist: pod3 formatter is the new default, because Template::Magic
+	  (pod2) is not supported anymore.
+
+	Fixes:
+
+	- do not include INHERITANCE header when there is no info in it.
+
+	- avoid memory leak via code-refs
+
+	- merge problem with subsections, but names and data
+
+	Improvements:
+
+	- oodist: run tests with 'prove'
+
+	- oodist: also run tests in 'xt/' sub-directory
+
+	- new method OODoc::Manual::index();
+
+	- pod: far more condensed output and other cleanups
+
 version 1.05: Mon Jan 26 12:57:32 CET 2009
 
 	Fixes:

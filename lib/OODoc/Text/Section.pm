@@ -47,14 +47,20 @@ sub init($)
     $self;
 }
 
+sub emptyExtension($)
+{   my ($self, $container) = @_;
+    my $empty = $self->SUPER::emptyExtension($container);
+    my @subsections = map {$_->emptyExtension($empty)} $self->subsections;
+    $empty->subsections(@subsections);
+    $empty;
+}
+
 #-------------------------------------------
 
 =section Location
 
 =method chapter
-
 Returns the chapter object for this section.
-
 =cut
 
 sub chapter() { shift->container }
@@ -95,14 +101,13 @@ sub all($@)
 
 =method subsection NAME|OBJECT
 With a NAME, the subsection within this section with that name is
-returned.  With an OBJECT (which must be a OODoc::Text::SubSection),
+returned.  With an OBJECT (which must be a M<OODoc::Text::SubSection>),
 a new subsection is added to the end of the list.
 
 =cut
 
 sub subsection($)
 {   my ($self, $thing) = @_;
-
     if(ref $thing)
     {   push @{$self->{OTS_subsections}}, $thing;
         return $thing;
