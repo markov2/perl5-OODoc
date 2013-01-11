@@ -4,6 +4,7 @@ use warnings;
 package OODoc::Format::Pod3;
 use base 'OODoc::Format::Pod';
 
+use Log::Report    'oodoc';
 use OODoc::Template;
 
 =chapter NAME
@@ -56,7 +57,8 @@ sub formatManual(@)
      , manual_obj => delete $args{manual}
      , chapter_order =>
          [ qw/NAME INHERITANCE SYNOPSIS DESCRIPTION OVERLOADED METHODS
-              FUNCTIONS EXPORTS DIAGNOSTICS DETAILS REFERENCES COPYRIGHTS/
+              FUNCTIONS CONSTANTS EXPORTS DIAGNOSTICS DETAILS REFERENCES
+              COPYRIGHTS/
          ]
      , %args
      );
@@ -207,8 +209,8 @@ sub diagnostics($$$$$$)
 __DATA__
 <{macro name=structure}>\
    <{description}>\
-   <{subroutines}>\
    <{template macro=examples}>\
+   <{subroutines}>\
 <{/macro}>\
 
 
@@ -230,16 +232,19 @@ __DATA__
 =head1 <{chapter}>
 
 \
+    <{template macro=structure}>\
     <{sections}>\
 
 =head2 <{section}>
 
 \
+      <{template macro=structure}>\
       <{subsections}>\
 
 =head3 <{subsection}>
 
 \
+        <{template macro=structure}>\
         <{subsubsections}>\
 
 =head4 <{subsubsection}>
@@ -248,13 +253,10 @@ __DATA__
           <{template macro=structure}>\
         <{/subsubsections}>\
 
-        <{template macro=structure}>\
       <{/subsections}>\
 
-      <{template macro=structure}>\
     <{/sections}>\
 
-    <{template macro=structure}>\
   <{/chapters}>\
 
   <{diagnostics}>\

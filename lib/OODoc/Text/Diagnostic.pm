@@ -5,7 +5,7 @@ use base 'OODoc::Text';
 use strict;
 use warnings;
 
-use Carp;
+use Log::Report    'oodoc';
 
 =chapter NAME
 
@@ -35,7 +35,7 @@ The subroutine in which this option lives.
 sub init($)
 {   my ($self, $args) = @_;
     $args->{type}    ||= 'Diagnostic';
-    $args->{container} = delete $args->{subroutine} or confess;
+    $args->{container} = delete $args->{subroutine} or panic;
 
     $self->SUPER::init($args) or return;
 

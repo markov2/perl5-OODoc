@@ -1,0 +1,10 @@
+<html>
+<head>
+   <title><{page_name}></title>
+   <base href="<{html_base}>">\
+
+<{stylesheets}>
+   <link rel="STYLESHEET" href="<{href}>">
+<{/stylesheets}>
+
+</head>

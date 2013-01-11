@@ -1,0 +1,29 @@
+<{manual}>\
+
+<{template file="html-head"}>
+
+<table class="manualhead">
+<tr><td class="man_head_left">\
+
+   <{distribution}>
+     <span class="this"><{nice_name}></span><br>
+     <a href="/">Documentation</a><br>
+     version <{version}>, <{dated}>
+   <{/distribution}>\
+
+</td><td class="man_head_middle">
+
+  <h1><{nice_name}><br>
+      <span class="mandiscr"><{description}></span></h1>
+
+</td><td class="man_head_right">
+
+  <{template file="main-components"}>
+
+</td></tr>
+</table>
+
+<{/manual}>
+
+   
+    

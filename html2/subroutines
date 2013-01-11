@@ -1,0 +1,12 @@
+
+<{has_subroutines}>\
+
+<dl>
+\
+  <{subroutines}>\
+   <{template file=subroutine}>\
+  <{/subroutines}>\
+
+</dl>
+
+<{has_subroutines}>

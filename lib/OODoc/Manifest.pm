@@ -5,9 +5,9 @@ use base 'OODoc::Object';
 use strict;
 use warnings;
 
-use Carp;
 use IO::File;
 use File::Basename 'dirname';
+use Log::Report    'oodoc';
 
 =chapter NAME
 
@@ -117,7 +117,7 @@ sub read()
 {   my $self = shift;
     my $filename = $self->filename;
     my $file = IO::File->new($filename, "r")
-       or die "ERROR: Cannot read manifest file $filename: $!\n";
+       or fault __x"cannot read manifest file {file}", file => $filename;
 
     my @dist = $file->getlines;
     $file->close;
@@ -155,7 +155,7 @@ sub write()
     my $filename = $self->filename || return $self;
 
     my $file = IO::File->new($filename, "w")
-      or die "ERROR: Cannot write manifest $filename: $!\n";
+      or fault __x"cannot write manifest {file}", file => $filename;
 
     $file->print($_, "\n") foreach sort $self->files;
     $file->close;

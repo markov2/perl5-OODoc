@@ -5,8 +5,8 @@ use base 'OODoc::Text::Structure';
 use strict;
 use warnings;
 
-use List::Util 'first';
-use Carp;
+use Log::Report    'oodoc';
+use List::Util     'first';
 
 =chapter NAME
 
@@ -34,10 +34,11 @@ The manual in which this chapter is described.
 sub init($)
 {   my ($self, $args) = @_;
     $args->{type}       ||= 'Chapter';
-    $args->{container}  ||= delete $args->{manual} or confess;
+    $args->{container}  ||= delete $args->{manual} or panic;
     $args->{level}      ||= 1;
 
-    $self->SUPER::init($args) or return;
+    $self->SUPER::init($args)
+        or return;
 
     $self->{OTC_sections} = [];
 

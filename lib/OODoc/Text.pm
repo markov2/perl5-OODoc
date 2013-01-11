@@ -5,7 +5,7 @@ use base 'OODoc::Object';
 use strict;
 use warnings;
 
-use Carp;
+use Log::Report    'oodoc';
 
 =chapter NAME
 
@@ -82,11 +82,14 @@ sub init($)
 
     $self->{OT_name}     = delete $args->{name};
 
-    my $nr = $self->{OT_linenr} = delete $args->{linenr} or confess;
-    $self->{OT_type}     = delete $args->{type} or confess;
+    my $nr = $self->{OT_linenr} = delete $args->{linenr} or panic;
+    $self->{OT_type}     = delete $args->{type} or panic;
 
-    confess "no text container specified for the ".ref($self)." object"
-       unless exists $args->{container};   # may be undef
+    exists $args->{container}   # may be explicit undef
+        or panic "no text container specified for the {pkg} object"
+             , pkg => ref $self;
+
+;   # may be undef
     $self->{OT_container}= delete $args->{container};
     
     $self->{OT_descr}    = delete $args->{description} || '';

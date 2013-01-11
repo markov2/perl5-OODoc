@@ -5,15 +5,13 @@ use base 'OODoc::Text';
 use strict;
 use warnings;
 
-use Carp;
-use List::Util 'first';
+use Log::Report    'oodoc';
+use List::Util     'first';
 
 =chapter NAME
-
 OODoc::Text::Structure - set of paragraphs with examples and subroutines
 
 =chapter SYNOPSIS
-
  # Cannot be instantiated itself
 
 =chapter DESCRIPTION
@@ -42,7 +40,7 @@ sub init($)
     $self->SUPER::init($args) or return;
     $self->{OTS_subs} = [];
     $self->{OTS_level} = delete $args->{level}
-        or croak "ERROR: no level defined for structural component";
+        or panic "no level defined for structural component";
 
     $self;
 }
@@ -102,14 +100,14 @@ one string, separated by slashes.
     # may print:  METHODS/Container/Search
 =cut
 
-sub path() { confess "Not implemented" }
+sub path() { panic "Not implemented" }
 
 =method findEntry NAME
 Find the chapter, section or subsection with this NAME.  The object found
 is returned.
 =cut
 
-sub findEntry($) { confess "Not implemented" }
+sub findEntry($) { panic "Not implemented" }
 
 #-------------------------------------------
 
@@ -136,9 +134,7 @@ collect subroutines to be listed.  However, in some cases, nothing
 is to be listed after all, and in that case, this method returns C<true>.
 
 =example
-
  unless($chapter->isEmpty) ...
-
 =cut
 
 sub isEmpty()
@@ -158,6 +154,7 @@ sub isEmpty()
     1;
 }
 
+#-------------------
 =section Subroutines
 
 Each manual page structure element (chapter, section, and subsection)
@@ -176,22 +173,14 @@ sub addSubroutine(@)
    $self;
 }
 
-#-------------------------------------------
-
 =method subroutines
-
 Returns the list of subroutines which are related to this text object.
-
 =cut
 
 sub subroutines() { @{shift->{OTS_subs}} }
 
-#-------------------------------------------
-
 =method subroutine NAME
-
 Returns the subroutine with the specific name.
-
 =cut
 
 sub subroutine($)
@@ -199,14 +188,10 @@ sub subroutine($)
     first {$_->name eq $name} $self->subroutines;
 }
 
-#-------------------------------------------
-
 =method setSubroutines ARRAY
-
 Sets the subroutines which are related to this text structure, replacing
 the preivous set.  This is used when the manual pages are expanded into
 each-other to simplify working with the inheritance relations.
-
 =cut
 
 sub setSubroutines($)

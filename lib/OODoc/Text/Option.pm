@@ -5,7 +5,7 @@ use base 'OODoc::Text';
 use strict;
 use warnings;
 
-use Carp;
+use Log::Report    'oodoc';
 
 =chapter NAME
 
@@ -36,11 +36,12 @@ An informal short description of the valid values for this option.
 sub init($)
 {   my ($self, $args) = @_;
     $args->{type}    ||= 'Option';
-    $args->{container} = delete $args->{subroutine} or confess;
+    $args->{container} = delete $args->{subroutine} or panic;
 
-    $self->SUPER::init($args) or return;
+    $self->SUPER::init($args)
+        or return;
 
-    $self->{OTO_parameters} = delete $args->{parameters} or confess;
+    $self->{OTO_parameters} = delete $args->{parameters} or panic;
 
     $self;
 }
@@ -50,24 +51,16 @@ sub init($)
 =section Attributes
 
 =method subroutine
-
 Returns the subroutine object for this option.
-
 =cut
 
 sub subroutine() { shift->container }
 
-#-------------------------------------------
-
 =method parameters
-
 Returns the short, informal description of the valid parameters for
 this option.
-
 =cut
 
 sub parameters() { shift->{OTO_parameters} }
-
-#-------------------------------------------
 
 1;

@@ -2,7 +2,35 @@
 All changes where made by Mark Overmeer <perl@overmeer.net>, unless
 explicitly stated differently.
 
- .... removal of Template::Magick for HTML output in progress
+version 2.00: Fri Jan 11 09:59:08 CET 2013
+
+	Changes:
+
+	- translated errors to use Log::Report.  Removed the 'verbose'
+	  parameters everywhere.
+
+	- removal of discontinued Template::Magick for HTML output. New
+	  template based way of producing HTML.
+
+	- functions without parameters will be formatted in Pod with
+	  empty parenthesis.
+
+	Fixes:
+
+	- ci_method should not show class option indented.
+
+	- general cleanups for consistent code layout.
+
+	- fix F<> translation [Nigel Metheringham]
+
+	Improvements:
+
+	- new ::Parser::Markov tag =package when there is no
+	  package statement possible.
+
+	- added bin/oodist option --(no)tests
+
+	- use ::Pod::writeTable(width) as minimum width, not absolute.
 
 version 1.06: Wed Jan 26 16:08:25 CET 2011
 

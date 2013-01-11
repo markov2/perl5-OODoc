@@ -1,0 +1,10 @@
+<h2>Show</h2>
+
+<ul>
+<li>class <a href="/manual/<{manual}>/relations.html">relations</a></li>
+<li>items <a href="/manual/<{manual}>/grouped.html">grouped</a></li>
+<li><span class="this">items alphabetically</li>
+<li>documentation <a href="/manual/<{manual}>/overview.html">overview</a></li>
+</ul>
+
+

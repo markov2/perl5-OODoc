@@ -5,6 +5,8 @@ use base 'OODoc::Parser';
 use strict;
 use warnings;
 
+use Log::Report    'oodoc';
+
 use OODoc::Text::Chapter;
 use OODoc::Text::Section;
 use OODoc::Text::SubSection;
@@ -16,7 +18,6 @@ use OODoc::Text::Diagnostic;
 use OODoc::Text::Example;
 use OODoc::Manual;
 
-use Carp;
 use File::Spec;
 use IO::File;
 
@@ -103,7 +104,7 @@ sub init($)
         if exists $args->{additional_rules};
 
     $self->{OP_rules} = [];
-    $self->rule(@$_) foreach @rules;
+    $self->rule(@$_) for @rules;
     $self;
 }
 
@@ -136,13 +137,11 @@ sub rule($$)
 #-------------------------------------------
 
 =method findMatchingRule LINE
-
 Check the list of rules whether this LINE matches one of them.  This
 is an ordered evaluation.  Returned is the matched string and the required
 action.  If the line fails to match anything, an empty list is returned.
 
 =example
-
   if(my($match, $action) = $parser->findMatchingRule($line))
   {  # do something with it
      $action->($parser, $match, $line);
@@ -202,11 +201,11 @@ sub parse(@)
 {   my ($self, %args) = @_;
 
     my $input   = $args{input}
-       or croak "ERROR: no input file to parse specified";
+       or error __x"no input file to parse specified";
 
     my $output  = $args{output} || File::Spec->devnull;
-    my $version = $args{version}      or confess;
-    my $distr   = $args{distribution} or confess;
+    my $version = $args{version}      or panic;
+    my $distr   = $args{distribution} or panic;
 
     my $in     = IO::File->new($input, 'r')
        or die "ERROR: cannot read document from $input: $!\n";
@@ -263,8 +262,22 @@ sub parse(@)
             push @manuals, $manual;
             $self->currentManual($manual);
         }
+        elsif(!$self->inDoc && $line =~ m/^=package\s*([\w\-\:]+)\s*$/)
+        {   my $package = $1;
+            $manual = OODoc::Manual->new
+             ( package  => $package
+             , source   => $input
+             , stripped => $output
+             , parser   => $self
+             , distribution => $distr
+             , version      => $version
+             );
+            push @manuals, $manual;
+            $self->currentManual($manual);
+        }
         elsif(my($match, $action) = $self->findMatchingRule($line))
         {
+
             if(ref $action)
             {   $action->($self, $match, $line, $input, $ln)
                   or $out->print($line);
@@ -1063,7 +1076,6 @@ sub cleanupHtml($$$;$)
         }
         s/\bM\<([^>]*)\>/$self->cleanupHtmlM($formatter, $manual, $1)/ge;
         s/\bL\<([^>]*)\>/$self->cleanupHtmlL($formatter, $manual, $1)/ge;
-        s#\bF\<([^>]*)\>#<a href="$url_coderoot"/$1>$1</a>#g;
         s#\bC\<([^>]*)\>#<code>$1</code>#g;
         s#\bI\<([^>]*)\>#<em>$1</em>#g;
         s#\bB\<([^>]*)\>#<b>$1</b>#g;
@@ -1073,6 +1085,11 @@ sub cleanupHtml($$$;$)
         s#(?:\A|\s*)\=back\b#\n</ul>#gms;
         s#^=pod\b##gm;
  
+        # when F<> contains a URL, it will be used. However, when it
+        # contains a file, we cannot do anything with it yet.
+        s#\bF\<(\w+\://[^>]*)\>#<a href="$1">$1</a>#g;
+        s#\bF\<([^>]*)\>#<tt>$1</tt>#g;
+
         my ($label, $level, $title);
         s#^\=head([1-6])\s*([^\n]*)#
           ($title, $level) = ($1, $2);
@@ -1256,6 +1273,7 @@ to manuals as well, however then the POD output filter will modify the
 manual page while converting it to other manual formats.
 
 Syntax of the C<M>-link:
+
  M E<lt> OODoc::Object E<gt>
  M E<lt> OODoc::Object::new() E<gt>
  M E<lt> OODoc::Object::new(verbose) E<gt>
@@ -1273,6 +1291,7 @@ The standard POD defines a C<L> markup tag.  This can also be used with
 this Markov parser.
 
 The following syntaxes are supported:
+
  L E<lt> manual E<gt>
  L E<lt> manual/section E<gt>
  L E<lt> manual/"section" E<gt>
@@ -1295,6 +1314,7 @@ I<subsection> a subsection (in that manual, by default the current manual).
 The I<unix-manual> MUST be formatted with its chapter number, for instance
 C<cat(1)>, otherwise a link will be created.  See the following examples
 in the html version of these manual pages:
+
  M E<lt> perldoc E<gt>              illegal: not in distribution
  L E<lt> perldoc E<gt>              L<perldoc>
  L E<lt> perldoc(1perl) E<gt>       L<perldoc(1perl)>

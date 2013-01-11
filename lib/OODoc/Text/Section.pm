@@ -5,8 +5,9 @@ use base 'OODoc::Text::Structure';
 use strict;
 use warnings;
 
-use Carp;
-use List::Util 'first';
+use Log::Report    'oodoc';
+use List::Util     'first';
+
 
 =chapter NAME
 
@@ -39,7 +40,7 @@ sub init($)
 {   my ($self, $args) = @_;
     $args->{type}      ||= 'Section';
     $args->{level}     ||= 2;
-    $args->{container} ||= delete $args->{chapter} or confess;
+    $args->{container} ||= delete $args->{chapter} or panic;
 
     $self->SUPER::init($args) or return;
 

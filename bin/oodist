@@ -3,16 +3,18 @@
 use warnings;
 use strict;
 
-use Getopt::Long  qw/GetOptions :config gnu_getopt/;
-use POSIX         qw/strftime/;
-use Cwd           qw/getcwd/;
-use File::Slurp   qw/read_file/;
-use List::Util    qw/first/;
-use File::Copy    qw/move copy/;
-use File::Spec    ();
+use Log::Report   'oodoc';
+
+use Getopt::Long      qw/GetOptions :config gnu_getopt/;
+use POSIX             qw/strftime/;
+use Cwd               qw/getcwd/;
+use File::Slurp       qw/read_file/;
+use List::Util        qw/first/;
+use File::Copy        qw/move copy/;
+use File::Spec        ();
 use Test::Pod;
 
-use OODoc         ();
+use OODoc             ();
 
 # In any case, we want modules in this dir to prevail over installed
 # versions of the module.
@@ -23,12 +25,14 @@ my $format_pod  = 'pod3';
 my $format_html = 'html';
 my $tmpdir      = $ENV{TMPDIR}         || '/tmp';
 
-my ($verbose, $test) = (0, 0);
+my ($verbose) = (0);
 my ($rawdir, $distdir, $license);
 my ($workdir, $podtailfn, $pmheadfn, $readmefn, $extends);
 my ($firstyear, $email, $website, $skip_links);
 my ($html_templates, $html_output, $html_docroot, $html_package);
+my ($html_stylesheet);
 my ($make_pod, $make_dist, $make_raw, $make_html) = (1, 1, 1, undef);
+my ($run_tests) = (1);
 
 Getopt::Long::Configure 'bundling';
 GetOptions
@@ -41,7 +45,8 @@ GetOptions
  , 'html-docroot=s'   => \$html_docroot
  , 'html-output=s'    => \$html_output
  , 'html-templates=s' => \$html_templates
- , 'html-package=s'=> \$html_package
+ , 'html-package=s'   => \$html_package
+ , 'html-stylesheet=s'=> \$html_stylesheet
  , 'license|l=s'   => \$license
  , 'pod!'          => \$make_pod
  , 'podtail'       => \$podtailfn
@@ -50,11 +55,13 @@ GetOptions
  , 'raw!'          => \$make_raw
  , 'rawdir|r=s'    => \$rawdir
  , 'skip_links=s'  => \$skip_links
- , 'test|t!'       => \$test
+ , 'tests|t!'      => \$run_tests
  , 'verbose|v!'    => \$verbose
  , 'website|u=s'   => \$website
  , 'workdir|w=s'   => \$workdir
- ) or die "ERROR: stopped";
+ ) or error __"stopped";
+
+dispatcher mode => $verbose, 'ALL';
 
 my %licenses = ( artistic => <<__ARTISTIC, gpl => <<__GPL);
 This program is free software; you can redistribute it and/or modify it
@@ -81,6 +88,7 @@ sub create_html_dist($$);
 sub publish_html_dist($$);
 sub create_heads_and_tails($);
 sub create_readme($$$);
+sub create_meta($);
 sub skip_links(@);
 
 #
@@ -88,7 +96,7 @@ sub skip_links(@);
 #
 
 system "perl Makefile.PL"
-   and die "ERROR: Cannot run Makefile.PL for basic information.\n";
+   and fault "cannot run Makefile.PL for basic information";
 
 my $makefile = read_makefile 'Makefile';
 
@@ -107,6 +115,7 @@ $html_templates ||= $makefile->{HTML_TEMPLATES} || 'html';
 $html_output    ||= $makefile->{HTML_OUTPUT}    || 'public_html';
 $html_docroot   ||= $makefile->{HTML_DOCROOT}   || '/';
 $html_package   ||= $makefile->{HTML_PACKAGE};
+$html_stylesheet||= $makefile->{HTML_STYLESHEET}|| '/oodoc.css';
 
 $make_html = -d $html_templates
    unless defined $make_html;
@@ -119,12 +128,12 @@ for($workdir, $rawdir, $distdir, $html_package, $html_templates, @extends)
 {  $_ = File::Spec->rel2abs($_, $here);
 }
 
-print "*** Producing $project version $version\n" if $verbose;
+info "*** Producing $project version $version";
 
 my $lictext = $licenses{$license} || '';
 if(!$lictext && $license)
 {   $lictext = read_file $license
-        or die "ERROR: cannot read from licence file $license: $!\n";
+        or fault __"cannot read from licence file {file}", file => $license;
 }
 
 ###
@@ -136,7 +145,6 @@ push @INC, map {"$_/lib"} @extends;
 my $doc  = OODoc->new
  ( distribution => $project
  , version      => $version  # version of whole
- , verbose      => ($verbose ? 2 : 0)
  );
 
 #
@@ -145,11 +153,10 @@ my $doc  = OODoc->new
 # manual pages in different formats.
 #
 
-print "* Processing files of $project $version\n" if $verbose;
+info "* Processing files of $project $version";
 
-   -d $workdir
-or mkdir $workdir
-or die "ERROR: cannot create $workdir: $!\n";
+-d $workdir or mkdir $workdir
+    or fault "cannot create {dir}", dir => $workdir;
 
 my ($pmhead, $podtail) = create_heads_and_tails $makefile;
 
@@ -175,41 +182,41 @@ create_html $doc, $html_templates, $html_output, $html_docroot
 # Dist package
 
 chdir $workdir
-   or die "ERROR: cannot go to my $workdir: $!";
+   or fault __x"cannot go to my {dir}", dir => $workdir;
+
+#create_meta $doc;
 
 my $temp_distfn = create_dist $distdir, $makefile
    if $make_dist;
 
-if(!$make_dist) {;}
-elsif($test) { print "* test mode: dist not published\n" if $verbose }
-else         { publish_dist $distdir, $temp_distfn }
+if(!$make_dist) { info "* dist not published" }
+else            { publish_dist $distdir, $temp_distfn }
 
 # RAW package
 
 chdir $here
-   or die "ERROR: cannot go back to $here; $!\n";
+   or fault __x"cannot go back to {dir}", dir => $here;
 
 my $temp_rawfn = create_raw_dist $rawdir, $makefile
    if $make_raw;
 
-if(!$make_raw) { ; }
-elsif($test) { print "* test mode: raw not published\n" if $verbose }
-else         { publish_raw_dist $rawdir, $temp_rawfn }
+if(!$make_raw) { info "* test mode: raw not published" }
+else           { publish_raw_dist $rawdir, $temp_rawfn }
 
 # HTML package
 
 if($make_html && $html_package)
 {   chdir $html_output
-        or die "ERROR: cannot go to produced html $html_output\n";
+        or fault __x"cannot go to produced html in {dir}", dir => $html_output;
 
     my $temp_htmlfn = create_html_dist $html_package, $makefile;
-
-    if($test) { print "* test mode: html not published\n" if $verbose }
-    else      { publish_html_dist $html_package, $temp_htmlfn }
+    publish_html_dist $html_package, $temp_htmlfn;
+}
+else
+{   info "* test mode: html not published";
 }
 
-print "* Ready\n" if $verbose;
-
+info "* Ready";
 exit 0;
 
 #
@@ -223,14 +230,14 @@ sub parse_additional_dists(@)
     # which is required to produce the pod.
 
     foreach my $extra (@extras)
-    {   print "* Processing files in $extra\n" if $verbose;
+    {   info "* Processing files in $extra";
         system "cd $extra && perl Makefile.PL"
-           and die "ERROR: failed to collect from $extra\n";
+            and fault __x"failed to collect from {dist}", dist => $extra;
 
         my $other = read_makefile "$extra/Makefile";
         my $dist  = $other->{DISTNAME};
         my $distv = $other->{VERSION};
-        print "Including files from $dist $distv\n";
+        trace "including files from $dist $distv";
 
         $doc->processFiles
          ( workdir      => undef
@@ -242,8 +249,7 @@ sub parse_additional_dists(@)
          );
     }
 
-    print "* Preparation phase\n" if $verbose;
-
+    info "* Preparation phase";
     $doc->prepare;
 }
 
@@ -254,7 +260,7 @@ sub parse_additional_dists(@)
 sub create_pod($$)
 {   my ($doc, $podtail) = @_;
 
-    print "* Creating POD files\n" if $verbose;
+    info "* Creating POD files";
 
     $doc->create
       ( $format_pod
@@ -271,16 +277,18 @@ sub create_pod($$)
 sub create_html($$$$)
 {   my ($doc, $templates, $output, $url) = @_;
 
-    print "* Creating HTML files in $output\n" if $verbose;
+    info "* Creating HTML files in $output";
 
     $doc->create
      ( $format_html
-     , workdir        => $output
-     , format_options => 
-        [ html_root      => $url
-        , html_meta_data => qq[<link rel="STYLESHEET" href="/oodoc.css">]
+     , workdir          => $output
+     , format_options   => 
+        [ html_root       => $url
+        , html_stylesheet => $html_stylesheet
         ]
-     , manual_format => []
+     , manual_format    => []
+     , manual_templates => "$templates/manual"
+     , other_templates  => "$templates/other"
      );
 }
 
@@ -332,10 +340,10 @@ $lictext
 __POD_TAIL
 
    my $pmhead  = eval qq{"$pmheadsrc"};
-   die "ERROR in pmhead: $@" if $@;
+   error __x"pmhead: {err}", err => $@ if $@;
 
    my $podtail = eval qq{"$podtailsrc"};
-   die "ERROR in podtail: $@" if $@;
+   error __x"podtail: {err}", err => $@ if $@;
 
    ($pmhead, $podtail);
 }
@@ -347,25 +355,23 @@ sub create_readme($$$)
     my $readme   = first { /\breadme$/i } @toplevel;
     return 1 if $readme;
 
-    print "adding README\n" if $verbose;
+    info "adding README";
 
     my $manifest = first { /\bmanifest$/i } @toplevel;
     open MANIFEST, '>>', $manifest
-        or die "ERROR: cannot append to $manifest: $!\n";
+        or fault __x"cannot append to {file}", file => $manifest;
     print MANIFEST "README\n";
     close MANIFEST;
 
     $readme      = File::Spec->catfile($workdir, 'README');
 
     if($readmefn)
-    {   #
-        # user provided README
-        #
-
-        print "copying $readmefn as README\n" if $verbose;
+    {   # user provided README
+        info "copying $readmefn as README\n";
 
         copy $readmefn, $readme
-            or die "ERROR: cannot copy $readmefn to $readme: $!\n";
+            or fault __x"cannot copy {from} to {to}"
+              , from => $readmefn, to => $readme;
 
         return 1;
     }
@@ -375,7 +381,7 @@ sub create_readme($$$)
     #
 
     open README, '>', $readme
-        or die "ERROR: cannot write to $readme: $!\n";
+        or fault __x"cannot write to {file}", file => $readme;
 
     my $date = localtime;
 
@@ -411,6 +417,25 @@ __README
     1;
 }
 
+# Since ExtUtils::MakeMaker, the META files only get updated when
+# they already exist.
+sub create_meta($)
+{   my ($doc) = @_;
+    my $manifest = first { /\bmanifest$/i } glob "*";
+    $manifest or panic "No manifest";
+
+    foreach my $fn ('META.yml', 'META.json')
+    {  next if -f $fn;
+       info "adding $fn";
+       open META, '>>', $fn and close META;
+
+       open MANIFEST, '>>', $manifest
+           or fault __x"cannot append to {file}", file => $manifest;
+       print MANIFEST "$fn\n";
+       close MANIFEST;
+    }
+}
+
 #
 # Create a distribution
 #
@@ -418,34 +443,39 @@ __README
 sub create_dist($$)
 {   my ($dest, $makefile) = @_;
 
-    print "* Preparing test\n" if $verbose;
+    info "* Preparing test";
     system "perl Makefile.PL"
-       and die "ERROR: perl Makefile.PL in $workdir failed: $!\n";
+        and fault __x"perl Makefile.PL in {dir} failed", dir => $workdir;
 
     system "make clean >/dev/null"
-       and die "ERROR: make clean in $workdir failed: $!\n";
+        and fault __x"make clean in {dir} failed", dir => $workdir;
 
     move 'Makefile.old', 'Makefile'
-       or die "ERROR: cannot reinstate Makefile: $!\n";
+        or fault __x"cannot reinstate Makefile in {dir}", dir => $workdir;
 
-    print "* Running make\n" if $verbose;
+    info "* Running make";
     system "make distdir >/dev/null"
-       and die "ERROR: make in $workdir failed: $!\n";
+       and fault __x"make in {dir} failed", dir => $workdir;
 
-    foreach my $testdir qw(t tests xt)
-    {   -d $testdir or next;
+    if($run_tests)
+    {   foreach my $testdir qw(t tests xt)
+        {   -d $testdir or next;
 
-        print "* Running tests in $testdir\n" if $verbose;
-        system "prove $testdir"
-            and die "ERROR: make test in $testdir failed: $!\n";
+            info "* Running tests in $testdir";
+            system "make test TEST_FILES=$testdir/*.t"
+                and fault __x"make test in {dir} failed", dir => $testdir;
+        }
+    }
+    else
+    {   info "* Release testing skipped";
     }
 
     my $distfile = $makefile->{DISTVNAME}. '.tar.gz';
-    print "* Building distribution in $distfile\n" if $verbose;
+    info "* Building distribution in $distfile";
     unlink $distfile;
 
     system "make dist >/dev/null"
-       and die "ERROR: make dist in $workdir failed: $!\n";
+        and fault __x"make dist in {dir} failed", dir => $workdir;
 
     $distfile;
 }
@@ -454,18 +484,16 @@ sub publish_dist($$)
 {   my ($dest, $distfile) = @_;
     return if $dest eq $workdir;
 
-    print "* Distributed package in $dest/$distfile\n"
-       if $verbose;
+    print "Distributed package in $dest/$distfile\n";
 
     -f $distfile
-       or die "ERROR: cannot find produced $distfile";
+        or error __x"cannot find produced {file}", file => $distfile;
 
-       -d $dest
-    or mkdir $dest
-    or die "ERROR: cannot create $dest: $!\n";
+    -d $dest or mkdir $dest
+        or fault __x"cannot create {dir}", dir => $dest;
 
     move $distfile, $dest
-       or die "ERROR: cannot move $distfile to $dest: $!\n";
+        or fault __x"cannot move {from} to {to}", from => $distfile, to=>$dest;
 }
 
 #
@@ -477,7 +505,7 @@ sub create_raw_dist($$)
 
     my $rawname = $makefile->{DISTVNAME}.'-raw';
     my $rawfile = $rawname. '.tar.gz';
-    print "* Building raw package $rawfile\n" if $verbose;
+    info "* Building raw package $rawfile";
     
     unlink $rawfile;
     
@@ -494,11 +522,11 @@ sub create_raw_dist($$)
     
     my @manifests = map { "$rawname/$_" } sort keys %manifests;
     symlink('.', $rawname) || readlink $rawname eq '.'
-        or die "ERROR: cannot create temp symlink $rawname: $!\n";
+        or fault __x"cannot create temp symlink {name}", name => $rawname;
 
     local $" = ' ';
     system "tar czf $rawfile @manifests"
-        and die "ERROR: cannot produce $rawfile with tar\n";
+        and fault __x"cannot produce {file} with tar", file => $rawfile;
 
     unlink $rawname;
     $rawfile;
@@ -508,13 +536,13 @@ sub publish_raw_dist($$)
 {   my ($dest, $rawfile) = @_;
     return if $dest eq $html_output;
 
-       -d $dest
-    or mkdir $dest
-    or die "ERROR: cannot create $dest: $!\n";
-    print "* Raw package to $dest/$rawfile\n" if $verbose;
+    -d $dest or mkdir $dest
+        or fault __x"cannot create {dir}", dir => $dest;
+
+    print "Raw package to $dest/$rawfile\n";
 
     move $rawfile, $dest
-        or die "ERROR: cannot move $rawfile to $dest: $!\n";
+        or fault __x"cannot move {from} to {to}", from => $rawfile, to => $dest;
 }
 
 #
@@ -525,13 +553,13 @@ sub create_html_dist($$)
 {   my ($dest, $makefile) = @_;
 
     my $htmlfile = $makefile->{DISTVNAME}.'-html.tar.gz';
-    print "* Building html package $htmlfile\n" if $verbose;
+    info "* Building html package $htmlfile";
 
     unlink $htmlfile;
 
     local $" = ' ';
     system "tar czf $htmlfile *"
-        and die "ERROR: cannot produce $htmlfile with tar\n";
+        and fault __x"cannot produce {file} with tar", file => $htmlfile;
 
     $htmlfile;
 }
@@ -541,15 +569,13 @@ sub publish_html_dist($$)
 
     return if $dest eq $html_output;
 
-       -d $dest
-    or mkdir($dest)
-    or die "ERROR: cannot create $dest: $!\n";
+    -d $dest or mkdir($dest)
+        or fault __x"cannot create {dir}", dir => $dest;
 
-    print "* HTML package to $dest/$htmlfile\n"
-        if $verbose;
+    info "* HTML package to $dest/$htmlfile";
 
     move $htmlfile, $dest
-        or die "ERROR: cannot move $htmlfile to $dest: $!\n";
+        or fault __x"cannot move {from} to {to}", from => $htmlfile, to=>$dest;
 }
 
 #
@@ -562,7 +588,7 @@ sub read_makefile($)
 {   my $makefile = shift;
 
     open MAKEFILE, '<', $makefile
-       or die "ERROR: cannot open produced Makefile: $makefile";
+       or fault __x"cannot open produced Makefile: {file}", file => $makefile;
 
     my %makefile;
     while( <MAKEFILE> )
@@ -604,10 +630,11 @@ oodist - create perl distributions with OODoc
  cd <src>
  oodist [OPTIONS]
    OPTION:                 DEFAULT:
-   --pod  or --nopod         produce pod: yes
-   --dist or --nodist        produce distribution: yes
-   --html or --nohtml        produce html: yes if templates
-   --raw  or --noraw         produce package with raw files: yes
+   --pod   or --nopod        produce pod: yes
+   --dist  or --nodist       package distribution: yes
+   --html  or --nohtml       produce html: yes if templates
+   --raw   or --noraw        produce package with raw files: yes
+   --tests or --notests      run tests before packaging: yes
 
   OPTIONS general:
    --distdir  | -d <dir>     makefile:DISTDIR || $ENV{OODOC_DISTDIR} || <src>
@@ -665,21 +692,23 @@ default C<on>.
 
 =over 4
 
-=item . --pod or --nopod
+=item --pod or --nopod
 
 Produce pod files in the working directory and in the distribution.
 
-=item . --dist or --nodist
+=item --dist or --nodist
 
 Create a distribution, containing all files from the MANIFEST plus
 produced files.
+Even with C<nodist>, you will end-up with these archives in the
+working directory (see C<--workdir>).
 
-=item . --html or --nohtml
+=item --html or --nohtml
 
 Create html manual pages.  The C<--html-templates> options must
 point to an existing directory (defaults to the C<html/> sub-directory).
 
-=item . --raw  or --noraw
+=item --raw  or --noraw
 
 Create a package which contains the files which are needed to produce
 the distribution: the pm files still including the oodoc markup.
@@ -692,7 +721,7 @@ The other OPTIONS in detail
 
 =over 4
 
-=item . --readme <filename>
+=item --readme <filename>
 
 Copy the specified README file into the distribution, if there is no
 README yet.  The name will be added to the MANIFEST.  If the option
@@ -700,36 +729,29 @@ is not specified, a simple file will be created.  If this option is
 specified, but the filename is empty, then the README will not be
 produced.
 
-=item . --distdir  | -d <dir>
+=item --distdir  | -d <dir>
 
 The location where the final file to be distributed is placed, by default
-in the source directory.  Ignored when C<--test> is used.
+in the source directory.
 
-=item . --extends  | -x <path>
+=item --extends  | -x <path>
 
 A colon seperated list of directories which contains "raw oodoc" pm and
 pod files which are (in some cases) used to provide data for base-classes
 of this module.
 
-=item . --rawdir   | --r <dir>
+=item --rawdir   | --r <dir>
 
 The location where a I<raw> version of the distribution is made.  The
 normal distribution contains expanded POD and stripped PM files.  For that
 reason, you can not use it a backup for your files.  If you have co-workers
 on the module, you may wish to give them the originals.
-gnored when C<--test> is used.
 
-=item . --test     | -t
-
-Run in test mode: the raw and real distributions are produced, but not
-moved to their final location.  You will end-up with these archives
-in the work-directory (see C<--workdir>).
-
-=item . --verbose  | --v
+=item --verbose  | --v
 
 Shows what happens during the process.
 
-=item . --workdir  | -w <dir>
+=item --workdir  | -w <dir>
 
 The processing will take place in a seperate directory: the stripped pm's
 and produced pod files will end-up there.
@@ -744,7 +766,7 @@ C</tmp/OODoc/>
 
 =over 4
 
-=item . --skip_links <strings>
+=item --skip_links <strings>
 
 A blank or comma separated list of packages which will have a manual
 page, but cannot be loaded under their name.  Sub-packages are excluded
@@ -757,12 +779,12 @@ a package with the same name.
 
 =over 4
 
-=item . --email    | -e <email>
+=item --email    | -e <email>
 
 The email address which can be used to contact the authors.  Used in the
 automatic podtail.
 
-=item . --firstyear| -y <string>
+=item --firstyear| -y <string>
 
 The first year that a release for this software was made.  Used in the
 automatic podtail.  The specified string can be more complex than a
@@ -771,13 +793,13 @@ automatically added like C<-2006>, which results in C<1998-2000,2003-2006>.
 When the current year is detected at the end of the string, the year will
 not be added again.
 
-=item . --license  | -l ['gpl'|'artistic'|filename]
+=item --license  | -l ['gpl'|'artistic'|filename]
 
 The lisense option is a special case: it can contain either the
 strings C<gpl> or C<artistic>, or a filename which is used to
 read the actual license text from.  The default is C<artistic>
 
-=item . --pmhead
+=item --pmhead
 
 Each of the stripped C<pm> files will have content of the file
 added at the top.  Each line will get a comment '# ' marker before
@@ -786,7 +808,7 @@ it.  If not specified, a short notice will be produced automatically.
 Implicitly, if a file C<PMHEAD.txt> exists, that will be used.
 variables found in the text will be filled-in.
 
-=item . --podtail
+=item --podtail
 
 Normally, a trailing text is automatically produced, based on all kinds
 of facts.  However, you can specify your own file. If exists, the content
@@ -795,7 +817,7 @@ is read from a file named C<PODTAIL.txt>.
 After reading the file, variables will be filled in: scalars like
 C<$version>, C<$project>, C<$website> etc are to your disposal.
 
-=item . --website  | -u <url>
+=item --website  | -u <url>
 
 Where the HTML documentation related to this module is publicly visible.
 
@@ -805,23 +827,25 @@ Where the HTML documentation related to this module is publicly visible.
 
 =over 4
 
-=item . --html-docroot <url>
-
+=item --html-docroot <url>
 This (usually relative) URL is prepended to all absolute links in the
 HTML output.
 
-=item . --html-output <dir>
-
+=item --html-output <dir>
 The directory where the produced HTML pages are written to.
 
-=item . --html-templates <dir>
-
+=item --html-templates <dir>
 The directory which contains the templates for HTML pages which are used
-to construct the html version of the manual-pages.
+to construct the html version of the manual-pages. The html2 backend
+accepts a colon separated list of directories.
 
-=item . --html-package <dir>
-
+=item --html-package <dir>
 When specified, the html-output directory will get packaged into a
 a tar achive in this specified directory.
+
+=item --html_stylesheet <file>
+Where to find the stylesheet which should be used to display the
+produced HTML. A copy of the stylesheet will be made and put in the
+top-level of the HTML directory.
 
 =back

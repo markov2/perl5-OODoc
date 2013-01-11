@@ -5,9 +5,10 @@ use base 'OODoc::Object';
 use strict;
 use warnings;
 
+use Log::Report    'oodoc';
+
 use OODoc::Manifest;
 
-use Carp;
 use File::Copy;
 use File::Spec;
 use File::Basename;
@@ -32,22 +33,20 @@ or use the oodist script
 =chapter DESCRIPTION
 
 OODoc stands for "Object Oriented Documentation": to produce manual-pages
-in HTML or the usual man-page UNIX format, describing Perl programs.  The
-OO part refers to two things: this module simplifies writing documentation
-for Object Oriented programs, and at the same time, it is Object Oriented
-itself: easily extensible.
+in HTML or the usual man-page UNIX format, describing Perl programs.
+The OO part of the name refers to two things: this module simplifies
+writing documentation for Object Oriented programs, and at the same time,
+it is Object Oriented itself: easily extensible.
 
 Before you read any further, decide:
 
 =over 4
 
-=item 1.
-
+=item 1
 to use your own modified version of the mkdist and mkdoc scripts, as provided
 in the examples which come with this module, or
 
-=item 2.
-
+=item 2
 use the oodist, which is less flexible but much simpler, and only requires
 some additions to your Makefile.PL.
 
@@ -70,34 +69,21 @@ get started.  Please contribute ideas.  Have a look at the main website
 of this project at L<http://perl.overmeer.net/oodoc/>.  That is also an
 example of the produced output.
 
-=cut
-
-#-------------------------------------------
-
 =chapter METHODS
 
 =c_method new OPTIONS
 
 =option  project STRING
 =default project <distribution>
-
 A short description of the distribution, as will be shown on many places
 in the produced manual pages and code.  You can use the main package name,
 or something which is nicer to read.
 
 =requires distribution STRING
-
 The name of the package, as released on CPAN.
-
-=option  verbose INTEGER
-=default verbose 0
-
-Verbosity during the process.  The higher the number, the more information
-will be presented (current useful maximum is 4).
 
 =option  version STRING
 =default version <from version or VERSION file>
-
 The version number as automatically included in all packages after
 each package statement and on many places in the documentation. By
 default the current directory is searched for a file named C<version>
@@ -106,7 +92,6 @@ or C<VERSION> which contains a number.
 =error the destribution must be specified
 
 =error no version specified for distribution "$name"
-
 Version information will be added to all packages and all manual
 pages.  You need to specify a version and be sure that it changes
 with each release, or create a file named C<version> or C<VERSION>
@@ -124,8 +109,8 @@ sub init($)
     $self->{O_pkg}    = {};
 
     my $distribution  = $self->{O_distribution} = delete $args->{distribution};
-    croak "ERROR: the produced distribution needs a project description"
-        unless defined $distribution;
+    defined $distribution
+        or error __x"the produced distribution needs a project description";
 
     $self->{O_project} = delete $args->{project} || $distribution;
 
@@ -136,18 +121,18 @@ sub init($)
                        : undef;
         if(defined $fn)
         {   my $v = IO::File->new($fn, 'r')
-               or die "ERROR: Cannot read version from file $fn: $!\n";
+                or fault __x"cannot read version from file {file}", file=> $fn;
             $version = $v->getline;
             $version = $1 if $version =~ m/(\d+\.[\d\.]+)/;
             chomp $version;
         }
     }
 
-    croak "ERROR: no version specified for distribution \"$distribution\""
-        unless defined $version;
+    defined $version
+        or error __x"no version specified for distribution '{dist}'"
+              , dist  => $distribution;
 
     $self->{O_version} = $version;
-    $self->{O_verbose} = delete $args->{verbose} || 0;
     $self;
 }
 
@@ -184,7 +169,6 @@ with files which do not need to be processed.  WHICH comes from
 M<processFiles(select)> and the LIST are files from a manifest.
 
 =error use regex, code reference or array for file selection
-
 The M<processFiles(select)> option is not understood.  You may specify
 an ARRAY, regular expression, or a code reference.
 
@@ -197,9 +181,10 @@ sub selectFiles($@)
       = ref $files eq 'Regexp' ? sub { $_[0] =~ $files }
       : ref $files eq 'CODE'   ? $files
       : ref $files eq 'ARRAY'  ? $files
-      : croak "ERROR: use regex, code reference or array for file selection";
+      : error __x"use regex, code reference or array for file selection";
 
-    return ($select, []) if ref $select eq 'ARRAY';
+    return ($select, [])
+        if ref $select eq 'ARRAY';
 
     my (@process, @copy);
     foreach my $fn (@_)
@@ -221,11 +206,6 @@ If you do not want to create a distribution, you may
 specify C<undef> (still: you have to specify the option).  In this
 case, only the documentation in the files is consumed, and no files
 created.
-
-=option  verbose INTEGER
-=default verbose <from object>
-Tell more about each stage of the processing.  The higher the number,
-the more information you will get.
 
 =option  manifest FILENAME
 =default manifest <source/>'MANIFEST'
@@ -308,10 +288,9 @@ as argument to M<OODoc::new()> or M<OODoc::processFiles()>.
 
 sub processFiles(@)
 {   my ($self, %args) = @_;
-    my $verbose = defined $args{verbose} ? $args{verbose} : $self->{O_verbose};
 
-    croak "ERROR: requires a directory to write the distribution to"
-       unless exists $args{workdir};
+    exists $args{workdir}
+        or error __x"requires a directory to write the distribution to";
 
     my $dest    = $args{workdir};
     my $source  = $args{source};
@@ -326,14 +305,14 @@ sub processFiles(@)
                 :                   'VERSION';
         if(defined $fn)
         {   my $v = IO::File->new($fn, "r")
-                or die "ERROR: Cannot read version from $fn: $!";
+                or fault __x"cannot read version from {file}", file => $fn;
             $version = $v->getline;
             $version = $1 if $version =~ m/(\d+\.[\d\.]+)/;
             chomp $version;
         }
         elsif($version = $self->version) { ; }
         else
-        {   die "ERROR: there is no version defined for the source files.\n";
+        {   error __x"there is no version defined for the source files";
         }
     }
 
@@ -367,8 +346,7 @@ sub processFiles(@)
     my $select    = $args{select} || qr/\.(pm|pod)$/;
     my ($process, $copy) = $self->selectFiles($select, @$manifest);
 
-    print @$process. " files to process and ".@$copy." files to copy\n"
-       if $verbose > 1;
+    trace @$process." files to process and ".@$copy." files to copy";
 
     #
     # Copy all the files which do not contain pseudo doc
@@ -380,16 +358,20 @@ sub processFiles(@)
                    :                   $filename;
 
             my $dn = File::Spec->catfile($dest, $fn);
-            carp "WARNING: no file $fn to include in the distribution", next
-               unless -f $fn;
+            unless(-f $fn)
+            {   warning __x"no file {file} to include in the distribution"
+                  , file => $fn;
+                next;
+            }
 
             unless(-e $dn && ( -M $dn < -M $fn ) && ( -s $dn == -s $fn ))
             {   $self->mkdirhier(dirname $dn);
 
                 copy $fn, $dn
-                   or die "ERROR: cannot copy distribution file $fn to $dest: $!\n";
+                   or fault __x"cannot copy distribution file {from} to {to}"
+                        , from => $fn, to => $dest;
 
-                print "Copied $fn to $dest\n" if $verbose > 2;
+                trace "  copied $fn to $dest";
             }
 
             $manout->add($dn);
@@ -405,11 +387,11 @@ sub processFiles(@)
 
     unless(ref $parser)
     {   eval "require $parser";
-        croak "ERROR: Cannot compile $parser class:\n$@"
-           if $@;
+        error __x"cannot compile {pkg} class: {err}", pkg => $parser, err => $@
+            if $@;
 
         $parser = $parser->new(skip_links => $skip_links)
-           or croak "ERROR: Parser $parser could not be instantiated";
+           or error __x"parser {name} could not be instantiated", name=>$parser;
     }
 
     #
@@ -419,8 +401,11 @@ sub processFiles(@)
     foreach my $filename (@$process)
     {   my $fn = $source ? File::Spec->catfile($source, $filename) : $filename; 
 
-        carp "WARNING: no file $fn to include in the distribution", next
-            unless -f $fn;
+        unless(-f $fn)
+        {   warning __x"no file {file} to include in the distribution"
+              , file => $fn;
+            next;
+        }
 
         my $dn;
         if($dest)
@@ -438,21 +423,17 @@ sub processFiles(@)
           , notice       => $notice
           );
 
-        if($verbose > 2)
-        {   print "Stripped $fn into $dn\n" if defined $dn;
-            print $_->stats foreach @manuals;
-        }
+        trace "stripped $fn into $dn" if defined $dn;
+        trace $_->stats for @manuals;
 
         foreach my $man (@manuals)
         {   $self->addManual($man) if $man->chapters;
         }
     }
 
-    #
     # Some general subtotals
-    #
+    trace $self->stats;
 
-    print $self->stats if $verbose > 1;
     $self;
 }
 
@@ -465,33 +446,30 @@ Add information to the documentation tree about inheritance relationships
 of the packages.  C<prepare> must be called between M<processFiles()>
 and M<create()>.
 
-=option  verbose INTEGER
-=default verbose <from object>
-
 =cut
 
 sub prepare(@)
 {   my ($self, %args) = @_;
-    my $verbose = defined $args{verbose} ? $args{verbose} : $self->{O_verbose};
 
-    print "Collect package relations.\n" if $verbose >1;
-    $self->getPackageRelations($verbose);
+    info "collect package relations";
+    $self->getPackageRelations;
 
-    print "Expand manual contents.\n" if $verbose >1;
+    info "expand manual contents";
     foreach my $manual ($self->manuals)
-    {   print "  expand manual $manual\n" if $verbose > 1;
+    {   trace "  expand manual $manual";
         $manual->expand;
     }
 
-    print "Create inheritance chapter.\n" if $verbose >1;
+    info "Create inheritance chapter";
     foreach my $manual ($self->manuals)
-    {   $manual->createInheritance;
+    {   trace "  create inheritance for $manual";
+        $manual->createInheritance;
     }
 
     $self;
 }
 
-=method getPackageRelations VERBOSITY
+=method getPackageRelations
 Compile all files which contain packages, and then try to find-out
 how they are related.
 
@@ -504,29 +482,29 @@ manual-pages as well...
 =cut
 
 sub getPackageRelations($)
-{   my ($self, $verbose) = @_;
+{   my $self = shift;
     my @manuals  = $self->manuals;  # all
 
     #
     # load all distributions (which are not loaded yet)
     #
 
-    print "Compile all packages\n" if $verbose;
+    info "compile all packages";
 
     foreach my $manual (@manuals)
     {    next if $manual->isPurePod;
-         print "  require package $manual\n" if $verbose > 1;
+         trace "  require package $manual";
 
          eval "require $manual";
-         warn "WARNING: errors from $manual; $@\n"
+         warning __x"errors from {manual}: {err}", manual => $manual, err =>$@
             if $@ && $@ !~ /can't locate/i && $@ !~ /attempt to reload/i;
     }
 
-    print "Detect inheritance relationships\n" if $verbose;
+    info "detect inheritance relationships";
 
     foreach my $manual (@manuals)
     {
-         print "  relations for $manual\n" if $verbose > 1;
+        trace "  relations for $manual";
 
         if($manual->name ne $manual->package)  # autoloaded code
         {   my $main = $self->mainManual("$manual");
@@ -569,11 +547,6 @@ and C<html> representing M<OODoc::Format::Pod> and M<OODoc::Format::Html>
 respectively), the name of a CLASS which needs to be instantiated,
 or an instantiated formatter.
 
-=option  verbose INTEGER
-=default verbose 0
-Debug level, the higher the number, the more details about the process
-you will have.
-
 =requires workdir DIRECTORY
 The directory where the output is going to.
 
@@ -598,15 +571,15 @@ is given, no file will be written for this.
 The value is passed on to M<OODoc::Format::createManual(append)>,
 but the behavior is formatter dependent.
 
-=option  manual_template LOCATION
-=default manual_template C<undef>
+=option  manual_templates DIRECTORY
+=default manual_templates C<undef>
 Passed to M<OODoc::Format::createManual(template)>, and defines the
 location of the set of pages which has to be created for each manual
 page.  Some formatters do not support templates and the valid values
 are formatter dependent.
 
-=option  other_files DIRECTORY
-=default other_files C<undef>
+=option  other_templates DIRECTORY
+=default other_templates C<undef>
 Other files which have to be copied
 passed to M<OODoc::Format::createOtherPages(source)>.
 
@@ -626,7 +599,7 @@ called with a manual as only argument.
 =error formatter $name has compilation errors: $@
 The formatter which is specified does not compile, so can not be used.
 
-=error requires a directory to write the manuals to
+=error create requires a directory to write the manuals to
 You have to give a value to C<workdir>, which will be used as top directory
 for the produced output.  It does not matter whether there is already some
 stuff in that directory.
@@ -634,18 +607,18 @@ stuff in that directory.
 =cut
 
 our %formatters =
- ( pod  => 'OODoc::Format::Pod'
- , pod2 => 'OODoc::Format::Pod2'
- , pod3 => 'OODoc::Format::Pod3'
- , html => 'OODoc::Format::Html'
+ ( pod   => 'OODoc::Format::Pod'
+ , pod2  => 'OODoc::Format::Pod2'
+ , pod3  => 'OODoc::Format::Pod3'
+ , html  => 'OODoc::Format::Html'
+ , html2 => 'OODoc::Format::Html2'
  );
 
 sub create($@)
 {   my ($self, $format, %args) = @_;
-    my $verbose = defined $args{verbose} ? $args{verbose} : $self->{O_verbose};
 
     my $dest    = $args{workdir}
-       or croak "ERROR: requires a directory to write the manuals to";
+       or error __x"create requires a directory to write the manuals to";
 
     #
     # Start manifest
@@ -658,10 +631,12 @@ sub create($@)
     # Create the formatter
 
     unless(ref $format)
-    {   $format = $formatters{$format} if exists $formatters{$format};
+    {   $format = $formatters{$format}
+            if exists $formatters{$format};
 
         eval "require $format";
-        die "ERROR: formatter $format has compilation errors: $@" if $@;
+        error __x"formatter {name} has compilation errors: {err}"
+          , name => $format, err => $@ if $@;
 
         my $options    = delete $args{format_options} || [];
 
@@ -680,7 +655,7 @@ sub create($@)
 
     my $select = ! defined $args{select}     ? sub {1}
                : ref $args{select} eq 'CODE' ? $args{select}
-               :                        sub { $_[0]->name =~ $args{select}};
+               : sub { $_[0]->name =~ $args{select}};
 
     foreach my $package (sort $self->packageNames)
     {
@@ -688,19 +663,18 @@ sub create($@)
         {   next unless $select->($manual);
 
             unless($manual->chapters)
-            {   print "Skipping $manual: no chapters\n" if $verbose > 1;
+            {   trace "  skipping $manual: no chapters";
                 next;
             }
 
-            print "  creating manual $manual with ",ref($format), "\n"
-                if $verbose > 1;
+            trace "  creating manual $manual with ".(ref $format);
 
             $format->createManual
-             ( manual         => $manual
-             , template       => $args{manual_template}
-             , append         => $args{append}
-             , format_options => ($args{manual_format} || [])
-             );
+              ( manual         => $manual
+              , template       => $args{manual_templates}
+              , append         => $args{append}
+              , format_options => ($args{manual_format} || [])
+              );
         }
     }
 
@@ -708,9 +682,9 @@ sub create($@)
     # Create other pages
     #
 
-    print "Creating other pages\n" if $verbose > 1;
+    trace "creating other pages";
     $format->createOtherPages
-     ( source   => $args{other_files}
+     ( source   => $args{other_templates}
      , process  => $args{process_files}
      );
 
@@ -856,8 +830,7 @@ when you glue multiple modules together into one big HTML documentation
 website (see the mailbox example), then this separate file simplifies
 the production script.
 
-To test the document production, use C<./mkdoc 1>  (C<1> = verbose)
-The output can be found in the specified C<workdir>.  To see them:
+To test the document production,
 try (on UNIX/Linux)  C<<pod2man xyz.pod | man -l - >>
 
 To get a prepared distribution, use C<./mkdist 1>.  This will first

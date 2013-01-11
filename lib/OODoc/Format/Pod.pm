@@ -4,8 +4,9 @@ use base 'OODoc::Format';
 use strict;
 use warnings;
 
+use Log::Report    'oodoc';
+
 use File::Spec   ();
-use Carp         qw/confess/;
 use List::Util   qw/max/;
 use Pod::Escapes qw/e2char/;
 
@@ -42,18 +43,21 @@ of the link path, when specified.
 
 sub link($$;$)
 {   my ($self, $manual, $object, $text) = @_;
+
     $object = $object->subroutine if $object->isa('OODoc::Text::Option');
     $object = $object->subroutine if $object->isa('OODoc::Text::Default');
     $object = $object->container  if $object->isa('OODoc::Text::Example');
     $object = $object->container  if $object->isa('OODoc::Text::Subroutine');
     $text   = defined $text ? "$text|" : '';
 
-    return "L<$text$object>" if $object->isa('OODoc::Manual');
+    return "L<$text$object>"
+        if $object->isa('OODoc::Manual');
+
+    $object->isa('OODoc::Text::Structure')
+        or error __x"cannot link to a {pkg}", pkg => ref $object;
 
     my $manlink = defined $manual ? $object->manual.'/' : '';
-
-      $object->isa('OODoc::Text::Structure') ? qq(L<$text$manlink"$object">)
-    : confess "cannot link to a ".ref $object;
+    qq(L<$text$manlink"$object">);
 }
 
 =method createManual OPTIONS
@@ -69,11 +73,9 @@ See M<formatManual(append)> for an explanation.
 
 sub createManual($@)
 {   my ($self, %args) = @_;
-    my $verbose  = $args{verbose} || 0;
-    my $manual   = $args{manual} or confess;
+    my $manual   = $args{manual} or panic;
     my $options  = $args{format_options} || [];
 
-    print $manual->orderedChapters." chapters in $manual\n" if $verbose>=3;
     my $podname  = $manual->source;
     $podname     =~ s/\.pm$/.pod/;
     my $tmpname  =  $podname . 't';
@@ -82,7 +84,8 @@ sub createManual($@)
     my $podfile  = File::Spec->catfile($self->workdir, $podname);
 
     my $output  = IO::File->new($tmpfile, "w")
-        or die "ERROR: cannot write prelimary pod manual to $tmpfile: $!";
+        or fault __x"cannot write prelimary pod manual to {file}"
+            , file => $tmpfile;
 
     $self->formatManual
       ( manual => $manual
@@ -149,7 +152,7 @@ sub showAppend(@)
        if(!defined $append)      { ; }
     elsif(ref $append eq 'CODE') { $append->(formatter => $self, %args) }
     else
-    {   my $output = $args{output} or confess;
+    {   my $output = $args{output} or panic;
         $output->print($append);
     }
 
@@ -160,12 +163,12 @@ sub showStructureExpand(@)
 {   my ($self, %args) = @_;
 
     my $examples = $args{show_chapter_examples} || 'EXPAND';
-    my $text     = $args{structure} or confess;
+    my $text     = $args{structure} or panic;
 
     my $name     = $text->name;
     my $level    = $text->level;
-    my $output   = $args{output}  or confess;
-    my $manual   = $args{manual}  or confess;
+    my $output   = $args{output}  or panic;
+    my $manual   = $args{manual}  or panic;
 
     my $descr   = $self->cleanup($manual, $text->description);
     $output->print("\n=head$level $name\n\n$descr");
@@ -180,12 +183,12 @@ sub showStructureExpand(@)
 sub showStructureRefer(@)
 {   my ($self, %args) = @_;
 
-    my $text     = $args{structure} or confess;
+    my $text     = $args{structure} or panic;
 
     my $name     = $text->name;
     my $level    = $text->level;
-    my $output   = $args{output}  or confess;
-    my $manual   = $args{manual}  or confess;
+    my $output   = $args{output}  or panic;
+    my $manual   = $args{manual}  or panic;
 
     my $link     = $self->link($manual, $text);
     $output->print("\n=head$level $name\n\nSee $link.\n");
@@ -197,19 +200,19 @@ sub chapterDescription(@)
 
     $self->showRequiredChapter(DESCRIPTION => %args);
 
-    my $manual  = $args{manual} or confess;
+    my $manual  = $args{manual} or panic;
     my $details = $manual->chapter('DETAILS');
    
     return $self unless defined $details;
 
-    my $output  = $args{output} or confess;
+    my $output  = $args{output} or panic;
     $output->print("\nSee L</DETAILS> chapter below\n");
     $self->showChapterIndex($output, $details, "   ");
 }
 
 sub chapterDiagnostics(@)
 {   my ($self, %args) = @_;
-    my $manual  = $args{manual} or confess;
+    my $manual  = $args{manual} or panic;
 
     my $diags   = $manual->chapter('DIAGNOSTICS');
     $self->showChapter(chapter => $diags, %args)
@@ -218,7 +221,7 @@ sub chapterDiagnostics(@)
     my @diags   = map {$_->diagnostics} $manual->subroutines;
     return unless @diags;
 
-    my $output  = $args{output} or confess;
+    my $output  = $args{output} or panic;
     $diags
         or $output->print("\n=head1 DIAGNOSTICS\n");
 
@@ -246,11 +249,11 @@ sub showChapterIndex($$;$)
 
 sub showExamples(@)
 {   my ($self, %args) = @_;
-    my $examples = $args{examples} or confess;
+    my $examples = $args{examples} or panic;
     return unless @$examples;
 
-    my $manual    = $args{manual}  or confess;
-    my $output    = $args{output}  or confess;
+    my $manual    = $args{manual}  or panic;
+    my $output    = $args{output}  or panic;
 
     foreach my $example (@$examples)
     {   my $name    = $self->cleanup($manual, $example->name);
@@ -263,11 +266,11 @@ sub showExamples(@)
 
 sub showDiagnostics(@)
 {   my ($self, %args) = @_;
-    my $diagnostics = $args{diagnostics} or confess;
+    my $diagnostics = $args{diagnostics} or panic;
     return unless @$diagnostics;
 
-    my $manual    = $args{manual}  or confess;
-    my $output    = $args{output}  or confess;
+    my $manual    = $args{manual}  or panic;
+    my $output    = $args{output}  or panic;
 
     foreach my $diag (sort @$diagnostics)
     {   my $name    = $self->cleanup($manual, $diag->name);
@@ -284,7 +287,7 @@ sub showSubroutines(@)
     my $subs = $args{subroutines} || [];
     @$subs or return;
 
-    my $output = $args{output} or confess;
+    my $output = $args{output} or panic;
 
     $output->print("\n=over 4\n\n");
     $self->SUPER::showSubroutines(%args);
@@ -296,21 +299,21 @@ sub showSubroutine(@)
     $self->SUPER::showSubroutine(@_);
 
     my %args   = @_;
-    my $output = $args{output} or confess;
+    my $output = $args{output} or panic;
     $output->print("\n");
     $self;
 }
 
 sub showSubroutineUse(@)
 {   my ($self, %args) = @_;
-    my $subroutine = $args{subroutine} or confess;
-    my $manual     = $args{manual}     or confess;
-    my $output     = $args{output}     or confess;
+    my $subroutine = $args{subroutine} or panic;
+    my $manual     = $args{manual}     or panic;
+    my $output     = $args{output}     or panic;
 
-    my $use        = $self->subroutineUse($manual, $subroutine);
+    my $use = $self->subroutineUse($manual, $subroutine);
+    $use    =~ s/(.+)/=item $1\n\n/gm;
 
-    $output->print("=item $use\n\n");
-
+    $output->print($use);
     $output->print("See ". $self->link($manual, $subroutine)."\n\n")
         if $manual->inherited($subroutine);
 
@@ -322,13 +325,13 @@ sub subroutineUse($$)
     my $type       = $subroutine->type;
     my $name       = $self->cleanup($manual, $subroutine->name);
     my $paramlist  = $self->cleanup($manual, $subroutine->parameters);
-    my $params     = length $paramlist ? "($paramlist)" : '';
+    my $params     = length $paramlist ? "($paramlist)" : '()';
 
     my $class      = $manual->package;
     my $use
      = $type eq 'i_method' ? qq[\$obj-E<gt>B<$name>$params]
      : $type eq 'c_method' ? qq[$class-E<gt>B<$name>$params]
-     : $type eq 'ci_method'? qq[\$obj-E<gt>B<$name>$params\n\n]
+     : $type eq 'ci_method'? qq[\$obj-E<gt>B<$name>$params\n]
                            . qq[$class-E<gt>B<$name>$params]
      : $type eq 'function' ? qq[B<$name>$params]
      : $type eq 'overload' ? qq[overload: B<$name>$params]
@@ -343,9 +346,9 @@ sub subroutineUse($$)
 
 sub showSubroutineName(@)
 {   my ($self, %args) = @_;
-    my $subroutine = $args{subroutine} or confess;
-    my $manual     = $args{manual}     or confess;
-    my $output     = $args{output}     or confess;
+    my $subroutine = $args{subroutine} or panic;
+    my $manual     = $args{manual}     or panic;
+    my $output     = $args{output}     or panic;
     my $name       = $subroutine->name;
 
     my $url
@@ -361,7 +364,7 @@ sub showSubroutineName(@)
 
 sub showOptions(@)
 {   my ($self, %args) = @_;
-    my $output = $args{output} or confess;
+    my $output = $args{output} or panic;
     $output->print("\n=over 2\n\n");
     $self->SUPER::showOptions(%args);
     $output->print("\n=back\n\n");
@@ -369,9 +372,9 @@ sub showOptions(@)
 
 sub showOptionUse(@)
 {   my ($self, %args) = @_;
-    my $output = $args{output} or confess;
-    my $option = $args{option} or confess;
-    my $manual = $args{manual}  or confess;
+    my $output = $args{output} or panic;
+    my $option = $args{option} or panic;
+    my $manual = $args{manual}  or panic;
 
     my $params = $option->parameters;
     $params    =~ s/\s+$//;
@@ -384,9 +387,9 @@ sub showOptionUse(@)
 
 sub showOptionExpand(@)
 {   my ($self, %args) = @_;
-    my $output = $args{output} or confess;
-    my $option = $args{option} or confess;
-    my $manual = $args{manual}  or confess;
+    my $output = $args{output} or panic;
+    my $option = $args{option} or panic;
+    my $manual = $args{manual}  or panic;
 
     $self->showOptionUse(%args);
 
@@ -415,9 +418,9 @@ is the header.
 sub writeTable($@)
 {   my ($self, %args) = @_;
 
-    my $head   = $args{header} or confess;
-    my $output = $args{output} or confess;
-    my $rows   = $args{rows}   or confess;
+    my $head   = $args{header} or panic;
+    my $output = $args{output} or panic;
+    my $rows   = $args{rows}   or panic;
     return unless @$rows;
 
     # Convert all elements to plain text, because markup is not
@@ -436,8 +439,8 @@ sub writeTable($@)
     }
 
     if(my $widths = $args{widths})
-    {   defined $widths->[$_] && ($w[$_] = $widths->[$_])
-           foreach 0..$#$rows;
+    {   defined $widths->[$_] && $widths->[$_] > $w[$_] && ($w[$_] = $widths->[$_])
+           for 0..$#$rows;
     }
 
     pop @w;   # ignore width of last column
@@ -529,13 +532,13 @@ sub _removeMarkup($)
 
 sub showSubroutineDescription(@)
 {   my ($self, %args) = @_;
-    my $manual  = $args{manual}                   or confess;
-    my $subroutine = $args{subroutine}            or confess;
+    my $manual  = $args{manual}                   or panic;
+    my $subroutine = $args{subroutine}            or panic;
 
     my $text    = $self->cleanup($manual, $subroutine->description);
     return $self unless length $text;
 
-    my $output  = $args{output}                   or confess;
+    my $output  = $args{output}                   or panic;
     $output->print("\n", $text);
 
     my $extends = $self->extends                  or return $self;
@@ -545,9 +548,9 @@ sub showSubroutineDescription(@)
 
 sub showSubroutineDescriptionRefer(@)
 {   my ($self, %args) = @_;
-    my $manual  = $args{manual}                   or confess;
-    my $subroutine = $args{subroutine}            or confess;
-    my $output  = $args{output}                   or confess;
+    my $manual  = $args{manual}                   or panic;
+    my $subroutine = $args{subroutine}            or panic;
+    my $output  = $args{output}                   or panic;
     $output->print("\nSee ", $self->link($manual, $subroutine), "\n");
 }
 
@@ -567,10 +570,10 @@ clean-up activities may be implemented later.
 sub cleanupPOD($$)
 {   my ($self, $infn, $outfn) = @_;
     my $in = IO::File->new($infn, 'r')
-        or die "ERROR: cannot read prelimary pod from $infn: $!\n";
+        or fault __x"cannot read prelimary pod from {file}", file => $infn;
 
     my $out = IO::File->new($outfn, 'w')
-        or die "ERROR: cannot write final pod to $outfn: $!\n";
+        or fault __x"cannot write final pod to {file}", file => $outfn;
 
     my $last_is_blank = 1;
   LINE:
@@ -588,7 +591,7 @@ sub cleanupPOD($$)
 
     $in->close;
     $out->close
-       or die "ERROR: write to $outfn failed: $!\n";
+        or fault __x"write to {file} failed", file => $outfn;
 
     $self;
 }
@@ -670,8 +673,8 @@ the default behavior of C<chapterInheritance()> by producing nothing.
 
  sub chapterCopyrights(@)
  {   my ($self, %args) = @_;
-     my $manual = $args{manual} or confess;
-     my $output = $args{output} or confess;
+     my $manual = $args{manual} or panic;
+     my $output = $args{output} or panic;
 
      $output->print("\n=head2 COPYRIGHTS\n");
      $output->print($manual->name =~ m/abc/ ? <<'FREE' : <<'COMMERICIAL');
@@ -689,28 +692,26 @@ COMMERCIAL
 
  package MyPod;
  use base 'OODoc::Format::Pod';
+ use Log::Report 'panic';
 
  sub chapterDiagnostics(@)
  {   my ($self, %args) = @_;
      $self->SUPER::Diagnostics(%args);
 
-     my $output  = $args{output} or confess;
-     my $manual  = $args{manual} or confess;
+     my $output  = $args{output} or panic;
+     my $manual  = $args{manual} or panic;
      my @extends = $manual->superClasses;
 
      $output->print(\nSee also the diagnostics is @extends.\n");
      $self;
  }
  
-=subsection Configuring with Template::Magic
+=subsection Configuring with OODoc::Template
 
 When using 'pod2' in stead of 'pod' when M<OODoc::create()> is called,
 the M<OODoc::Format::Pod2> will be used.   It's nearly a drop-in
 replacement by its default behavior.  When you specify
 your own template file, every thing can be made.
-
-See the manual page of M<Template::Magic>.  You have to install
-C<Bundle::Template::Magic> to get it to work.
 
 =example formatting with template
 

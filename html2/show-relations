@@ -1,0 +1,14 @@
+<h2>Show</h2>
+
+<ul>
+<li><span class="this">relations</span></li>
+<li>items <a href="/manual/<{manual}>/grouped.html">grouped</a></li>
+<li>items <a href="/manual/<{manual}>/sorted.html">alphabetically</a></li>
+<li>documentation <a href="/manual/<{manual}>/overview.html">overview</a></li>
+</ul>
+
+<{chapters}>\
+  <{is_inheritance}>\
+    <{template file=chapter}>\
+  <{/is_inheritance}>\
+<{/chapters}>

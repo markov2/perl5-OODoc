@@ -1,0 +1,12 @@
+<{template file="html-head"}>
+
+<frameset rows="130,*" frameborder="NO">
+  <frame name="head" src="<{manual}>/head.html">
+  </frame>
+  <frameset cols="*,350" frameborder="NO">
+    <{frame src="<{manual}>/main.html">
+    <{frame src="<{manual}>/relations.html">
+  </frameset>
+</frameset>
+
+<{template file="html-tail"}>

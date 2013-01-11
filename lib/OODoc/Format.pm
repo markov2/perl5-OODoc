@@ -5,8 +5,8 @@ use base 'OODoc::Object';
 use strict;
 use warnings;
 
-use Carp;
 use OODoc::Manifest;
+use Log::Report    'oodoc';
 
 =chapter NAME
 
@@ -93,14 +93,14 @@ sub init($)
 {   my ($self, $args) = @_;
     $self->SUPER::init($args) or return;
 
-    $self->{OF_project} = delete $args->{project}
-        or croak "ERROR: formatter knows no project name.\n";
+    my $name = $self->{OF_project} = delete $args->{project}
+        or error __x"formatter knows no project name";
 
     $self->{OF_version} = delete $args->{version}
-        or croak "ERROR: formatter does not know the version.\n";
+        or error __x"formatter for {name} does not know the version", name => $name;
 
     $self->{OF_workdir} = delete $args->{workdir}
-        or croak "ERROR: no working directory specified.\n";
+        or error __x"no working directory specified for {name}", name => $name;
 
     $self->{OF_manifest} = delete $args->{manifest} || OODoc::Manifest->new;
 
@@ -117,31 +117,21 @@ Returns the name of this project.
 
 sub project() {shift->{OF_project}}
 
-#-------------------------------------------
-
 =method version
 Returns the version string of this project.  This version may
 contains any character, so should be handled with care.
-=cut
-
-sub version() {shift->{OF_version}}
-
-#-------------------------------------------
 
 =method workdir
 Returns the name of the work directory: the top location for all
 the output files.
-=cut
-
-sub workdir() {shift->{OF_workdir}}
-
-#-------------------------------------------
 
 =method manifest
 Returns the M<OODoc::Manifest> object which maintains the names
 of created files.
 =cut
 
+sub version() {shift->{OF_version}}
+sub workdir() {shift->{OF_workdir}}
 sub manifest() {shift->{OF_manifest}}
 
 #-------------------------------------------
@@ -171,7 +161,7 @@ The name of this project, which will appear on many pages.
 
 =cut
 
-sub createManual(@) { confess }
+sub createManual(@) {panic}
 
 =method cleanup MANUAL, STRING
 Takes the STRING and cleans it up to be in the right format for the
@@ -208,8 +198,8 @@ to the manual page which describes it.
 
 sub showChapter(@)
 {   my ($self, %args) = @_;
-    my $chapter  = $args{chapter} or confess;
-    my $manual   = $args{manual}  or confess;
+    my $chapter  = $args{chapter} or panic;
+    my $manual   = $args{manual}  or panic;
     my $show_ch  = $args{show_inherited_chapter}    || 'REFER';
     my $show_sec = $args{show_inherited_section}    || 'REFER';
     my $show_ssec= $args{show_inherited_subsection} || 'REFER';
@@ -254,12 +244,12 @@ related: examples which come at the end of a chapter, section, or
 subsection.
 =cut
 
-sub showStructureExpanded(@) {confess}
+sub showStructureExpanded(@) {panic}
 
 =method showStructureRefer OPTIONS
 =cut
 
-sub showStructureRefer(@) {confess}
+sub showStructureRefer(@) {panic}
 
 #-------------------------------------------
 
@@ -285,11 +275,11 @@ sub chapterCopyrights(@)  {shift->showOptionalChapter(COPYRIGHTS  => @_)}
 
 sub showRequiredChapter($@)
 {   my ($self, $name, %args) = @_;
-    my $manual  = $args{manual} or confess;
+    my $manual  = $args{manual} or panic;
     my $chapter = $manual->chapter($name);
 
     unless(defined $chapter)
-    {   warn "WARNING: missing required chapter $name in $manual\n";
+    {   alert "missing required chapter $name in $manual";
         return;
     }
 
@@ -301,7 +291,7 @@ sub showRequiredChapter($@)
 
 sub showOptionalChapter($@)
 {   my ($self, $name, %args) = @_;
-    my $manual  = $args{manual} or confess;
+    my $manual  = $args{manual} or panic;
 
     my $chapter = $manual->chapter($name);
     return unless defined $chapter;
@@ -314,9 +304,6 @@ Create other pages which come with the set of formatted manuals.  What
 the contents of these pages is depends on the formatter.  Some formatters
 simply ignore the functionality of this method as a whole: they do not
 support data-files which are not manuals.
-
-=option  verbose  INTEGER
-=default verbose  0
 
 =option  source   DIRECTORY
 =default source   undef
@@ -376,7 +363,7 @@ sub showSubroutines(@)
     my @subs   = $args{subroutines} ? sort @{$args{subroutines}} : [];
     return unless @subs;
 
-    my $manual = $args{manual} or confess;
+    my $manual = $args{manual} or panic;
     my $output = $args{output}    || select;
 
     # list is also in ::Pod3
@@ -454,8 +441,8 @@ chapter per manual page.
 sub showSubroutine(@)
 {   my ($self, %args) = @_;
 
-    my $subroutine = $args{subroutine} or confess;
-    my $manual = $args{manual} or confess;
+    my $subroutine = $args{subroutine} or panic;
+    my $manual = $args{manual} or panic;
     my $output = $args{output} || select;
 
     #
@@ -468,7 +455,7 @@ sub showSubroutine(@)
      : $use eq 'USE'    ? ('showSubroutineUse',  0)
      : $use eq 'NAMES'  ? ('showSubroutineName', 0)
      : $use eq 'NO'     ? (undef,                0)
-     : croak "ERROR: illegal value for show_subroutine: $use";
+     : error __x"illegal value for show_subroutine: {value}", value => $use;
 
     $self->$show_use(%args, subroutine => $subroutine)
        if defined $show_use;
@@ -494,7 +481,7 @@ sub showSubroutine(@)
     elsif($descr eq 'DESCRIBED')
          { $show_descr = undef if $manual->inherited($description) }
     elsif($descr eq 'ALL') {;}
-    else { croak "ERROR: illegal value for show_sub_description: $descr" }
+    else { error __x"illegal value for show_sub_description: {v}", v => $descr}
     
     $self->$show_descr(%args, subroutine => $description)
           if defined $show_descr;
@@ -515,7 +502,7 @@ sub showSubroutine(@)
      : $opttab eq 'DESCRIBED'? (grep {not $manual->inherits($_->[0])} @options)
      : $opttab eq 'INHERITED'? (grep {$manual->inherits($_->[0])} @options)
      : $opttab eq 'ALL'      ? @options
-     : croak "ERROR: illegal value for show_option_table: $opttab";
+     : error __x"illegal value for show_option_table: {v}", v => $opttab;
     
     $self->showOptionTable(%args, options => \@opttab)
        if @opttab;
@@ -596,9 +583,9 @@ sub showSubroutineDescription(@) {shift}
 
 sub showOptionTable(@)
 {   my ($self, %args) = @_;
-    my $options = $args{options} or confess;
-    my $manual  = $args{manual}  or confess;
-    my $output  = $args{output}  or confess;
+    my $options = $args{options} or panic;
+    my $manual  = $args{manual}  or panic;
+    my $output  = $args{output}  or panic;
 
     my @rows;
     foreach (@$options)
@@ -648,8 +635,8 @@ options which belong to the subroutine being displayed.
 sub showOptions(@)
 {   my ($self, %args) = @_;
 
-    my $options = $args{options} or confess;
-    my $manual  = $args{manual}  or confess;
+    my $options = $args{options} or panic;
+    my $manual  = $args{manual}  or panic;
 
     foreach (@$options)
     {   my ($option, $default) = @$_;
@@ -660,7 +647,7 @@ sub showOptions(@)
         my $action
           = $show eq 'USE'   ? 'showOptionUse'
           : $show eq 'EXPAND'? 'showOptionExpand'
-          : croak "ERROR: illegal show option choice $show";
+          : error __x"illegal show option choice: {v}", v => $show;
  
         $self->$action(%args, option => $option, default => $default);
     }

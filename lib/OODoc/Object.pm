@@ -4,7 +4,7 @@ package OODoc::Object;
 use strict;
 use warnings;
 
-use Carp;
+use Log::Report    'oodoc';
 
 =chapter NAME
 
@@ -19,10 +19,6 @@ OODoc::Object - base class for all OODoc classes.
 Any object used in the OODoc module is derived from this OODoc::Object
 class.  This means that all functionality in this class is provided
 for all of the other classes.
-
-=cut
-
-#-------------------------------------------
 
 =chapter OVERLOADED
 
@@ -59,8 +55,8 @@ sub new(@)
     my $self = (bless {}, $class)->init(\%args);
 
     if(my @missing = keys %args)
-    {   local $" = ', ';
-        carp "WARNING: Unknown ".(@missing==1?'option':'options')." @missing";
+    {   error __xn"unknown option {options}", "unknown options {options}"
+           , scalar @missing, options => @missing;
     }
 
     $self;
@@ -77,11 +73,9 @@ sub init($)
 =section Inheritance knowledge
 
 =method extends [OBJECT]
-
 Close to all elements used within OODoc can have an inheritance relation.
 The returned object is extended by the current object.  Multiple inheritance
 is not supported here.
-
 =cut
 
 sub extends(;$)
@@ -99,9 +93,7 @@ sub extends(;$)
 =section Commonly used functions
 
 =ci_method mkdirhier DIRECTORY
-
 Creates this DIRECTORY and all its non-existing parents.
-
 =cut
 
 sub mkdirhier($)
@@ -111,21 +103,16 @@ sub mkdirhier($)
 
     while(@dirs)
     {   $path = File::Spec->catdir($path, shift @dirs);
-        die "Cannot create $path $!"
-            unless -d $path || mkdir $path;
+        -d $path || mkdir $path
+            or fault __x"cannot create {dir}", dir => $path;
     }
 
     $thing;
 }
 
-#-------------------------------------------
-
 =ci_method filenameToPackage FILENAME
-
 =example
-
  print $self->filenameToPackage('Mail/Box.pm'); # prints Mail::Box
-
 =cut
 
 sub filenameToPackage($)
@@ -144,13 +131,11 @@ All manuals can be reached everywhere in the program: it is a global
 collection.
 
 =method addManual MANUAL
-
 The MANUAL will be added to the list of known manuals.  The same package
 name can appear in more than one manual.  This OBJECT shall be of type
 M<OODoc::Manual>.
 
 =error manual definition requires manual object
-
 A call to M<addManual()> expects a new manual object (a M<OODoc::Manual>),
 however an incompatible thing was passed.  Usually, intended was a call
 to M<manualsForPackage()> or M<mainManual()>.
@@ -163,29 +148,23 @@ my %manuals;
 sub addManual($)
 {   my ($self, $manual) = @_;
 
-    confess "ERROR: manual definition requires manual object"
-        unless ref $manual && $manual->isa('OODoc::Manual');
+    ref $manual && $manual->isa('OODoc::Manual')
+         or panic "manual definition requires manual object";
 
     push @{$packages{$manual->package}}, $manual;
     $manuals{$manual->name} = $manual;
     $self;
 }
 
-#-------------------------------------------
-
 =method mainManual NAME
-
 Returns the manual of the named package which contains the primar
 documentation for the code of the package NAME.
-
 =cut
 
 sub mainManual($)
 {  my ($self, $name) = @_;
    (grep {$_ eq $_->package} $self->manualsForPackage($name))[0];
 }
-
-#-------------------------------------------
 
 =method manualsForPackage NAME
 
@@ -201,16 +180,11 @@ sub manualsForPackage($)
     defined $packages{$name} ? @{$packages{$name}} : ();
 }
 
-#-------------------------------------------
-
 =method manuals 
 All manuals are returned.
-
 =cut
 
 sub manuals() { values %manuals }
-
-#-------------------------------------------
 
 =method manual NAME
 Returns the manual with the specified name, or else C<undef>.
@@ -219,12 +193,8 @@ Returns the manual with the specified name, or else C<undef>.
 
 sub manual($) { $manuals{ $_[1] } }
 
-#-------------------------------------------
-
 =method packageNames
-
 Returns the names of all defined packages.
-
 =cut
 
 sub packageNames() { keys %packages }

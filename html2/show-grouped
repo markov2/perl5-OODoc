@@ -1,0 +1,25 @@
+<h2>Show</h2>
+
+<ul>
+<li>class <a href="/manual/<{manual}>/relations.html">relations</a></li>
+<li><span class="this">items grouped</span></li>
+<li>items <a href="/manual/<{manual}>/sorted.html">alphabetically</a></li>
+<li>documentation <a href="/manual/<{manual}>/overview.html">overview</a></li>
+</ul>
+
+<{chapters}>
+<h2><{nice_name}></h2>
+
+<ul>
+
+<{has_subroutines}>
+<li><{sublinks_me}></li>\
+<{/has_subroutines}>\
+
+<{sections}>
+<li><{nice_name}>: <{sublinks_nested}></li>
+<{sections}>\
+
+</ul>
+
+<{/chapters}>

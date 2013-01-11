@@ -1,0 +1,9 @@
+<h2><{nice_name}></h2>
+
+<{description}>\
+
+<{template file=subroutines}>\
+
+<{sections}>\
+  <{template file=section}>\
+<{/sections}>

@@ -5,8 +5,8 @@ use base 'OODoc::Object';
 use strict;
 use warnings;
 
-use Carp;
-use List::Util qw/first/;
+use Log::Report    'oodoc';
+use List::Util     'first';
 
 =chapter NAME
 
@@ -53,7 +53,7 @@ sub init($)
 
     my $skip = delete $args->{skip_links} || [];
     my @skip = map { ref $_ eq 'Regexp' ? $_ : qr/^\Q$_\E(?:\:\:|$)/ }
-       ref $skip eq 'ARRAY' ? @$skip : $skip;
+        ref $skip eq 'ARRAY' ? @$skip : $skip;
     $self->{skip_links} = \@skip;
 
     $self;
@@ -78,7 +78,7 @@ platform dependend black hole is used (/dev/null on UNIX).
 
 =cut
 
-sub parse(@) { confess }
+sub parse(@) {panic}
 
 #-------------------------------------------
 
@@ -117,10 +117,11 @@ sub cleanup($$$)
        if $formatter->isa('OODoc::Format::Pod');
 
     return $self->cleanupHtml($formatter, $manual, $string)
-       if $formatter->isa('OODoc::Format::Html');
+       if $formatter->isa('OODoc::Format::Html')
+       || $formatter->isa('OODoc::Format::Html2');
 
-    croak "ERROR: The formatter type ".ref($formatter)
-        . " is not known for cleanup\n";
+    error __x"the formatter type {type} is not known for cleanup"
+      , type => ref $formatter;
 
     $string;
 }

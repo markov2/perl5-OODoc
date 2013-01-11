@@ -5,11 +5,11 @@ use base qw/OODoc::Format::Pod OODoc::Format::TemplateMagic/;
 use strict;
 use warnings;
 
-use Carp;
+use Log::Report    'oodoc';
+use Template::Magic;
+
 use File::Spec;
 use IO::Scalar;
-
-use Template::Magic;
 
 =chapter NAME
 
@@ -87,20 +87,23 @@ erroneous, because it requires a chapter name.
 sub templateChapter($$)
 {   my ($self, $zone, $args) = @_;
     my $contained = $zone->content;
-    warn "WARNING: no meaning for container $contained in chapter block\n"
-        if defined $contained && length $contained;
+    defined $contained && length $contained
+        or warning __x"no meaning for container {c} in chapter block"
+             , c => $contained;
 
     my $attrs = $zone->attributes;
     my $name  = $attrs =~ s/^\s*(\w+)\s*\,?// ? $1 : undef;
 
-    croak "ERROR: chapter without name in template.", return ''
-       unless defined $name;
+    unless(defined $name)
+    {   error __x"chapter without name in template.";
+        return '';
+    }
 
     my @attrs = $self->zoneGetParameters($attrs);
     my $out   = '';
 
-    $self->showOptionalChapter($name, %$args,
-       output => IO::Scalar->new(\$out), @attrs);
+    $self->showOptionalChapter($name, %$args
+      , output => IO::Scalar->new(\$out), @attrs);
 
     $out;
 }
@@ -132,6 +135,7 @@ __DATA__
 {chapter OVERLOADED}
 {chapter METHODS}
 {chapter FUNCTIONS}
+{chapter CONSTANTS}
 {chapter EXPORTS}
 {chapter DETAILS}
 {diagnostics}

@@ -5,7 +5,7 @@ use base 'OODoc::Text::Structure';
 use strict;
 use warnings;
 
-use Carp;
+use Log::Report    'oodoc';
 
 =chapter NAME
 
@@ -35,10 +35,11 @@ The section in which this sub-section lives.
 sub init($)
 {   my ($self, $args) = @_;
     $args->{type}      ||= 'Subsubsection';
-    $args->{container} ||= delete $args->{subsection} or confess;
+    $args->{container} ||= delete $args->{subsection} or panic;
     $args->{level}     ||= 3;
 
-    $self->SUPER::init($args) or return;
+    $self->SUPER::init($args)
+        or return;
 
     $self;
 }
@@ -48,6 +49,7 @@ sub findEntry($)
    $self->name eq $name ? $self : ();
 }
 
+#--------------
 =section Location
 
 =method subsection

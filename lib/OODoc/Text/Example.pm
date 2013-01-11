@@ -5,7 +5,7 @@ use base 'OODoc::Text';
 use strict;
 use warnings;
 
-use Carp;
+use Log::Report    'oodoc';
 
 =chapter NAME
 
@@ -30,9 +30,10 @@ in this manual page.
 sub init($)
 {   my ($self, $args) = @_;
     $args->{type}    ||= 'Example';
-    $args->{container} = delete $args->{container} or confess;
+    $args->{container} = delete $args->{container} or panic;
 
-    $self->SUPER::init($args) or return;
+    $self->SUPER::init($args)
+        or return;
 
     $self;
 }

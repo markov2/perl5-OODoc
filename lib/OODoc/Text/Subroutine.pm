@@ -5,7 +5,7 @@ use base 'OODoc::Text';
 use strict;
 use warnings;
 
-use Carp;
+use Log::Report    'oodoc';
 
 =chapter NAME
 
@@ -33,10 +33,11 @@ they differ.
 sub init($)
 {   my ($self, $args) = @_;
 
-    confess "no name for subroutine"
-       unless exists $args->{name};
+    exists $args->{name}
+        or error __x"no name for subroutine";
 
-    $self->SUPER::init($args) or return;
+    $self->SUPER::init($args)
+        or return;
 
     $self->{OTS_param}    = delete $args->{parameters};
     $self->{OTS_options}  = {};
@@ -63,7 +64,7 @@ situation is errorneous of confusing for the users of the library.
 
 sub extends($)
 {   my $self  = shift;
-    return $self->SUPER::extends unless @_;
+    @_ or return $self->SUPER::extends;
 
     my $super = shift;
     if($self->type ne $super->type)
@@ -71,11 +72,10 @@ sub extends($)
         my ($fn2, $ln2) = $super->where;
         my ($t1,  $t2 ) = ($self->type, $super->type);
 
-        warn <<WARN;
-WARNING: subroutine $self() extended by different type:
-   $t1 in $fn1 line $ln1
-   $t2 in $fn2 line $ln2
-WARN
+        warning __x"subroutine {name}() extended by different type:\n  {type1} in {file1} line {line1}\n  {type2} in {file2} line {line2}"
+          , name => "$self"
+          , type1 => $t1, file1 => $fn1, line1 => $ln1
+          , type2 => $t2, file2 => $fn2, line2 => $ln2;
     }
 
     $self->SUPER::extends($super);
@@ -86,10 +86,8 @@ WARN
 =section Attributes
 
 =method parameters
-
 The parameter list for the subroutine is returned as string.  The
 result may be C<undef> or empty.
-
 =cut
 
 sub parameters() {shift->{OTS_param}}
@@ -99,7 +97,6 @@ sub parameters() {shift->{OTS_param}}
 =section Location
 
 =method location MANUAL
-
 Try to figure-out what the location for the subroutine is within the
 MANUAL page.  Have a look at all levels of extension for this
 sub-routine's documentation and decides the best enclosing
@@ -107,7 +104,6 @@ chapter, section and subsection.  Then return that object for the
 current manual.
 
 =warning subroutine $self location conflict: $here $super
-
 The location of subroutine descriptions must be consistent over the
 manual pages.  You may change the level of clearness about the
 exact location (place in the chapter in one page, and in a subsection
@@ -119,7 +115,8 @@ be a part of the chapter).
 sub location($)
 {   my ($self, $manual) = @_;
     my $container = $self->container;
-    my $super     = $self->extends or return $container;
+    my $super     = $self->extends
+        or return $container;
 
     my $superloc  = $super->location;
     my $superpath = $superloc->path;
@@ -129,7 +126,7 @@ sub location($)
     
     if(length $superpath < length $mypath)
     {   return $container
-           if substr($mypath, 0, length($superpath)+1) eq "$superpath/";
+            if substr($mypath, 0, length($superpath)+1) eq "$superpath/";
     }
     elsif(substr($superpath, 0, length($mypath)+1) eq "$mypath/")
     {   if($superloc->isa("OODoc::Text::Chapter"))
@@ -153,11 +150,10 @@ sub location($)
    {   my ($myfn, $myln)       = $self->where;
        my ($superfn, $superln) = $super->where;
 
-       warn <<WARN
-WARNING: Subroutine $self() location conflict:
-   $mypath in $myfn line $myln
-   $superpath in $superfn line $superln
-WARN
+       warning __x"subroutine {name}() location conflict:\n  {path1} in {file1} line {line1}\n  {path2} in {file2} line {line2}"
+         , name => "$self"
+         , path1 => $mypath, file1 => $myfn, line1 => $myln
+         , path2 => $superpath, file2 => $superfn, line2 => $superln;
    }
 
    $container;
@@ -184,7 +180,8 @@ that will be stored.
 
 sub default($)
 {   my ($self, $it) = @_;
-    return $self->{OTS_defaults}{$it} unless ref $it;
+    ref $it
+        or return $self->{OTS_defaults}{$it};
 
     my $name = $it->name;
     $self->{OTS_defaults}{$name} = $it;
@@ -209,7 +206,8 @@ that will be stored.
 
 sub option($)
 {   my ($self, $it) = @_;
-    return $self->{OTS_options}{$it} unless ref $it;
+    ref $it
+        or return $self->{OTS_options}{$it};
 
     my $name = $it->name;
     $self->{OTS_options}{$name} = $it;
@@ -276,7 +274,8 @@ sub collectedOptions(@)
 
         unless(exists $options{$name})
         {   my ($fn, $ln) = $default->where;
-            warn "WARNING: no option $name for default in $fn line $ln\n";
+            warning __x"no option {name} for default in {file} line {line}"
+              , name => $name, file => $fn, line => $ln;
             next;
         }
         $options{$name}[1] = $default;
@@ -287,13 +286,14 @@ sub collectedOptions(@)
         next if defined $options{$name}[1];
 
         my ($fn, $ln) = $option->where;
-        warn "WARNING: no default for option $name defined in $fn line $ln\n";
+        warning __x"no default for option {name} defined in {file} line {line}"
+          , name => $name, file => $fn, line => $ln;
 
         my $default = $options{$name}[1] =
         OODoc::Text::Default->new
-         ( name => $name, value => 'undef'
-         , subroutine => $self, linenr => $ln
-         );
+          ( name => $name, value => 'undef'
+          , subroutine => $self, linenr => $ln
+          );
 
         $self->default($default);
     }

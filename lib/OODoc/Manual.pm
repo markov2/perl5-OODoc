@@ -5,9 +5,11 @@ use base 'OODoc::Object';
 use strict;
 use warnings;
 
-use Carp;
-use List::Util 'first';
+use Log::Report    'oodoc';
+
 use OODoc::Text::Chapter;
+
+use List::Util 'first';
 
 =chapter NAME
 
@@ -102,18 +104,18 @@ sub init($)
     $self->SUPER::init($args) or return;
 
     my $name = $self->{OP_package} = delete $args->{package}
-       or croak "ERROR: package name is not specified";
+       or error __x"package name is not specified";
 
     $self->{OP_source}   = delete $args->{source}
-        or croak "ERROR: no source filename is specified for manual $name";
+        or error __x"no source is specified for manual {name}", name => $name;
 
     $self->{OP_version}  = delete $args->{version}
-        or croak "ERROR: no version is specified for manual $name";
+        or error __x"no version is specified for manual {name}", name => $name;
 
     $self->{OP_distr}    = delete $args->{distribution}
-        or croak "ERROR: no distribution is specified for manual $name";
+        or error __x"no distribution specified for manual {name}", name=> $name;
 
-    $self->{OP_parser}   = delete $args->{parser}    or confess;
+    $self->{OP_parser}   = delete $args->{parser}    or panic;
     $self->{OP_stripped} = delete $args->{stripped};
 
     $self->{OP_pure_pod} = delete $args->{pure_pod} || 0;
@@ -195,13 +197,14 @@ sub chapter($)
         or return $self->{OP_chapter_hash}{$it};
 
     $it->isa("OODoc::Text::Chapter")
-        or confess "ERROR: $it is not a chapter";
+        or panic "$it is not a chapter";
 
     my $name = $it->name;
     if(my $old = $self->{OP_chapter_hash}{$name})
-    {   my ($fn,   $ln2) = $it->where;
-        my (undef, $ln1) = $old->where;
-        die "ERROR: two chapters named $name in $fn line $ln2 and $ln1\n";
+    {   my ($fn,  $ln2) = $it->where;
+        my ($fn2, $ln1) = $old->where;
+        error __x"two chapters named {name} in {file} line {line1} and {line2}"
+          , name => $name, file => $fn, line1 => $ln2, line2 => $ln1;
     }
 
     $self->{OP_chapter_hash}{$name} = $it;
@@ -245,13 +248,13 @@ sub name()
     return $self->{OP_name} if defined $self->{OP_name};
 
     my $chapter = $self->chapter('NAME')
-        or die 'ERROR: No chapter NAME in scope of package ',$self->package
-             , ' in file '.$self->source."\n";
+        or error __x"no chapter NAME in scope of package {pkg} in file {file}"
+             , pkg => $self->package, file => $self->source;
 
     my $text   = $chapter->description || '';
     $text =~ m/^\s*(\S+)\s*\-\s/
-        or die "ERROR: The NAME chapter does not have the right format in "
-             , $self->source, "\n";
+        or error __x"the NAME chapter does not have the right format in {file}"
+             , file => $self->source;
 
     $self->{OP_name} = $1;
 }
@@ -560,10 +563,9 @@ sub expand()
         }
     }
 
-    warn "ERROR: Section without location in $self: $_\n"
-        for keys %location;
-die $self->index
-  if keys %location;
+    warning __x"section without location in {manual}: {section}"
+      , manual => $self, section => $_
+          for keys %location;
 
     $self->{OP_is_expanded} = 1;
     $self;
@@ -611,7 +613,7 @@ sub mergeStructure(@)
 {   my ($self, %args) = @_;
     my @this      = defined $args{this}  ? @{$args{this}}  : ();
     my @super     = defined $args{super} ? @{$args{super}} : ();
-    my $container = $args{container} or confess;
+    my $container = $args{container} or panic;
 
     my $equal     = $args{equal} || sub {"$_[0]" eq "$_[1]"};
     my $merge     = $args{merge} || sub {$_[0]};
@@ -635,7 +637,8 @@ sub mergeStructure(@)
 
             if(first {$equal->($insert, $_)} @super)
             {   my ($fn, $ln) = $insert->where;
-                warn "WARNING: order conflict \"$take\" before \"$insert\" in $fn line $ln\n";
+                warning __x"order conflict: '{h1}' before '{h2}' in {file} line {line}"
+                  , h1 => $take, h2 => $insert, file => $fn, line => $ln;
             }
 
             push @joined, $insert
@@ -689,9 +692,9 @@ sub mostDetailedLocation($)
     return $path1
        if $lpath2 < $lpath1 && substr($path1, 0, $lpath2+1) eq "$path2/";
 
-    warn "WARNING: subroutine $thing location conflict:\n"
-       , "   $path1 in ",$thing->manual, "\n"
-       , "   $path2 in ",$inherit->manual, "\n"
+    warning __x"subroutine '{name}' location conflict:\n  {p1} in {man1}\n  {p2} in {man2}"
+      , name => "$thing", p1 => $path1, man1 => $thing->manual
+      , p2 => $path2, man2 => $inherit->manual
           if $self eq $thing->manual;
 
     $path1;
