@@ -27,7 +27,7 @@ OODoc::Text::Section - collects the text of one section within a chapter
 
 =chapter METHODS
 
-=c_method new OPTIONS
+=c_method new %options
 
 =requires chapter   OBJECT
 =default  container M<new(chapter)>
@@ -51,7 +51,7 @@ sub init($)
 sub emptyExtension($)
 {   my ($self, $container) = @_;
     my $empty = $self->SUPER::emptyExtension($container);
-    my @subsections = map {$_->emptyExtension($empty)} $self->subsections;
+    my @subsections = map $_->emptyExtension($empty), $self->subsections;
     $empty->subsections(@subsections);
     $empty;
 }
@@ -60,7 +60,7 @@ sub emptyExtension($)
 
 =section Location
 
-=method chapter
+=method chapter 
 Returns the chapter object for this section.
 =cut
 
@@ -100,9 +100,9 @@ sub all($@)
 
 =section Subsections
 
-=method subsection NAME|OBJECT
-With a NAME, the subsection within this section with that name is
-returned.  With an OBJECT (which must be a M<OODoc::Text::SubSection>),
+=method subsection $name|$object
+With a $name, the subsection within this section with that name is
+returned.  With an $object (which must be a M<OODoc::Text::SubSection>),
 a new subsection is added to the end of the list.
 
 =cut
@@ -117,7 +117,7 @@ sub subsection($)
     first {$_->name eq $thing} $self->subsections;
 }
 
-=method subsections [SUBSECTIONS]
+=method subsections [$subsections]
 Returns a list of all subsections in this chapter.
 =cut
 

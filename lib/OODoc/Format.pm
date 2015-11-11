@@ -61,7 +61,7 @@ L<Bundle::Template::Magic> and the ability to run cgi scripts.
 
 =chapter METHODS
 
-=c_method new OPTIONS
+=c_method new %options
 
 =requires project STRING
 The short name of this project (module), set by M<OODoc::new(project)>.
@@ -111,21 +111,21 @@ sub init($)
 
 =section Attributes
 
-=method project
+=method project 
 Returns the name of this project.
 =cut
 
 sub project() {shift->{OF_project}}
 
-=method version
+=method version 
 Returns the version string of this project.  This version may
 contains any character, so should be handled with care.
 
-=method workdir
+=method workdir 
 Returns the name of the work directory: the top location for all
 the output files.
 
-=method manifest
+=method manifest 
 Returns the M<OODoc::Manifest> object which maintains the names
 of created files.
 =cut
@@ -138,7 +138,7 @@ sub manifest() {shift->{OF_manifest}}
 
 =section Page generation
 
-=method createManual OPTIONS
+=method createManual %options
 
 =option  format_options ARRAY
 =default format_options []
@@ -163,7 +163,7 @@ The name of this project, which will appear on many pages.
 
 sub createManual(@) {panic}
 
-=method cleanup MANUAL, STRING
+=method cleanup $manual, STRING
 Takes the STRING and cleans it up to be in the right format for the
 current formatter.  The cleaning up is parser dependent, and therefore
 the parser of the manual is addressed to do the work.
@@ -174,8 +174,8 @@ sub cleanup($$)
     $manual->parser->cleanup($self, $manual, $string);
 }
 
-=method showChapter OPTIONS
-You can pass all OPTIONS about formatting to this method.  They will passed
+=method showChapter %options
+You can pass all %options about formatting to this method.  They will passed
 to the related methods.  So: the list of options you can pass here is much
 longer: the combination of everything possible for all show* methods.
 
@@ -203,6 +203,8 @@ sub showChapter(@)
     my $show_ch  = $args{show_inherited_chapter}    || 'REFER';
     my $show_sec = $args{show_inherited_section}    || 'REFER';
     my $show_ssec= $args{show_inherited_subsection} || 'REFER';
+warn "show $chapter in $manual ($show_ch, $show_sec, ", ref($self), ")\n"
+   if ref $self =~ m/pod/i;
 
     if($manual->inherited($chapter))
     {    return $self if $show_ch eq 'NO';
@@ -235,7 +237,7 @@ sub showChapter(@)
 
 #-------------------------------------------
 
-=method showStructureExpanded OPTIONS
+=method showStructureExpanded %options
 
 =option   show_chapter_examples 'NO'|'EXPAND'
 =default  show_chapter_examples 'EXPAND'
@@ -246,7 +248,7 @@ subsection.
 
 sub showStructureExpanded(@) {panic}
 
-=method showStructureRefer OPTIONS
+=method showStructureRefer %options
 =cut
 
 sub showStructureRefer(@) {panic}
@@ -267,7 +269,7 @@ sub chapterCopyrights(@)  {shift->showOptionalChapter(COPYRIGHTS  => @_)}
 
 #-------------------------------------------
 
-=method showRequiredChapter NAME, OPTIONS
+=method showRequiredChapter $name, %options
 
 =warning missing required chapter $name in $manual
 
@@ -286,7 +288,7 @@ sub showRequiredChapter($@)
     $self->showChapter(chapter => $chapter, %args);
 }
 
-=method showOptionalChapter NAME, OPTIONS
+=method showOptionalChapter $name, %options
 =cut
 
 sub showOptionalChapter($@)
@@ -299,7 +301,7 @@ sub showOptionalChapter($@)
     $self->showChapter(chapter => $chapter, %args);
 }
 
-=method createOtherPages OPTIONS
+=method createOtherPages %options
 Create other pages which come with the set of formatted manuals.  What
 the contents of these pages is depends on the formatter.  Some formatters
 simply ignore the functionality of this method as a whole: they do not
@@ -321,7 +323,7 @@ files is formatter dependent.
 
 sub createOtherPages(@) {shift}
 
-=method showSubroutines OPTIONS
+=method showSubroutines %options
 
 =option  subroutines ARRAY
 =default subroutines []
@@ -393,7 +395,7 @@ sub showSubroutines(@)
     }
 }
 
-=method showSubroutine(@)
+=method showSubroutine <@>
 
 =requires subroutine OBJECT
 =requires manual  MANUAL
@@ -536,7 +538,7 @@ sub showSubroutine(@)
         if $show_diag eq 'EXPAND';
 }
 
-=method showExamples OPTIONS
+=method showExamples %options
 
 =requires examples ARRAY
 =requires manual MANUAL
@@ -546,7 +548,7 @@ sub showSubroutine(@)
 
 sub showExamples(@) {shift}
 
-=method showSubroutineUse OPTIONS
+=method showSubroutineUse %options
 =requires subroutine OBJECT
 =requires manual OBJECT
 =requires output FILE
@@ -556,7 +558,7 @@ sub showExamples(@) {shift}
 
 sub showSubroutineUse(@) {shift}
 
-=method showSubroutineName OPTIONS
+=method showSubroutineName %options
 =requires subroutine OBJECT
 =requires manual OBJECT
 =requires output FILE
@@ -567,7 +569,7 @@ sub showSubroutineUse(@) {shift}
 
 sub showSubroutineName(@) {shift}
 
-=method showSubroutineDescription OPTIONS
+=method showSubroutineDescription %options
 =requires subroutine OBJECT
 =requires manual OBJECT
 =requires output FILE
@@ -575,7 +577,7 @@ sub showSubroutineName(@) {shift}
 
 sub showSubroutineDescription(@) {shift}
 
-=method showOptionTable OPTIONS
+=method showOptionTable %options
 =requires options ARRAY
 =requires manual OBJECT
 =requires output FILE
@@ -617,8 +619,8 @@ sub showOptionTable(@)
     $self
 }
 
-=method showOptions OPTIONS
-The options shown are B<not> the OPTIONS passed as argument, but the
+=method showOptions %options
+The options shown are B<not> the %options passed as argument, but the
 options which belong to the subroutine being displayed.
 
 =requires options ARRAY
@@ -654,7 +656,7 @@ sub showOptions(@)
     $self;
 }
 
-=method showOptionUse OPTIONS
+=method showOptionUse %options
 =requires option OBJECT
 =requires default OBJECT
 =requires output FILE
@@ -663,7 +665,7 @@ sub showOptions(@)
 
 sub showOptionUse(@) {shift}
 
-=method showOptionExpand OPTIONS
+=method showOptionExpand %options
 =requires option OBJECT
 =requires default OBJECT
 =requires output FILE

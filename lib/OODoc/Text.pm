@@ -25,15 +25,15 @@ objects and convert it into manual pages.
 
 =chapter OVERLOADED
 
-=overload '==' and '!='
+=overload  '==' $and '!='
 Numeric comparison is used to compare to objects whether they are
 identical.  String comparison is overloaded to compare the names
 of the objects.
 
-=overload '""' (stringification)
+=overload  '""' <$stringification>
 Returned is the name of the text object.
 
-=overload 'cmp' (string comparison)
+=overload  'cmp' <$string $comparison>
 Names are compared.
 
 =cut
@@ -48,7 +48,7 @@ use overload '=='   => sub {$_[0]->unique == $_[1]->unique}
 
 =chapter METHODS
 
-=c_method new OPTIONS
+=c_method new %options
 
 =option  name STRING
 =default name undef
@@ -89,7 +89,7 @@ sub init($)
         or panic "no text container specified for the {pkg} object"
              , pkg => ref $self;
 
-;   # may be undef
+    # may be undef
     $self->{OT_container}= delete $args->{container};
     
     $self->{OT_descr}    = delete $args->{description} || '';
@@ -103,7 +103,7 @@ sub init($)
 
 =section Attributes
 
-=method name
+=method name 
 The name of this text element.  Stringification is overloaded to call
 this name method.
 
@@ -114,13 +114,13 @@ this name method.
 
 sub name() {shift->{OT_name}}
 
-=method type
+=method type 
 Returns the type name of this data object.
 =cut
 
 sub type() {shift->{OT_type}}
 
-=method description
+=method description 
 Returns the description text for this object.  Nearly all objects
 contains some kind of introductory description.
 =cut
@@ -133,7 +133,7 @@ sub description()
     join '', @lines;
 }
 
-=method container [OBJECT]
+=method container [$object]
 The text element which encapsulates the text element at hand.  This
 defines the structure of the documentation.
 Only for chapters, this value will be undefined.
@@ -146,8 +146,8 @@ sub container(;$)
 
 =section Location
 
-=method manual [NAME]
-Without a NAME, the manual of the text object is returned. With a NAME,
+=method manual [$name]
+Without a $name, the manual of the text object is returned. With a $name,
 the manual with that name is returned, even when that does not have a
 relation to the object: it calls M<OODoc::Object::manual()>.
 =cut
@@ -158,7 +158,7 @@ sub manual(;$)
        : $self->container->manual;
 }
 
-=method unique
+=method unique 
 Returns a unique id for this text item.  This is the easiest way to
 see whether two references to the same (overloaded) objects point to
 the same thing. The ids are numeric.
@@ -171,7 +171,7 @@ the same thing. The ids are numeric.
 
 sub unique() {shift->{OT_unique}}
 
-=method where
+=method where 
 Returns the source of the text item: the filename name and the line
 number of the start of it.
 =cut
@@ -185,7 +185,7 @@ sub where()
 
 =section Collected
 
-=method openDescription
+=method openDescription 
 Returns a reference to the scalar which will contain the description for
 this object.
 
@@ -197,7 +197,7 @@ this object.
 
 sub openDescription() { \shift->{OT_descr} }
 
-=method findDescriptionObject
+=method findDescriptionObject 
 From the current object, search in the extends until an object is found
 which has a content for the description field.
 =cut
@@ -210,7 +210,7 @@ sub findDescriptionObject()
     wantarray ? @descr : $descr[0];
 }
 
-=method example OBJECT
+=method example $object
 Add a new example (a OODoc::Text::Example object) to the list already in
 this object.  You can not look for a specific because they have no real
 name (only a sequence number).
@@ -222,7 +222,7 @@ sub example($)
     $example;
 }
 
-=method examples
+=method examples 
 Returns a list of all examples contained in this text element.
 =cut
 

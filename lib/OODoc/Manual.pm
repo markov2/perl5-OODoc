@@ -33,7 +33,7 @@ More than one manual can be related to a single package.
 
 =chapter OVERLOADED
 
-=overload stringification
+=overload stringification 
 
 Used in string context, a manual produces its name.
 
@@ -42,7 +42,7 @@ Used in string context, a manual produces its name.
 use overload '""' => sub { shift->name };
 use overload bool => sub {1};
 
-=overload cmp
+=overload cmp 
 String comparison takes place between a manual name and another
 manual name which may be a manual object or any other string or
 stringifyable object.
@@ -61,7 +61,7 @@ use overload cmp  => sub {$_[0]->name cmp "$_[1]"};
 
 =chapter METHODS
 
-=c_method new OPTIONS
+=c_method new %options
 
 =requires parser OBJECT
 The parser which produces this manual page.  This parameter is needed
@@ -132,43 +132,43 @@ sub init($)
 
 =section Attributes
 
-=method package
+=method package 
 Returns the package of the manual.
 =cut
 
 sub package() {shift->{OP_package}}
 
-=method parser
+=method parser 
 Returns the parser which has produced this manual object.
 =cut
 
 sub parser() {shift->{OP_parser}}
 
-=method source
+=method source 
 Returns the source of this manual information.
 =cut
 
 sub source() {shift->{OP_source}}
 
-=method version
+=method version 
 Returns the version of this manual information.
 =cut
 
 sub version() {shift->{OP_version}}
 
-=method distribution
+=method distribution 
 Returns the distribution which includes this manual.
 =cut
 
 sub distribution() {shift->{OP_distr}}
 
-=method stripped
+=method stripped 
 The name of the produced stripped package file.
 =cut
 
 sub stripped() {shift->{OP_stripped}}
 
-=method isPurePod
+=method isPurePod 
 Returns whether this package has real code related to it.
 =cut
 
@@ -178,9 +178,9 @@ sub isPurePod() {shift->{OP_pure_pod}}
 
 =section Collected
 
-=method chapter NAME|OBJECT
-When a NAME (a string) given, the chapter with that name is returned, or
-C<undef> when it is not known.  With an OBJECT, that object is added to
+=method chapter $name|$object
+When a $name (a string) given, the chapter with that name is returned, or
+C<undef> when it is not known.  With an $object, that object is added to
 the list of chapters.
 
 =error two chapters named $name in $filename line $ln1 and $ln2
@@ -212,7 +212,7 @@ sub chapter($)
     $it;
 }
 
-=method chapters [CHAPTERS]
+=method chapters [$chapters]
 Returns the ordered list of chapter object for this manual.
 =cut
 
@@ -225,7 +225,7 @@ sub chapters(@)
     @{$self->{OP_chapters}};
 }
 
-=method name
+=method name 
 Returns the name of the manual, which is found in the NAME chapter.
 
 =error No chapter NAME in scope of package $pkg in file $source
@@ -260,7 +260,7 @@ sub name()
 }
 
 
-=method subroutines
+=method subroutines 
 All subroutines of all chapters within this manual together, especially
 useful for counting.
 
@@ -271,8 +271,8 @@ useful for counting.
 
 sub subroutines() { shift->all('subroutines') }
 
-=method subroutine NAME
-Returns the subroutine with the specified NAME as object reference.  When
+=method subroutine $name
+Returns the subroutine with the specified $name as object reference.  When
 the manual is part of a package description which is spread over multiple
 manuals, then these other manuals will be searched as well.
 =cut
@@ -294,7 +294,7 @@ sub subroutine($)
     ();
 }
 
-=method examples
+=method examples 
 All examples of all chapters within this manual together, especially
 useful for counting.
 
@@ -310,7 +310,7 @@ sub examples()
     );
 }
 
-=method diagnostics OPTIONS
+=method diagnostics %options
 All diagnostic messages of all chapters for this manual together.
 
 =option  select ARRAY
@@ -340,8 +340,8 @@ sub diagnostics(@)
 
 =section Inheritance knowledge
 
-=method superClasses [PACKAGES]
-Returns the super classes for this package.  PACKAGES (names or objects)
+=method superClasses [$packages]
+Returns the super classes for this package.  $packages (names or objects)
 will be added to the list of superclasses first.
 =cut
 
@@ -351,9 +351,9 @@ sub superClasses(;@)
     @{$self->{OP_isa}};
 }
 
-=method realizes [PACKAGE]
+=method realizes [$package]
 Returns the class into which this class can be realized.  This is
-a trick of the Object::Realize::Later module.  The PACKAGE (name or
+a trick of the Object::Realize::Later module.  The $package (name or
 object) will be set first, if specified.
 =cut
 
@@ -362,9 +362,9 @@ sub realizes(;$)
     @_ ? ($self->{OP_realizes} = shift) : $self->{OP_realizes};
 }
 
-=method subClasses [PACKAGES]
+=method subClasses [$packages]
 Returns the names of all sub-classes (extensions) of this package.
-When PACKAGES (names or objects) are specified, they are first added
+When $packages (names or objects) are specified, they are first added
 to the list.
 =cut
 
@@ -374,9 +374,9 @@ sub subClasses(;@)
     @{$self->{OP_subclasses}};
 }
 
-=method realizers [PACKAGES]
+=method realizers [$packages]
 Returns a list of packages which can realize into this object
-using Object::Realize::Later magic.  When PACKAGES (names or objects)
+using Object::Realize::Later magic.  When $packages (names or objects)
 are specified, they are added first.
 =cut
 
@@ -386,7 +386,7 @@ sub realizers(;@)
     @{$self->{OP_realizers}};
 }
 
-=method extraCode
+=method extraCode 
 Returns a list of manuals which contain extra code for this package.
 =cut
 
@@ -399,9 +399,9 @@ sub extraCode()
     : ();
 }
 
-=method all METHOD, PARAMETERS
-Call M<OODoc::Text::Structure::all()> on all chapters, passing the METHOD
-and PARAMETERS.  In practice, this means that you can simply collect
+=method all $method, $parameters
+Call M<OODoc::Text::Structure::all()> on all chapters, passing the $method
+and $parameters.  In practice, this means that you can simply collect
 kinds of information from various parts within the manual page.
 
 =example
@@ -414,14 +414,14 @@ sub all($@)
     map { $_->all(@_) } $self->chapters;
 }
 
-=method inherited SUBROUTINE|OPTION
-Returns whether the SUBROUTINE or OPTION was defined by this manual page,
+=method inherited $subroutine|$option
+Returns whether the $subroutine or $option was defined by this manual page,
 or inherited from it.
 =cut
 
 sub inherited($) {$_[0]->name ne $_[1]->manual->name}
 
-=method ownSubroutines
+=method ownSubroutines 
 Returns only the subroutines which are described in this manual page
 itself.  M<subroutines()> returns them all.
 =cut
@@ -436,7 +436,7 @@ sub ownSubroutines
 
 =section Processing
 
-=method collectPackageRelations
+=method collectPackageRelations 
 =cut
 
 sub collectPackageRelations()
@@ -457,7 +457,7 @@ sub collectPackageRelations()
     %return;
 }
 
-=method expand
+=method expand 
 Add the information of lower level manuals into this one.
 =cut
 
@@ -571,7 +571,7 @@ sub expand()
     $self;
 }
 
-=method mergeStructure OPTIONS
+=method mergeStructure %options
 Merge two lists of structured text objects: "this" list and "super" list.
 The "this" objects are defined on this level of inheritance, where the
 "super" objects are from an inheritence level higher (super class).
@@ -650,9 +650,9 @@ sub mergeStructure(@)
     (@joined, @this);
 }
 
-=method mostDetailedLocation OBJECT
-The OBJECT (a text element) is located in some subsection, section or
-chapter.  But the OBJECT may also be an extension to a piece of
+=method mostDetailedLocation $object
+The $object (a text element) is located in some subsection, section or
+chapter.  But the $object may also be an extension to a piece of
 documentation which is described in a super class with a location in
 more detail.  The most detailed location for the description is returned.
 
@@ -700,7 +700,7 @@ sub mostDetailedLocation($)
     $path1;
 }
 
-=method createInheritance
+=method createInheritance 
 Create the text which represents the inheritance relationships of
 a certain package.  More than one MANUAL can be defined for one
 package, and will each produce the same text.  The returned string
@@ -780,7 +780,7 @@ sub createSuperSupers($)
 
 =section Tracing
 
-=method stats
+=method stats 
 Returns a string which displays some stats about the manual.
 =cut
 
@@ -809,7 +809,7 @@ $head
 STATS
 }
 
-=method index
+=method index 
 Returns a string which can be used as index of headings used in this
 manual page.
 =example

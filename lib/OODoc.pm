@@ -71,7 +71,7 @@ example of the produced output.
 
 =chapter METHODS
 
-=c_method new OPTIONS
+=c_method new %options
 
 =option  project STRING
 =default project <distribution>
@@ -140,19 +140,19 @@ sub init($)
 
 =section Attributes
 
-=method distribution
+=method distribution 
 Returns the nice name for the distribution.
 =cut
 
 sub distribution() {shift->{O_distribution}}
 
-=method version
+=method version 
 Returns the version string for the distribution.
 =cut
 
 sub version() {shift->{O_version}}
 
-=method project
+=method project 
 Returns the general project description, by default the distribution name.
 =cut
 
@@ -162,10 +162,10 @@ sub project() {shift->{O_project}}
 
 =section Parser
 
-=method selectFiles WHICH, LIST
+=method selectFiles $which, LIST
 
 Returns two array references: the first with files to process, and the second
-with files which do not need to be processed.  WHICH comes from
+with files which do not need to be processed.  $which comes from
 M<processFiles(select)> and the LIST are files from a manifest.
 
 =error use regex, code reference or array for file selection
@@ -195,7 +195,7 @@ sub selectFiles($@)
     ( \@process, \@copy );
 }
 
-=method processFiles OPTIONS
+=method processFiles %options
 
 =requires workdir DIRECTORY
 Specify the directory where the stripped pm-files and the pod files
@@ -441,7 +441,7 @@ sub processFiles(@)
 
 =section Preparation
 
-=method prepare OPTIONS
+=method prepare %options
 Add information to the documentation tree about inheritance relationships
 of the packages.  C<prepare> must be called between M<processFiles()>
 and M<create()>.
@@ -469,7 +469,7 @@ sub prepare(@)
     $self;
 }
 
-=method getPackageRelations
+=method getPackageRelations 
 Compile all files which contain packages, and then try to find-out
 how they are related.
 
@@ -535,16 +535,16 @@ sub getPackageRelations($)
 
 =section Formatter
 
-=method create NAME|CLASS|OBJECT, OPTIONS
+=method create $name|$class|$object, %options
 Create a manual for the set of manuals read so far.  The manuals are
 produced by different formatters which produce one page at a time.
 Returned is the formatter which is used: it may contain useful information
 for you.
 
 The first, optional argument specifies the type of pages to be produced.
-This can be either a predefined NAME (currently available are C<pod>
+This can be either a predefined $name (currently available are C<pod>
 and C<html> representing M<OODoc::Format::Pod> and M<OODoc::Format::Html>
-respectively), the name of a CLASS which needs to be instantiated,
+respectively), the name of a $class which needs to be instantiated,
 or an instantiated formatter.
 
 =requires workdir DIRECTORY
@@ -691,7 +691,7 @@ sub create($@)
     $format;
 }
 
-=method stats
+=method stats 
 Returns a string which contains some statistics about the whole parsed
 document set.
 =cut

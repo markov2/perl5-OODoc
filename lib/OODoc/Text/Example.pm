@@ -21,7 +21,7 @@ in this manual page.
 
 =chapter METHODS
 
-=c_method new OPTIONS
+=c_method new %options
 
 =default type  'Example'
 

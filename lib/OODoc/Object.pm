@@ -26,7 +26,7 @@ for all of the other classes.
 
 =section Constructors
 
-=c_method new OPTIONS
+=c_method new %options
 
 Create a new object (instantiation).  All objects in OODoc are created
 the same way: they carry a list of key-value pairs as option.  For
@@ -72,7 +72,7 @@ sub init($)
 
 =section Inheritance knowledge
 
-=method extends [OBJECT]
+=method extends [$object]
 Close to all elements used within OODoc can have an inheritance relation.
 The returned object is extended by the current object.  Multiple inheritance
 is not supported here.
@@ -81,9 +81,7 @@ is not supported here.
 sub extends(;$)
 {   my $self = shift;
     my $ext  = $self->{OO_extends};
-    if(@_)
-    {   push @$ext, @_;
-    }
+    push @$ext, @_;
 
     wantarray ? @$ext : $ext->[0];
 }
@@ -92,8 +90,8 @@ sub extends(;$)
 
 =section Commonly used functions
 
-=ci_method mkdirhier DIRECTORY
-Creates this DIRECTORY and all its non-existing parents.
+=ci_method mkdirhier $directory
+Creates this $directory and all its non-existing parents.
 =cut
 
 sub mkdirhier($)
@@ -110,7 +108,7 @@ sub mkdirhier($)
     $thing;
 }
 
-=ci_method filenameToPackage FILENAME
+=ci_method filenameToPackage $filename
 =example
  print $self->filenameToPackage('Mail/Box.pm'); # prints Mail::Box
 =cut
@@ -130,8 +128,8 @@ sub filenameToPackage($)
 All manuals can be reached everywhere in the program: it is a global
 collection.
 
-=method addManual MANUAL
-The MANUAL will be added to the list of known manuals.  The same package
+=method addManual $manual
+The $manual will be added to the list of known manuals.  The same package
 name can appear in more than one manual.  This OBJECT shall be of type
 M<OODoc::Manual>.
 
@@ -156,9 +154,9 @@ sub addManual($)
     $self;
 }
 
-=method mainManual NAME
+=method mainManual $name
 Returns the manual of the named package which contains the primar
-documentation for the code of the package NAME.
+documentation for the code of the package $name.
 =cut
 
 sub mainManual($)
@@ -166,10 +164,10 @@ sub mainManual($)
    (grep {$_ eq $_->package} $self->manualsForPackage($name))[0];
 }
 
-=method manualsForPackage NAME
+=method manualsForPackage $name
 
-Returns a list package objects which are related to the specified NAME.
-One NAME can appear in more than one file, and therefore a list is
+Returns a list package objects which are related to the specified $name.
+One $name can appear in more than one file, and therefore a list is
 returned.
 
 =cut
@@ -186,14 +184,14 @@ All manuals are returned.
 
 sub manuals() { values %manuals }
 
-=method manual NAME
+=method manual $name
 Returns the manual with the specified name, or else C<undef>.
 
 =cut
 
 sub manual($) { $manuals{ $_[1] } }
 
-=method packageNames
+=method packageNames 
 Returns the names of all defined packages.
 =cut
 

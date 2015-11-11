@@ -24,7 +24,7 @@ part of a chapter.
 
 =chapter METHODS
 
-=c_method new OPTIONS
+=c_method new %options
 
 =requires section OBJECT
 The section in which this sub-section lives.
@@ -49,7 +49,7 @@ sub init($)
 sub emptyExtension($)
 {   my ($self, $container) = @_;
     my $empty = $self->SUPER::emptyExtension($container);
-    my @subsub = map {$_->emptyExtension($empty)} $self->subsubsections;
+    my @subsub = map $_->emptyExtension($empty), $self->subsubsections;
     $empty->subsubsections(@subsub);
     $empty;
 }
@@ -63,13 +63,13 @@ sub findEntry($)
 
 =section Location
 
-=method section
+=method section 
 Returns the section object for this subsection.
 =cut
 
 sub section() { shift->container }
 
-=method chapter
+=method chapter 
 Returns the chapter object for this subsection.
 =cut
 
@@ -84,9 +84,9 @@ sub path()
 
 =section Subsubsections
 
-=method subsubsection NAME|OBJECT
-With a NAME, the subsubsection within this subsection with that name is
-returned.  With an OBJECT (which must be a OODoc::Text::SubSubSection),
+=method subsubsection $name|$object
+With a $name, the subsubsection within this subsection with that name is
+returned.  With an $object (which must be a OODoc::Text::SubSubSection),
 a new subsubsection is added to the end of the list.
 
 =cut
@@ -102,7 +102,7 @@ sub subsubsection($)
     first {$_->name eq $thing} $self->subsubsections;
 }
 
-=method subsubsections [SUBSUBSECTIONS]
+=method subsubsections [$subsubsections]
 Returns a list of all subsubsections in this chapter.
 =cut
 

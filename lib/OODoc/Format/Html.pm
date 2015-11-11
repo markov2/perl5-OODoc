@@ -38,7 +38,7 @@ POD, because one manual page may be spread over multiple output files.
 
 =section Constructors
 
-=c_method new OPTIONS
+=c_method new %options
 
 =option  html_root   URI
 =default html_root   '/'
@@ -67,19 +67,20 @@ sub init($)
     $self->{OFH_html} = $html;
     $self->{OFH_jump} = delete $args->{jump_script} || "$html/jump.cgi";
 
-    my $meta  = $self->{OFH_meta}  = delete $args->{html_meta_data} || '';
+    my $meta  = delete $args->{html_meta_data} || '';
     if(my $ss = $self->{OFH_style} = delete $args->{html_stylesheet})
     {   my $base = basename $ss;
         $meta   .= qq[<link rel="STYLESHEET" href="/$base">];
     }
+    $self->{OFH_meta} = $meta;
     $self;
 }
 
 #-------------------------------------------
 
 =section Attributes
-=method manual [MANUAL]
-Returns (optionally after setting) the MANUAL which is being processed.
+=method manual [$manual]
+Returns (optionally after setting) the $manual which is being processed.
 =cut
 
 sub manual(;$) {my $s = shift; @_ ? $s->{OFH_manual}=shift : $s->{OFH_manual}}
@@ -88,8 +89,8 @@ sub manual(;$) {my $s = shift; @_ ? $s->{OFH_manual}=shift : $s->{OFH_manual}}
 
 =section Page generation
 
-=method cleanupString MANUAL, OBJECT
-The general M<cleanup()> is too over eager: it turns all pieces of text
+=method cleanupString $manual, $object
+The general M<cleanup()> is over eager: it turns all pieces of text
 into paragraphs.  So things, like names of chapters, are not paragraphs
 at all: these simple strings are to be cleaned from paragraph information.
 =cut
@@ -102,10 +103,10 @@ sub cleanupString($$)
     $text;
 }
 
-=method link MANUAL, OBJECT, [TEXT]
-Create the html for a link which refers to the OBJECT.  The link will be
-shown somewhere in the MANUAL.  The TEXT is displayed as link, and defaults
-to the name of the OBJECT.
+=method link $manual, $object, [$text]
+Create the html for a link which refers to the $object.  The link will be
+shown somewhere in the $manual.  The $text is displayed as link, and defaults
+to the name of the $object.
 =cut
 
 sub link($$;$)
@@ -125,7 +126,7 @@ sub link($$;$)
     qq[<a href="$jump" target="_top">$text</a>];
 }
 
-=method mark MANUAL, ID
+=method mark $manual, $id
 Write a marker to items file.  This locates an item to a frameset.
 =cut
 
@@ -135,7 +136,7 @@ sub mark($$)
     $self->{OFH_markers}->print("$id $manual $self->{OFH_filename}\n");
 }
 
-=method createManual OPTIONS
+=method createManual %options
 
 =option  template DIRECTORY|HASH
 =default template "html/manual/"
@@ -219,7 +220,7 @@ sub createManual($@)
     $self;
 }
 
-=method createOtherPages OPTIONS
+=method createOtherPages %options
 
 =default source   "html/other/"
 =default process  qr/\.(s?html|cgi)$/
@@ -301,11 +302,11 @@ sub createOtherPages(@)
     $self;
 }
 
-=method expandTemplate LOCATION, [FORMAT]
+=method expandTemplate $location, [$format]
 Translate a filename, directory name or hash with file/directory names
-which are specified as LOCATION for templates into hash of filenames
-names and related formatting options.  The FORMAT is an array of options
-which can be overruled by values which the LOCATION is specified as hash.
+which are specified as $location for templates into hash of filenames
+names and related formatting options.  The $format is an array of options
+which can be overruled by values which the $location is specified as hash.
 
 =examples expanding template specification into files
 
@@ -618,7 +619,7 @@ sub showOptionExpand(@)
     $self;
 }
 
-=method writeTable
+=method writeTable 
 
 =requires output FILE
 =requires header ARRAY
@@ -681,7 +682,7 @@ sub showSubroutineDescriptionRefer(@)
 
 =section Template processing
 
-=method format OPTIONS
+=method format %options
 
 =option  manual MANUAL
 =default manual undef
@@ -721,7 +722,7 @@ sub format(@)
       scalar $template->processFile($args{template_fn}, \%permitted));
 }
 
-=method templateTitle TEMPL, ATTRS, IF, ELSE
+=method templateTitle $templ, $attrs, $if, $else
 =cut
 
 sub templateProject($$)
@@ -729,7 +730,7 @@ sub templateProject($$)
     $self->project;
 }
 
-=method templateTitle TEMPL, ATTRS, IF, ELSE
+=method templateTitle $templ, $attrs, $if, $else
 =error not a manual, so no automatic title in $template
 =cut
 
@@ -745,7 +746,7 @@ sub templateTitle($$)
     $name;
 }
 
-=method templateManual TEMPL, ATTRS, IF, ELSE
+=method templateManual $templ, $attrs, $if, $else
 =error not a manual, so no manual name for $template
 =cut
 
@@ -759,7 +760,7 @@ sub templateManual($$)
     $self->cleanupString($manual, $manual->name);
 }
 
-=method templateDistribution TEMPL, ATTRS, IF, ELSE
+=method templateDistribution $templ, $attrs, $if, $else
 The name of the distribution which contains the manual page at hand.
 =cut
 
@@ -769,7 +770,7 @@ sub templateDistribution($$)
     defined $manual ? $manual->distribution : '';
 }
 
-=method templateVersion TEMPL, ATTRS, IF, ELSE
+=method templateVersion $templ, $attrs, $if, $else
 The version is taken from the manual (which means that you may have
 a different version number per manual) when a manual is being formatted,
 and otherwise the project total version.
@@ -781,7 +782,7 @@ sub templateVersion($$)
     defined $manual ? $manual->version : $self->version;
 }
 
-=method templateDate TEMPL, ATTRS, IF, ELSE
+=method templateDate $templ, $attrs, $if, $else
 =cut
 
 sub templateDate($$)
@@ -789,7 +790,7 @@ sub templateDate($$)
     strftime "%Y/%m/%d", localtime;
 }
 
-=method templateName TEMPL, ATTRS, IF, ELSE
+=method templateName $templ, $attrs, $if, $else
 =error not a manual, so no name for $template
 =error cannot find chapter NAME in manual $name
 =error chapter NAME in manual $name has illegal shape
@@ -813,7 +814,7 @@ sub templateName($$)
       , manual => $manual;
 }
 
-=method templateHref TEMPL, ATTRS, IF, ELSE
+=method templateHref $templ, $attrs, $if, $else
 =cut
 
 our %path_lookup =
@@ -837,7 +838,7 @@ sub templateHref($$)
     qq[<a href="$self->{OFH_html}$path" target="$window">];
 }
 
-=method templateMeta TEMPL, ATTRS, IF, ELSE
+=method templateMeta $templ, $attrs, $if, $else
 ARGS is a reference to a hash with options.  ZONE contains the attributes
 in the template.  Use M<new(html_meta_data)> to set the result of this
 method, or extend its implementation.
@@ -848,7 +849,7 @@ sub templateMeta($$)
     $self->{OFH_meta};
 }
 
-=method templateInheritance TEMPL, ATTRS, IF, ELSE
+=method templateInheritance $templ, $attrs, $if, $else
 =cut
 
 sub templateInheritance(@)
@@ -878,7 +879,7 @@ sub templateInheritance(@)
     $buffer;
 }
 
-=method templateChapter
+=method templateChapter 
 =error chapter without name in template $fn
 In your template file, a {chapter} statement is used, which is
 erroneous, because it requires a chapter name.
@@ -913,7 +914,7 @@ sub templateChapter($$)
     $buffer;
 }
 
-=method templateIndex TEMPL, ATTRS, IF, ELSE
+=method templateIndex $templ, $attrs, $if, $else
 
 The I<index> template is called with one keyword, which tells the
 kind of index to be built.  Valid values are C<MANUALS>,
@@ -1024,20 +1025,28 @@ DIAG
     elsif($group eq 'DETAILS')
     {   foreach my $manual (sort $select->($self->manuals))
         {   my $details  = $manual->chapter("DETAILS") or next;
-            my @sections = grep !$manual->inherited($_), $details->sections;
-            next unless @sections || length $details->description;
+            my @sections;
+            foreach my $section ($details->sections)
+            {   my @subsect = grep !$manual->inherited($_) && $_->description
+                  , $section->subsections;
+                push @sections, $section
+                    if @subsect || $section->description;
+            }
+
+            @sections || length $details->description
+                or next;
 
             my $sections = join "\n"
-                             , map { "<li>".$self->link($manual, $_)."</li>" }
-                                @sections;
+              , map { "<li>".$self->link($manual, $_)."</li>" }
+                    @sections;
 
             push @rows, $self->link($manual, $details, "Details in $manual")
-                        . qq[\n<ul>\n$sections</ul>\n]
+              . qq[\n<ul>\n$sections</ul>\n]
         }
     }
     elsif($group eq 'MANUALS')
-    {   @rows = map { $self->link(undef, $_, $_->name) }
-                    sort $select->($self->manuals);
+    {   @rows = map $self->link(undef, $_, $_->name)
+          , sort $select->($self->manuals);
     }
     else
     {   error __x"unknown group {name} as list attribute", name => $group;
@@ -1056,7 +1065,7 @@ DIAG
     $output;
 }
 
-=method templateList TEMPL, ATTRS, IF, ELSE
+=method templateList $templ, $attrs, $if, $else
 
 =requires manual MANUAL
 
@@ -1107,8 +1116,8 @@ sub templateList($$)
     unless($types eq 'ALL')
     {   my @take   = map { $_ eq 'method' ? '.*method' : $_ }
                          split /[_|]/, $types;
-        local $"   = ')|(';
-        my $regexp = qr/^(@take)$/;
+        local $"   = ')|(?:';
+        my $regexp = qr/^(?:@take)$/;
         $selected  = sub { grep $_->type =~ $regexp, @_ };
     }
 

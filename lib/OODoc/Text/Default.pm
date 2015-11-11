@@ -21,7 +21,7 @@ in this manual page.
 
 =chapter METHODS
 
-=c_method new OPTIONS
+=c_method new %options
 
 =requires subroutine OBJECT
 The subroutine in which this option lives.
@@ -51,13 +51,13 @@ sub init($)
 
 =section Attributes
 
-=method subroutine
+=method subroutine 
 Returns the subroutine object for this option.
 =cut
 
 sub subroutine() { shift->container }
 
-=method value
+=method value 
 The value of this default.
 =cut
 

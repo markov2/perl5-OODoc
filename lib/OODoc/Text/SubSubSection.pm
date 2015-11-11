@@ -21,7 +21,7 @@ part of a section.
 
 =chapter METHODS
 
-=c_method new OPTIONS
+=c_method new %options
 
 =requires subsection OBJECT
 The section in which this sub-section lives.
@@ -52,13 +52,13 @@ sub findEntry($)
 #--------------
 =section Location
 
-=method subsection
+=method subsection 
 Returns the subsection object for this subsubsection.
 =cut
 
 sub subsection() { shift->container }
 
-=method chapter
+=method chapter 
 Returns the chapter object for this subsection.
 =cut
 

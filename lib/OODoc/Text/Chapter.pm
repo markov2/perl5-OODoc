@@ -18,7 +18,7 @@ OODoc::Text::Chapter - collects the information of one chapter
 
 =chapter METHODS
 
-=c_method new OPTIONS
+=c_method new %options
 
 =default container M<new(manual)>
 =default level     1
@@ -48,7 +48,7 @@ sub init($)
 sub emptyExtension($)
 {   my ($self, $container) = @_;
     my $empty = $self->SUPER::emptyExtension($container);
-    my @sections = map {$_->emptyExtension($empty)} $self->sections;
+    my @sections = map $_->emptyExtension($empty), $self->sections;
     $empty->sections(@sections);
     $empty;
 }
@@ -89,9 +89,9 @@ sub all($@)
 =section Sections
 A chapters consists of a list of sections, which may contain subsections.
 
-=method section NAME|OBJECT
-With a NAME, the section within this chapter with that name is
-returned.  With an OBJECT (which must be a M<OODoc::Text::Section>),
+=method section $name|$object
+With a $name, the section within this chapter with that name is
+returned.  With an $object (which must be a M<OODoc::Text::Section>),
 a new section is added to the end of the list.
 =cut
 
@@ -106,7 +106,7 @@ sub section($)
     first {$_->name eq $thing} $self->sections;
 }
 
-=method sections [SECTIONS]
+=method sections [$sections]
 Returns a list of all sections in this chapter.
 =cut
 

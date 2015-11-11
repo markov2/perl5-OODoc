@@ -84,7 +84,7 @@ my @default_rules =
        /x => 'forgotCut' ]
  );
 
-=c_method new OPTIONS
+=c_method new %options
 
 =option  additional_rules ARRAY
 =default additional_rules []
@@ -112,7 +112,7 @@ sub init($)
 
 =section Parsing a file
 
-=method rule (STRING|REGEX), (METHOD|CODE)
+=method rule <STRING|Regexp>, <$method|CODE>
 
 Register a rule which will be applied to a line in the input file.  When
 a STRING is specified, it must start at the beginning of the line to be
@@ -120,7 +120,7 @@ selected.  You may also specify a regular expression which will match
 on the line.
 
 The second argument is the action which will be taken when the line
-is selected.  Either the named METHOD or the CODE reference will be called.
+is selected.  Either the named $method or the CODE reference will be called.
 Their arguments are:
 
  $parser->METHOD($match, $line, $file, $linenumber);
@@ -136,8 +136,8 @@ sub rule($$)
 
 #-------------------------------------------
 
-=method findMatchingRule LINE
-Check the list of rules whether this LINE matches one of them.  This
+=method findMatchingRule $line
+Check the list of rules whether this $line matches one of them.  This
 is an ordered evaluation.  Returned is the matched string and the required
 action.  If the line fails to match anything, an empty list is returned.
 
@@ -165,7 +165,7 @@ sub findMatchingRule($)
     ();
 }
 
-=method parse OPTIONS
+=method parse %options
 
 =requires input FILENAME
 
@@ -247,6 +247,9 @@ sub parse(@)
         if(!$self->inDoc && $line =~ s/^(\s*package\s*([\w\-\:]+)\;)//)
         {   $out->print($1);
             my $package = $2;
+
+            # I would like to use 'our' here, but in some cases, that will
+            # cause compaints about double declaration with our.
             $out->print("\nuse vars '\$VERSION';\n\$VERSION = '$version';\n");
             $out->print($line);
 
@@ -288,7 +291,7 @@ sub parse(@)
                   or $out->print($line);
             }
         }
-        elsif($line =~ m/^=(over|back|item|for|pod|begin|end|head4)\b/ )
+        elsif($line =~ m/^=(over|back|item|for|pod|begin|end|head4|encoding)\b/)
         {   ${$self->{OPM_block}} .= "\n". $line;
             $self->inDoc(1);
         }
@@ -357,10 +360,10 @@ sub inDoc(;$)
 
 #-------------------------------------------
 
-=method currentManual [MANUAL]
+=method currentManual [$manual]
 
 Returns the manual object which is currently being filled with data.
-With a new MANUAL, a new one is set.
+With a new $manual, a new one is set.
 
 =cut
 
@@ -800,7 +803,7 @@ sub forgotCut($$$$)
 
 =section Producing manuals
 
-=method decomposeM MANUAL, LINK
+=method decomposeM $manual, $link
 
 =warning module $name is not on your system, but linked to in $manual
 The module can not be found.  This may be an error at your part (usually
@@ -889,7 +892,7 @@ sub decomposeM($$)
     ($location, $opt);
 }
 
-=method decomposeL MANUAL, LINK
+=method decomposeL $manual, $link
 Decompose the L-tags.  These tags are described in L<perlpod>, but
 they will not refer to items: only headers.
 
@@ -947,7 +950,7 @@ sub decomposeL($$)
     ($man, $dest, undef, $text);
 }
 
-=method cleanupPod FORMATTER, MANUAL, STRING
+=method cleanupPod $formatter, $manual, STRING
 =cut
 
 sub cleanupPod($$$)
@@ -1002,7 +1005,7 @@ sub cleanupPod($$$)
     @lines ? join('', @lines) : '';
 }
 
-=method cleanupPodM FORMATTER, MANUAL, LINK
+=method cleanupPodM $formatter, $manual, $link
 =cut
 
 sub cleanupPodM($$$)
@@ -1011,7 +1014,7 @@ sub cleanupPodM($$$)
     ref $to ? $formatter->link($toman, $to, $link) : $to;
 }
 
-=method cleanupPodL FORMATTER, MANUAL, LINK
+=method cleanupPodL $formatter, $manual, $link
 The C<L> markups for C<OODoc::Parser::Markov> have the same syntax
 as standard POD has, however most standard pod-laters do no accept
 links in verbatim blocks.  Therefore, the links have to be
@@ -1029,8 +1032,8 @@ sub cleanupPodL($$$)
 
 =section Commonly used functions
 
-=method cleanupHtml FORMATTER, MANUAL, STRING, [IS_HTML]
-Some changes will not be made when IS_HTML is C<true>, for instance,
+=method cleanupHtml $formatter, $manual, STRING, [$is_html]
+Some changes will not be made when $is_html is C<true>, for instance,
 a "E<lt>" will stay that way, not being translated in a "E<amp>lt;".
 =cut
 
@@ -1054,7 +1057,7 @@ sub cleanupHtml($$$;$)
         {   $type    = 'text';
             $capture = $self->cleanupPod($formatter, $manual, $capture);
         }
-        elsif($type =~ m/^\:html\b/ )
+        elsif($type =~ m/^\:?html\b/ )
         {   $type    = 'html';
             $capture = $self->cleanupHtml($formatter, $manual, $capture, 1);
         }
@@ -1117,7 +1120,7 @@ sub cleanupHtml($$$;$)
     $string;
 }
 
-=method cleanupHtmlM FORMATTER, MANUAL, LINK
+=method cleanupHtmlM $formatter, $manual, $link
 =cut
 
 sub cleanupHtmlM($$$)
@@ -1126,7 +1129,7 @@ sub cleanupHtmlM($$$)
     ref $to ? $formatter->link($toman, $to, $link) : $to;
 }
 
-=method cleanupHtmlL FORMATTER, MANUAL, LINK
+=method cleanupHtmlL $formatter, $manual, $link
 =cut
 
 sub cleanupHtmlL($$$)
@@ -1260,7 +1263,7 @@ For comfort, all POD markups are supported as well
 
 Next to the structural markup, there is textual markup.  This markup
 is the same as POD defines in the perlpod manual page. For instance,
-CE<lt>some codeE<gt> can be used to create visual markup as a code
+E<lt>some codeE<gt> can be used to create visual markup as a code
 fragment.
 
 One kind is added to the standard list: the C<M>.
@@ -1274,11 +1277,11 @@ manual page while converting it to other manual formats.
 
 Syntax of the C<M>-link:
 
- M E<lt> OODoc::Object E<gt>
- M E<lt> OODoc::Object::new() E<gt>
- M E<lt> OODoc::Object::new(verbose) E<gt>
- M E<lt> new() E<gt>
- M E<lt> new(verbose) E<gt>
+ M < OODoc::Object >
+ M < OODoc::Object::new() >
+ M < OODoc::Object::new(verbose) >
+ M < new() >
+ M < new(verbose) >
 
 These links refer to a manual page, a subroutine within a manual page, and
 an option of a subroutine respectively.  And then two abbreviations are
@@ -1292,20 +1295,20 @@ this Markov parser.
 
 The following syntaxes are supported:
 
- L E<lt> manual E<gt>
- L E<lt> manual/section E<gt>
- L E<lt> manual/"section" E<gt>
- L E<lt> manual/subsection E<gt>
- L E<lt> manual/"subsection" E<gt>
- L E<lt> /section E<gt>
- L E<lt> /"section" E<gt>
- L E<lt> /subsection E<gt>
- L E<lt> /"subsection" E<gt>
- L E<lt> "section" E<gt>
- L E<lt> "subsection" E<gt>
- L E<lt> "subsubsection" E<gt>
- L E<lt> unix-manual E<gt>
- L E<lt> url E<gt>
+ L < manual >
+ L < manual/section >
+ L < manual/"section" >
+ L < manual/subsection >
+ L < manual/"subsection" >
+ L < /section >
+ L < /"section" >
+ L < /subsection >
+ L < /"subsection" >
+ L < "section" >
+ L < "subsection" >
+ L < "subsubsection" >
+ L < unix-manual >
+ L < url >
  
 In the above, I<manual> is the name of a manual, I<section> the name of
 any section (in that manual, by default the current manual), and
@@ -1315,12 +1318,12 @@ The I<unix-manual> MUST be formatted with its chapter number, for instance
 C<cat(1)>, otherwise a link will be created.  See the following examples
 in the html version of these manual pages:
 
- M E<lt> perldoc E<gt>              illegal: not in distribution
- L E<lt> perldoc E<gt>              L<perldoc>
- L E<lt> perldoc(1perl) E<gt>       L<perldoc(1perl)>
- M E<lt> OODoc::Object E<gt>        M<OODoc::Object>
- L E<lt> OODoc::Object E<gt>        L<OODoc::Object>
- L E<lt> OODoc::Object(3pm) E<gt>   L<OODoc::Object(3pm)>
+ M < perldoc >              illegal: not in distribution
+ L < perldoc >              L<perldoc>
+ L < perldoc(1perl) >       L<perldoc(1perl)>
+ M < OODoc::Object >        M<OODoc::Object>
+ L < OODoc::Object >        L<OODoc::Object>
+ L < OODoc::Object(3pm) >   L<OODoc::Object(3pm)>
 
 =section Grouping subroutines
 

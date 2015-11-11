@@ -1,6 +1,28 @@
 
 All changes where made by Mark Overmeer <perl@overmeer.net>, unless
-explicitly stated differently.
+explicitly stated otherwise.
+
+version 2.01: Wed 11 Nov 12:27:52 CET 2015
+
+	Fixes:
+	- PODTAIL.txt from file should have a blank line added before
+	  to avoid to pod statements without separating blank.
+	- accept =encoding
+	- overload has no parameters to display
+	- html_stylesheet processing in HTML(1) formatter
+	- show functions in example template
+	- DETAILS overview repeated inherited references
+
+	Improvements:
+	- bin/oodist remove warnings about use of qw()
+	- explicitly use tar with --format=gnu (not posix, to avoid
+	  PaxHeaders poluting the extracted directories)
+	- refer to docs in base class, in case of inheritance
+	- remove many of the empty inherited heads which show-up empty
+	- =pod :html, the ':' becomes optional. perlpod has both.
+	- ::MarkOv blanks between parens and [] or <> in formatted call
+	- ::MarkOv change some texts
+	- changed documentation style
 
 version 2.00: Fri Jan 11 09:59:08 CET 2013
 

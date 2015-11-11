@@ -4,8 +4,10 @@ use warnings;
 package OODoc::Format::Pod3;
 use base 'OODoc::Format::Pod';
 
-use Log::Report    'oodoc';
-use OODoc::Template;
+use Log::Report      'oodoc';
+
+use OODoc::Template  ();
+use List::Util       qw/first/;
 
 =chapter NAME
 
@@ -26,7 +28,7 @@ template system.
 
 =chapter METHODS
 
-=method createManual OPTIONS
+=method createManual %options
 
 =option  template FILENAME
 =default template <in code>
@@ -84,27 +86,36 @@ sub formatManual(@)
 sub structure($$$)
 {   my ($self, $template, $type, $object) = @_;
 
-    my $manual_obj = $template->valueFor('manual_obj');
-    my $descr = $self->cleanup($manual_obj, $object->description);
+    my $manual = $template->valueFor('manual_obj');
+    my $descr  = $self->cleanup($manual, $object->description);
+    my $name   = $object->name;
 
     $descr =~ s/\n*$/\n\n/
         if defined $descr && length $descr;
 
-    +{ $type        => $object->name
+    my @examples = $object->examples;
+    my @extends;
+
+    unless($name eq 'NAME' || $name eq 'SYNOPSIS') 
+    {   @extends = map +{manual => $_->manual, header => $name}
+           , $object->extends;
+    }
+
+    +{ $type        => $name
      , $type.'_obj' => $object
      , description  => $descr
-     , examples     => [ $object->examples ]
+     , examples     => \@examples
+     , extends      => \@extends
      };
 }
 
 sub chapters($$$$$)
 {   my ($self, $template, $tag, $attrs, $then, $else) = @_;
-    my $manual_obj = $template->valueFor('manual_obj');
+    my $manual = $template->valueFor('manual_obj');
 
     my @chapters
-       = map { $self->structure($template, chapter => $_) }
-             grep {! $_->isEmpty}
-                 $manual_obj->chapters;
+       = map $self->structure($template, chapter => $_)
+           , $manual->chapters;
 
     if(my $order = $attrs->{order})
     {   my @order = ref $order eq 'ARRAY' ? @$order : split( /\,\s*/, $order);
@@ -124,30 +135,42 @@ sub chapters($$$$$)
 
 sub sections($$$$$)
 {   my ($self, $template, $tag, $attrs, $then, $else) = @_;
-    my $chapter_obj = $template->valueFor('chapter_obj');
+    my $chapter = $template->valueFor('chapter_obj');
+
+    return ([], $attrs, $then, $else)
+        unless first {!$_->isEmpty} $chapter->sections;
+
     my @sections
        = map { $self->structure($template, section => $_) }
-             $chapter_obj->sections;
+             $chapter->sections;
 
     ( \@sections, $attrs, $then, $else );
 }
 
 sub subsections($$$$$)
 {   my ($self, $template, $tag, $attrs, $then, $else) = @_;
-    my $section_obj = $template->valueFor('section_obj');
+    my $section = $template->valueFor('section_obj');
+
+    return ([], $attrs, $then, $else)
+        unless first {!$_->isEmpty} $section->subsections;
+
     my @subsections
        = map { $self->structure($template, subsection => $_) }
-             $section_obj->subsections;
+             $section->subsections;
 
     ( \@subsections, $attrs, $then, $else );
 }
 
 sub subsubsections($$$$$)
 {   my ($self, $template, $tag, $attrs, $then, $else) = @_;
-    my $subsection_obj = $template->valueFor('subsection_obj');
+    my $subsection = $template->valueFor('subsection_obj');
+
+    return ([], $attrs, $then, $else)
+        unless first {!$_->isEmpty} $subsection->subsubsections;
+
     my @subsubsections
        = map { $self->structure($template, subsubsection => $_) }
-             $subsection_obj->subsubsections;
+             $subsection->subsubsections;
 
     ( \@subsubsections, $attrs, $then, $else );
 }
@@ -167,7 +190,7 @@ sub subroutines($$$$$$)
     my $out  = '';
     open OUT, '>',\$out;
 
-    my @show = map { ($_ => scalar $template->valueFor($_)) }
+    my @show = map +($_ => scalar $template->valueFor($_)),
        qw/show_described_options show_described_subs show_diagnostics
           show_examples show_inherited_options show_inherited_subs
           show_option_table show_subs_index/;
@@ -207,8 +230,15 @@ sub diagnostics($$$$$$)
 1;
 
 __DATA__
+=encoding utf8
+
 <{macro name=structure}>\
    <{description}>\
+   <{extends}>\
+Extends L<"<{header}>" in <{manual}>|<{manual}>/"<{header}>">.
+ 
+\
+   <{/extends}>\
    <{template macro=examples}>\
    <{subroutines}>\
 <{/macro}>\

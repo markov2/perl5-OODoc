@@ -21,7 +21,7 @@ in this manual page.
 
 =chapter METHODS
 
-=c_method new OPTIONS
+=c_method new %options
 
 =requires subroutine OBJECT
 
@@ -46,7 +46,7 @@ sub init($)
 
 =section Attributes
 
-=method subroutine
+=method subroutine 
 
 Returns the subroutine object for this option.
 

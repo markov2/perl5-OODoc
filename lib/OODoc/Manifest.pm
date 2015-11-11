@@ -21,7 +21,7 @@ OODoc::Manifest - maintain the information inside a manifest file.
 
 =chapter OVERLOADED
 
-=overload @{}
+=overload  @{}
 
 Referencing this object as array will produce all filenames from the
 manifest.
@@ -35,7 +35,7 @@ use overload bool  => sub {1};
 
 =chapter METHODS
 
-=c_method new OPTIONS
+=c_method new %options
 
 =option  filename FILENAME
 =default filename undef
@@ -61,7 +61,7 @@ sub init($)
 
 =section Attributes
 
-=method filename
+=method filename 
 
 The name of the file which is read or will be written.
 
@@ -73,7 +73,7 @@ sub filename() {shift->{OM_filename}}
 
 =section The manifest list
 
-=method files
+=method files 
 
 Returns an unsorted list with all filenames in this manifest.
 
@@ -83,9 +83,9 @@ sub files() { keys %{shift->{O_files}} }
 
 #-------------------------------------------
 
-=method add FILENAMES
+=method add $filenames
 
-Adds the FILENAMES to the manifest, doubles are ignored.
+Adds the $filenames to the manifest, doubles are ignored.
 
 =cut
 
@@ -103,7 +103,7 @@ sub add($)
 
 =section Internals
 
-=method read
+=method read 
 
 Read the MANIFEST file.  The comments are stripped from the lines.
 
@@ -142,7 +142,7 @@ sub modified(;$)
 
 #-------------------------------------------
 
-=method write
+=method write 
 
 Write the MANIFEST file if it has changed.  The file will automatically
 be written when the object leaves scope.
@@ -168,11 +168,11 @@ sub DESTROY() { shift->write }
 
 #-------------------------------------------
 
-=method relative FILENAME
+=method relative $filename
 
 Returns the name of the file relative to the location of the MANIFEST
 file.  The MANIFEST file should always be in top of the directory tree,
-so the FILENAME should be in the same directory and below.
+so the $filename should be in the same directory and below.
 
 =warning MANIFEST file $name lists filename outside (sub)directory: $file
 

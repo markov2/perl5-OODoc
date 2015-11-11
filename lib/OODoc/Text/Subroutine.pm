@@ -23,7 +23,7 @@ they differ.
 
 =chapter METHODS
 
-=c_method new OPTIONS
+=c_method new %options
 
 =option  parameters STRING
 =default parameters undef
@@ -48,7 +48,7 @@ sub init($)
 
 #-------------------------------------------
 
-=method extends [OBJECT]
+=method extends [$object]
 
 =warning subroutine $name extended by different type:
 
@@ -85,7 +85,7 @@ sub extends($)
 
 =section Attributes
 
-=method parameters
+=method parameters 
 The parameter list for the subroutine is returned as string.  The
 result may be C<undef> or empty.
 =cut
@@ -96,9 +96,9 @@ sub parameters() {shift->{OTS_param}}
 
 =section Location
 
-=method location MANUAL
+=method location $manual
 Try to figure-out what the location for the subroutine is within the
-MANUAL page.  Have a look at all levels of extension for this
+$manual page.  Have a look at all levels of extension for this
 sub-routine's documentation and decides the best enclosing
 chapter, section and subsection.  Then return that object for the
 current manual.
@@ -159,7 +159,7 @@ sub location($)
    $container;
 }
 
-=method path
+=method path 
 Returns the path of the text structure which contains this subroutine.
 =cut
 
@@ -169,11 +169,11 @@ sub path() { shift->container->path }
 
 =section Collected
 
-=method default NAME|OBJECT
+=method default $name|$object
 
-In case of a NAME, a default object for this method is looked up.  This
+In case of a $name, a default object for this method is looked up.  This
 does not search through super classes, but solely which is defined with
-this subroutine.  When passed an OBJECT of type OODoc::Text::Default
+this subroutine.  When passed an $object of type OODoc::Text::Default
 that will be stored.
 
 =cut
@@ -190,17 +190,17 @@ sub default($)
 
 #-------------------------------------------
 
-=method defaults
+=method defaults 
 Returns a list of all defaults as defined by this documentation item in
 one manual.
 =cut
 
 sub defaults() { values %{shift->{OTS_defaults}} }
 
-=method option NAME|OBJECT
-In case of a NAME, the option object for this method is looked up.  This
+=method option $name|$object
+In case of a $name, the option object for this method is looked up.  This
 does not search through super classes, but solely which is defined with
-this subroutine.  When passed an OBJECT of type OODoc::Text::Option
+this subroutine.  When passed an $object of type OODoc::Text::Option
 that will be stored.
 =cut
 
@@ -215,7 +215,7 @@ sub option($)
 }
 
 
-=method findOption NAME
+=method findOption $name
 Does a little more thorough job than M<option()> bu searching the inherited
 options for this subroutine as well.
 =cut
@@ -229,14 +229,14 @@ sub findOption($)
     $extends->findOption($name);
 }
 
-=method options
+=method options 
 Returns a list of all options as defined by this documentation item in
 one manual.
 =cut
 
 sub options() { values %{shift->{OTS_options}} }
 
-=method diagnostic OBJECT
+=method diagnostic $object
 Add a new diagnostic message (a OODoc::Text::Diagnostic object) to the
 list already in this object.  You can not look for a message because
 these names are without use.
@@ -248,13 +248,13 @@ sub diagnostic($)
     $diag;
 }
 
-=method diagnostics
+=method diagnostics 
 Returns a list of all diagnostics.
 =cut
 
 sub diagnostics() { @{shift->{OTS_diags}} }
 
-=method collectedOptions
+=method collectedOptions 
 Returns a list of option-default combinations on this subroutine.
 =cut
 

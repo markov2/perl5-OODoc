@@ -32,7 +32,7 @@ first need to install L<Bundle::Template::Magic>.
 
 =chapter METHODS
 
-=method createManual OPTIONS
+=method createManual %options
 
 =option  template FILENAME
 =default template <in code>
@@ -75,7 +75,7 @@ sub formatManual(@)
 
 =section Template processing
 
-=method templateChapter
+=method templateChapter 
 
 =error chapter without name in template.
 In your template file, a {chapter} statement is used, which is
@@ -128,6 +128,8 @@ sub templateAppend($$)
 1;
 
 __DATA__
+=encoding utf8
+
 {chapter NAME}
 {chapter INHERITANCE}
 {chapter SYNOPSIS}

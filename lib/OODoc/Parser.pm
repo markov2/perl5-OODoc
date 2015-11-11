@@ -38,7 +38,7 @@ and the C<M&lt;&gt;> links.
 
 =section Constructors
 
-=c_method new OPTIONS
+=c_method new %options
 
 =option  skip_links ARRAY|REGEXP|STRING
 =default skip_links undef
@@ -63,7 +63,7 @@ sub init($)
 
 =section Parsing a file
 
-=method parse OPTIONS
+=method parse %options
 Parse the specified input file into a code file and an object tree which
 describes the pod.  Returned is a list of package objects which contain
 the docs found in this file.
@@ -91,8 +91,8 @@ with M<parse()>, but the text blocks not yet.  This is because the
 transformations which are needed are context dependent.  For each
 text section M<cleanup()> is called for the final touch.
 
-=method skipManualLink PACKAGE
-Returns true is the PACKAGE name matches one of the links to be
+=method skipManualLink $package
+Returns true is the $package name matches one of the links to be
 skipped, set by M<new(skip_links)>.
 =cut
 
@@ -101,7 +101,7 @@ sub skipManualLink($)
     (first { $package =~ $_ } @{$self->{skip_links}}) ? 1 : 0;
 }
 
-=method cleanup FORMATTER, MANUAL, STRING
+=method cleanup $formatter, $manual, STRING
 
 =error The formatter type $class is not known for cleanup
 Text blocks have to get the finishing touch in the final formatting

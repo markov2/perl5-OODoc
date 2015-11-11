@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use warnings;
 use strict;
@@ -213,7 +213,7 @@ if($make_html && $html_package)
     publish_html_dist $html_package, $temp_htmlfn;
 }
 else
-{   info "* test mode: html not published";
+{   info "* no html package published";
 }
 
 info "* Ready";
@@ -260,7 +260,7 @@ sub parse_additional_dists(@)
 sub create_pod($$)
 {   my ($doc, $podtail) = @_;
 
-    info "* Creating POD files";
+    info "* Creating POD files with $format_pod";
 
     $doc->create
       ( $format_pod
@@ -277,7 +277,7 @@ sub create_pod($$)
 sub create_html($$$$)
 {   my ($doc, $templates, $output, $url) = @_;
 
-    info "* Creating HTML files in $output";
+    info "* Creating HTML with $format_html, files in $output";
 
     $doc->create
      ( $format_html
@@ -325,7 +325,6 @@ __PM_HEAD
      = defined $podtailfn ? read_file $podtailfn
      : -f 'PODTAIL.txt'   ? read_file 'PODTAIL.txt'
      :                      <<'__POD_TAIL';
-
 =head1 SEE ALSO
 
 This module is part of $project distribution version $version,
@@ -342,7 +341,7 @@ __POD_TAIL
    my $pmhead  = eval qq{"$pmheadsrc"};
    error __x"pmhead: {err}", err => $@ if $@;
 
-   my $podtail = eval qq{"$podtailsrc"};
+   my $podtail = eval qq{"\n$podtailsrc"};
    error __x"podtail: {err}", err => $@ if $@;
 
    ($pmhead, $podtail);
@@ -458,12 +457,12 @@ sub create_dist($$)
        and fault __x"make in {dir} failed", dir => $workdir;
 
     if($run_tests)
-    {   foreach my $testdir qw(t tests xt)
+    {   foreach my $testdir (qw/t tests xt/)
         {   -d $testdir or next;
 
             info "* Running tests in $testdir";
             system "make test TEST_FILES=$testdir/*.t"
-                and fault __x"make test in {dir} failed", dir => $testdir;
+#               and fault __x"make test in {dir} failed", dir => $testdir;
         }
     }
     else

@@ -33,10 +33,10 @@ operating system specific manual systems, like the Unix C<man> system.
 
 =section Page generation
 
-=method link MANUAL, OBJECT, [TEXT]
+=method link $manual, $object, [$text]
 
-Create the text for a link which refers to the OBJECT.  The link will be
-shown somewhere in the MANUAL.  The TEXT will be displayed is stead
+Create the text for a link which refers to the $object.  The link will be
+shown somewhere in the $manual.  The $text will be displayed is stead
 of the link path, when specified.
 
 =cut
@@ -60,7 +60,7 @@ sub link($$;$)
     qq(L<$text$manlink"$object">);
 }
 
-=method createManual OPTIONS
+=method createManual %options
 
 =option  append STRING|CODE
 =default append ''
@@ -104,9 +104,9 @@ sub createManual($@)
     $self;
 }
 
-=method formatManual OPTIONS
+=method formatManual %options
 
-The OPTIONS are a collection of all options available to show* methods.
+The %options are a collection of all options available to show* methods.
 They are completed with the defaults set by M<createManual(format_options)>.
 
 =requires manual MANUAL
@@ -231,7 +231,7 @@ sub chapterDiagnostics(@)
     $self;
 }
 
-=method showChapterIndex FILE, CHAPTER, INDENT
+=method showChapterIndex $file, $chapter, $indent
 =cut
 
 sub showChapterIndex($$;$)
@@ -314,7 +314,7 @@ sub showSubroutineUse(@)
     $use    =~ s/(.+)/=item $1\n\n/gm;
 
     $output->print($use);
-    $output->print("See ". $self->link($manual, $subroutine)."\n\n")
+    $output->print("Inherited, see ". $self->link($manual, $subroutine)."\n\n")
         if $manual->inherited($subroutine);
 
     $self;
@@ -325,18 +325,21 @@ sub subroutineUse($$)
     my $type       = $subroutine->type;
     my $name       = $self->cleanup($manual, $subroutine->name);
     my $paramlist  = $self->cleanup($manual, $subroutine->parameters);
-    my $params     = length $paramlist ? "($paramlist)" : '()';
+    my $params
+      = !length $paramlist ? '()'
+      : $paramlist =~ m/^[\[<]|[\]>]$/ ? "( $paramlist )"
+      :                      "($paramlist)";
 
     my $class      = $manual->package;
     my $use
-     = $type eq 'i_method' ? qq[\$obj-E<gt>B<$name>$params]
-     : $type eq 'c_method' ? qq[$class-E<gt>B<$name>$params]
-     : $type eq 'ci_method'? qq[\$obj-E<gt>B<$name>$params\n]
-                           . qq[$class-E<gt>B<$name>$params]
-     : $type eq 'function' ? qq[B<$name>$params]
-     : $type eq 'overload' ? qq[overload: B<$name>$params]
-     : $type eq 'tie'      ? qq[B<$name>$params]
-     :                       '';
+      = $type eq 'i_method' ? qq[\$obj-E<gt>B<$name>$params]
+      : $type eq 'c_method' ? qq[$class-E<gt>B<$name>$params]
+      : $type eq 'ci_method'? qq[\$obj-E<gt>B<$name>$params\n]
+                            . qq[$class-E<gt>B<$name>$params]
+      : $type eq 'function' ? qq[B<$name>$params]
+      : $type eq 'overload' ? qq[overload: B<$name>]
+      : $type eq 'tie'      ? qq[B<$name>$params]
+      :                       '';
 
     length $use
         or warn "WARNING: unknown subroutine type $type for $name in $manual";
@@ -401,7 +404,7 @@ sub showOptionExpand(@)
     $self;
 }
 
-=method writeTable
+=method writeTable 
 
 =requires output FILE
 =requires header ARRAY
@@ -551,13 +554,13 @@ sub showSubroutineDescriptionRefer(@)
     my $manual  = $args{manual}                   or panic;
     my $subroutine = $args{subroutine}            or panic;
     my $output  = $args{output}                   or panic;
-    $output->print("\nSee ", $self->link($manual, $subroutine), "\n");
+    $output->print("\nInherited, see ",$self->link($manual, $subroutine),"\n");
 }
 
 sub showSubsIndex() {;}
 
-=method cleanupPOD IN, OUT
-The POD is produced in the specified IN filename, but may contain some
+=method cleanupPOD $in, $out
+The POD is produced in the specified $in filename, but may contain some
 garbage, especially a lot of superfluous blanks lines.  Because it is
 quite complex to track double blank lines in the production process,
 we make an extra pass over the POD to remove it afterwards.  Other

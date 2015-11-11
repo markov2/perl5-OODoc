@@ -16,7 +16,7 @@ OODoc::Format::TemplateMagic - helpers to simplify use of Template::Magic
 
 =chapter METHODS
 
-=method zoneGetParameters ZONE|STRING
+=method zoneGetParameters $zone|STRING
 Takes a Template::Magic::Zone object to process the text after the
 tag.  You may also specify a string, for instance a modified
 attribute list.  The return is a list of key-value pairs with data.
