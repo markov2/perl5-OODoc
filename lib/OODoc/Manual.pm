@@ -1,3 +1,5 @@
+# This code is part of perl distribution OODoc.  It is licensed under the
+# same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
 
 package OODoc::Manual;
 use base 'OODoc::Object';
@@ -124,6 +126,7 @@ sub init($)
     $self->{OP_subclasses}   = [];
     $self->{OP_realizers}    = [];
     $self->{OP_extra_code}   = [];
+    $self->{OP_isa}          = [];
 
     $self;
 }
@@ -341,8 +344,10 @@ sub diagnostics(@)
 =section Inheritance knowledge
 
 =method superClasses [$packages]
-Returns the super classes for this package.  $packages (names or objects)
-will be added to the list of superclasses first.
+Returns the super classes for this package.
+
+Provided C<$packages> (names or objects) will be added to the list
+of superclasses first.
 =cut
 
 sub superClasses(;@)
@@ -466,13 +471,13 @@ sub expand()
     return $self if $self->{OP_is_expanded};
 
     #
-    # All super classes much be expanded first.  Manuals for
+    # All super classes must be expanded first.  Manuals for
     # extra code are considered super classes as well.  Super
     # classes which are external are ignored.
     #
 
     my @supers  = reverse     # multiple inheritance, first isa wins
-                      grep { ref $_ }
+                      grep ref,
                           $self->superClasses;
 
     $_->expand for @supers;
@@ -521,13 +526,13 @@ sub expand()
     # Give all the inherited subroutines a new location in this manual.
     #
 
-    my %extended  = map { ($_->name => $_) }
-                       map { $_->subroutines }
+    my %extended  = map +($_->name => $_),
+                       map $_->subroutines,
                           ($self, $self->extraCode);
 
     my %used;  # items can be used more than once, collecting multiple inherit
 
-    my @inherited = map { $_->subroutines  } @supers;
+    my @inherited = map $_->subroutines, @supers;
     my %location;
 
     foreach my $inherited (@inherited)
@@ -756,7 +761,10 @@ sub createInheritance()
 
 sub createSuperSupers($)
 {   my ($self, $package) = @_;
-    my $output = "   is a M<$package>\n";
+    my $output = $package =~ /^[aeio]/i
+      ? "   is an M<$package>\n"
+      : "   is a M<$package>\n";
+
     return $output
         unless ref $package;  # only the name of the package is known
 

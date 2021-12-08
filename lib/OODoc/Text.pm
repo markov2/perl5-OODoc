@@ -1,3 +1,5 @@
+# This code is part of perl distribution OODoc.  It is licensed under the
+# same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
 
 package OODoc::Text;
 use base 'OODoc::Object';
@@ -91,7 +93,7 @@ sub init($)
 
     # may be undef
     $self->{OT_container}= delete $args->{container};
-    
+
     $self->{OT_descr}    = delete $args->{description} || '';
     $self->{OT_examples} = [];
     $self->{OT_unique}   = $unique++;

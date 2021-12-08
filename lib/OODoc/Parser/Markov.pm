@@ -1,3 +1,5 @@
+# This code is part of perl distribution OODoc.  It is licensed under the
+# same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
 
 package OODoc::Parser::Markov;
 use base 'OODoc::Parser';
@@ -244,7 +246,10 @@ sub parse(@)
     while(my $line = $in->getline)
     {   my $ln = $in->input_line_number;
 
-        if(!$self->inDoc && $line =~ s/^(\s*package\s*([\w\-\:]+)\;)//)
+        if(    !$self->inDoc
+            && $line !~ m/^\s*package\s*DB\s*;/
+            && $line =~ s/^(\s*package\s*([\w\-\:]+)\s*\;)//
+          )
         {   $out->print($1);
             my $package = $2;
 
@@ -371,7 +376,7 @@ sub currentManual(;$)
 {   my $self = shift;
     @_ ? $self->{OPM_manual} = shift : $self->{OPM_manual};
 }
-    
+
 #-------------------------------------------
 
 =warning =cut does not terminate any doc in $file line $number
@@ -612,7 +617,7 @@ values.
 sub docOption($$$$)
 {   my ($self, $match, $line, $fn, $ln) = @_;
 
-    unless($line =~ m/^\=option\s+(\S+)\s*(.+?)\s*$/ )
+    unless($line =~ m/^\=option\s+(\S+)\s+(.+?)\s*$/ )
     {   warn "WARNING: option line incorrect in $fn line $ln:\n$line";
         return;
     }
@@ -650,7 +655,7 @@ two words being the option name and the default value.
 sub docDefault($$$$)
 {   my ($self, $match, $line, $fn, $ln) = @_;
 
-    unless($line =~ m/^\=default\s+(\S+)\s*(.+?)\s*$/ )
+    unless($line =~ m/^\=default\s+(\S+)\s+(.+?)\s*$/ )
     {   warn "WARNING: default line incorrect in $fn line $ln:\n$line";
         return;
     }
@@ -675,7 +680,7 @@ sub docDefault($$$$)
 sub docRequires($$$$)
 {   my ($self, $match, $line, $fn, $ln) = @_;
 
-    unless($line =~ m/^\=requires\s+(\w+)\s*(.+?)\s*$/ )
+    unless($line =~ m/^\=requires\s+(\w+)\s+(.+?)\s*$/ )
     {   warn "WARNING: requires line incorrect in $fn line $ln:\n$line";
         return;
     }
@@ -746,7 +751,7 @@ sub docExample($$$$)
                  || $self->{OPM_subsection}
                  || $self->{OPM_section}
                  || $self->{OPM_chapter};
- 
+
     die "ERROR: example outside chapter in $fn line $ln\n"
        unless defined $container;
 
@@ -1087,7 +1092,7 @@ sub cleanupHtml($$$;$)
         s#(?:\A|\n)\=item\s*(?:\*\s*)?([^\n]*)#\n<li><b>$1</b><br />#gms;
         s#(?:\A|\s*)\=back\b#\n</ul>#gms;
         s#^=pod\b##gm;
- 
+
         # when F<> contains a URL, it will be used. However, when it
         # contains a file, we cannot do anything with it yet.
         s#\bF\<(\w+\://[^>]*)\>#<a href="$1">$1</a>#g;
@@ -1309,7 +1314,7 @@ The following syntaxes are supported:
  L < "subsubsection" >
  L < unix-manual >
  L < url >
- 
+
 In the above, I<manual> is the name of a manual, I<section> the name of
 any section (in that manual, by default the current manual), and
 I<subsection> a subsection (in that manual, by default the current manual).

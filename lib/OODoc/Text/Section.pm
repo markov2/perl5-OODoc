@@ -1,3 +1,5 @@
+# This code is part of perl distribution OODoc.  It is licensed under the
+# same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
 
 package OODoc::Text::Section;
 use base 'OODoc::Text::Structure';
@@ -7,7 +9,6 @@ use warnings;
 
 use Log::Report    'oodoc';
 use List::Util     'first';
-
 
 =chapter NAME
 

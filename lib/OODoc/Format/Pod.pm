@@ -1,3 +1,6 @@
+# This code is part of perl distribution OODoc.  It is licensed under the
+# same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
+
 package OODoc::Format::Pod;
 use base 'OODoc::Format';
 
@@ -202,7 +205,7 @@ sub chapterDescription(@)
 
     my $manual  = $args{manual} or panic;
     my $details = $manual->chapter('DETAILS');
-   
+
     return $self unless defined $details;
 
     my $output  = $args{output} or panic;
@@ -383,7 +386,7 @@ sub showOptionUse(@)
     $params    =~ s/\s+$//;
     $params    =~ s/^\s+//;
     $params    = " => ".$self->cleanup($manual, $params) if length $params;
- 
+
     $output->print("=item $option$params\n\n");
     $self;
 }
@@ -408,7 +411,7 @@ sub showOptionExpand(@)
 
 =requires output FILE
 =requires header ARRAY
-=requires ARRAY-OF-ARRAYS
+=requires rows ARRAY-OF-ARRAYS
 
 An array of arrays, each describing a row for the output.  The first row
 is the header.
@@ -508,7 +511,7 @@ sub _removeMarkup($)
             {    $out .= $self->_removeMarkup($1);
                  next;
             }
-   
+
             my ($man, $chapter) = ($container, '');
             if($container =~ m!^\s*([^/]*)/\"([^"]*)\"\s*$!)
             {   ($man, $chapter) = ($1, $2);
@@ -688,7 +691,7 @@ COMMERCIAL
 
      $self;
  }
- 
+
 =example adding to a chapter's output
 
  $doc->create('MyPod', format_options => [...]);
@@ -708,7 +711,7 @@ COMMERCIAL
      $output->print(\nSee also the diagnostics is @extends.\n");
      $self;
  }
- 
+
 =subsection Configuring with OODoc::Template
 
 When using 'pod2' in stead of 'pod' when M<OODoc::create()> is called,

@@ -1,11 +1,11 @@
-=== OODist README
+# helper command oodist
 
 From release 0.96, the OODoc module contains a script named 'oodist',
 which simplifies the creation of pod and HTML enormously.  You do not
 need to create mkdoc and mkdist scripts anymore: simply add a few lines
 to your Makefile.PL is sufficient.
 
-= about the examples
+## about the examples
 
 The OODoc module will be used to produce the manuals for many packages
 by the same author.  Some of these modules are small, some are larger.
@@ -41,4 +41,3 @@ examples/mailbox.tar.gz
    The most complicated module which is controlled by OODoc: the
    Mail::Box module.  This is by far most complex test case for OODoc,
    grouping the docs of multiple distributions.
-

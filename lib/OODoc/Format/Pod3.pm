@@ -1,3 +1,6 @@
+# This code is part of perl distribution OODoc.  It is licensed under the
+# same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
+
 use strict;
 use warnings;
 
@@ -93,7 +96,18 @@ sub structure($$$)
     $descr =~ s/\n*$/\n\n/
         if defined $descr && length $descr;
 
-    my @examples = $object->examples;
+    my @examples;
+    foreach my $example ($object->examples)
+    {   my $title = $example->name || 'Example';
+		$title = "Example: $example" if $title !~ /example/i;
+		$title =~ s/\s+$//;
+
+        push @examples,
+         +{ title => $title
+          , descr => $self->cleanup($manual, $example->description)
+          };
+    }
+
     my @extends;
 
     unless($name eq 'NAME' || $name eq 'SYNOPSIS') 
@@ -253,6 +267,9 @@ Extends L<"<{header}>" in <{manual}>|<{manual}>/"<{header}>">.
 
 
 <{macro name=example}>\
+B<. <{title}>>
+
+<{descr}>
 <{/macro}>\
 
 

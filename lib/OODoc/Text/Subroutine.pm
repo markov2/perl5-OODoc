@@ -1,3 +1,5 @@
+# This code is part of perl distribution OODoc.  It is licensed under the
+# same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
 
 package OODoc::Text::Subroutine;
 use base 'OODoc::Text';
@@ -123,7 +125,7 @@ sub location($)
     my $mypath    = $container->path;
 
     return $container if $superpath eq $mypath;
-    
+
     if(length $superpath < length $mypath)
     {   return $container
             if substr($mypath, 0, length($superpath)+1) eq "$superpath/";

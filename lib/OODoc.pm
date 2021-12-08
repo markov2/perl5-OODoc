@@ -1,3 +1,5 @@
+# This code is part of perl distribution OODoc.  It is licensed under the
+# same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
 
 package OODoc;
 use base 'OODoc::Object';
@@ -17,7 +19,7 @@ use List::Util 'first';
 
 =chapter NAME
 
-OODoc - object oriented production of code related documentation
+OODoc - object oriented production of software documentation
 
 =chapter SYNOPSIS
 
@@ -460,10 +462,12 @@ sub prepare(@)
         $manual->expand;
     }
 
-    info "Create inheritance chapter";
+    info "Create inheritance chapters";
     foreach my $manual ($self->manuals)
-    {   trace "  create inheritance for $manual";
-        $manual->createInheritance;
+    {    next if $manual->chapter('INHERITANCE');
+
+         trace "  create inheritance for $manual";
+         $manual->createInheritance;
     }
 
     $self;
