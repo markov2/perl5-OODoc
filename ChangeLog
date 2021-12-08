@@ -2,7 +2,7 @@
 All changes where made by Mark Overmeer <perl@overmeer.net>, unless
 explicitly stated otherwise.
 
-version 2.02:
+version 2.02: Wed  8 Dec 13:41:32 CET 2021
 
 	Fixes:
 	- parsing of requires/option/default when second parameter is
