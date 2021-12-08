@@ -2,7 +2,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile
   ( NAME	  => 'OODoc'
-  , VERSION   => '2.02'
+  , VERSION   => '2.03'
   , PREREQ_PM =>
     { Test::More              => 0.47
     , File::Slurp             => 9999.12
