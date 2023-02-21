@@ -272,6 +272,7 @@ sub parse(@)
         }
         elsif(!$self->inDoc && $line =~ m/^=package\s*([\w\-\:]+)\s*$/)
         {   my $package = $1;
+warn "FOUND PACKAGE $package";
             $manual = OODoc::Manual->new
              ( package  => $package
              , source   => $input
@@ -284,17 +285,8 @@ sub parse(@)
             $self->currentManual($manual);
         }
         elsif(my($match, $action) = $self->findMatchingRule($line))
-        {
-
-            if(ref $action)
-            {   $action->($self, $match, $line, $input, $ln)
-                  or $out->print($line);
-            }
-            else
-            {   no strict 'refs';
-                $self->$action($match, $line, $input, $ln)
-                  or $out->print($line);
-            }
+        {    $self->$action($match, $line, $input, $ln)
+                 or $out->print($line);
         }
         elsif($line =~ m/^=(over|back|item|for|pod|begin|end|head4|encoding)\b/)
         {   ${$self->{OPM_block}} .= "\n". $line;
