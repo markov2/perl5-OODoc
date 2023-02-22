@@ -738,9 +738,6 @@ sub docExample($$$$)
     $line =~ s/^=examples?\s*//;
     $line =~ s/^\#.*//;
 
-warn "example $line";
-warn $self->{OPM_subroutine}, $self->{OPM_subsubsection}, $self->{OPM_subsection}, $self->{OPM_section}, $self->{OPM_chapter}, "\n";
-
     my $container = $self->{OPM_subroutine}
                  || $self->{OPM_subsubsection}
                  || $self->{OPM_subsection}
