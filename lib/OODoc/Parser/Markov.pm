@@ -272,7 +272,6 @@ sub parse(@)
         }
         elsif(!$self->inDoc && $line =~ m/^=package\s*([\w\-\:]+)\s*$/)
         {   my $package = $1;
-warn "FOUND PACKAGE $package";
             $manual = OODoc::Manual->new
              ( package  => $package
              , source   => $input
@@ -568,7 +567,7 @@ sub docSubroutine($$$$)
 
     my $container = $self->{OPM_subsection}
                  || $self->{OPM_section}
-	         || $self->{OPM_chapter};
+                 || $self->{OPM_chapter};
 
     die "ERROR: subroutine $name outside chapter in $fn line $ln\n"
        unless defined $container;

@@ -221,7 +221,7 @@ sub chapterDiagnostics(@)
     $self->showChapter(chapter => $diags, %args)
         if defined $diags;
 
-    my @diags   = map {$_->diagnostics} $manual->subroutines;
+    my @diags   = map $_->diagnostics, $manual->subroutines;
     return unless @diags;
 
     my $output  = $args{output} or panic;

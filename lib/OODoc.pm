@@ -706,12 +706,12 @@ sub stats()
     my $manuals  = @manuals;
     my $realpkg  = $self->packageNames;
 
-    my $subs     = map {$_->subroutines} @manuals;
-    my @options  = map { map {$_->options} $_->subroutines } @manuals;
+    my $subs     = map $_->subroutines, @manuals;
+    my @options  = map { map $_->options, $_->subroutines } @manuals;
     my $options  = @options;
-    my $examples = map {$_->examples}    @manuals;
+    my $examples = map $_->examples,    @manuals;
 
-    my $diags    = map {$_->diagnostics} @manuals;
+    my $diags    = map $_->diagnostics, @manuals;
     my $distribution   = $self->distribution;
     my $version  = $self->version;
 

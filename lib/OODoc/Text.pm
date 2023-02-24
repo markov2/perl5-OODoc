@@ -146,6 +146,11 @@ sub container(;$)
     @_ ? ($self->{OT_container} = shift) : $self->{OT_container};
 }
 
+=method linenr
+=cut
+
+sub linenr() { $_[0]->{OT_linenr} }
+
 =section Location
 
 =method manual [$name]

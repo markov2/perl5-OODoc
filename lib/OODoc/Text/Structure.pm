@@ -143,7 +143,7 @@ sub isEmpty()
 
     my $manual = $self->manual;
     return 0 if $self->description !~ m/^\s*$/;
-    return 0 if first {!$manual->inherited($_)}
+    return 0 if first { !$manual->inherited($_) }
         $self->examples, $self->subroutines;
 
     my @nested
@@ -152,7 +152,7 @@ sub isEmpty()
       : $self->isa('OODoc::Text::SubSection') ? $self->subsubsections
       : return 1;
 
-    not first {!$_->isEmpty} @nested;
+    not first { !$_->isEmpty } @nested;
 }
 
 #-------------------
@@ -168,10 +168,20 @@ chapter, section, or subsection.
 =cut
 
 sub addSubroutine(@)
-{  my $self = shift;
-   push @{$self->{OTS_subs}}, @_;
-   $_->container($self) for @_;
-   $self;
+{   my $self = shift;
+    my $subs = $self->{OTS_subs} ||= [];
+
+    foreach my $sub (@_)
+    {   $sub->container($self);
+
+        my $name = $sub->name;
+        if(my $has = first { $_->name eq $name } @$subs)
+		{   warn "WARNING: name '$name' seen before, lines ".$has->linenr. " and " . $sub->linenr . "\n";
+        }
+        push @{$self->{OTS_subs}}, $sub;
+    }
+
+    $self;
 }
 
 =method subroutines 
