@@ -253,9 +253,9 @@ sub parse(@)
         {   $out->print($1);
             my $package = $2;
 
-            # I would like to use 'our' here, but in some cases, that will
-            # cause compaints about double declaration with our.
-            $out->print("\nuse vars '\$VERSION';\n\$VERSION = '$version';\n");
+            # Wrap VERSION declaration in a block to avoid any problems with
+            # double declaration
+            $out->print("{\nour \$VERSION = '$version';\n}\n");
             $out->print($line);
 
             $manual = OODoc::Manual->new
