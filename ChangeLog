@@ -9,6 +9,9 @@ version 2.03:
 	- warning on finding a second method with the same name.
 	- use block to declare $VERSION.  GitHUB pull #1 [Haarg]
 
+	Improvements:
+	- replace File::Slurp by File::Slurper.
+
 version 2.02: Wed  8 Dec 13:41:32 CET 2021
 
 	Fixes:

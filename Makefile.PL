@@ -5,7 +5,7 @@ WriteMakefile
   , VERSION   => '2.03'
   , PREREQ_PM =>
     { Test::More              => 0.47
-    , File::Slurp             => 9999.12
+    , File::Slurper           => 0.014
     , OODoc::Template         => 0.16
     }
   , EXE_FILES    => [ 'bin/oodist' ]

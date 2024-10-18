@@ -8,7 +8,7 @@ use Log::Report   'oodoc';
 use Getopt::Long      qw/GetOptions :config gnu_getopt/;
 use POSIX             qw/strftime/;
 use Cwd               qw/getcwd realpath/;
-use File::Slurp       qw/read_file/;
+use File::Slurper     qw/read_text read_lines/;
 use List::Util        qw/first/;
 use File::Copy        qw/move copy/;
 use File::Spec        ();
@@ -142,7 +142,7 @@ info "*** Producing $project version $version";
 
 my $lictext = $licenses{$license} || '';
 if(!$lictext && $license)
-{   $lictext = read_file $license
+{   $lictext = read_text $license
         or fault __"cannot read from licence file {file}", file => $license;
 }
 
@@ -207,11 +207,13 @@ else            { publish_dist $distdir, $temp_distfn }
 chdir $here
    or fault __x"cannot go back to {dir}", dir => $here;
 
-my $temp_rawfn = create_raw_dist $rawdir, $makefile
-   if $make_raw;
-
-if(!$make_raw) { info "* test mode: raw not published" }
-else           { publish_raw_dist $rawdir, $temp_rawfn }
+if($make_raw && $rawdir !~ m!/SKIP$!)
+{	my $temp_rawfn = create_raw_dist $rawdir, $makefile;
+	publish_raw_dist $rawdir, $temp_rawfn;
+}
+else
+{	info "* test mode: raw not published";
+}
 
 # HTML package
 
@@ -323,8 +325,8 @@ __CONTRIB
     my $author    = $makefile->{AUTHOR} ? " by $makefile->{AUTHOR}" : '';
 
     my $pmheadsrc
-     = defined $pmheadfn  ? read_file $pmheadfn
-     : -f 'PMHEAD.txt'    ? read_file 'PMHEAD.txt'
+     = defined $pmheadfn  ? read_text $pmheadfn
+     : -f 'PMHEAD.txt'    ? read_text 'PMHEAD.txt'
      :                      <<'__PM_HEAD';
 Copyrights $year$author.
 ${contrib}See the manual pages for details on the licensing terms.
@@ -332,8 +334,8 @@ Pod stripped from pm file by OODoc $ooversion.
 __PM_HEAD
 
     my $podtailsrc
-     = defined $podtailfn ? read_file $podtailfn
-     : -f 'PODTAIL.txt'   ? read_file 'PODTAIL.txt'
+     = defined $podtailfn ? read_text $podtailfn
+     : -f 'PODTAIL.txt'   ? read_text 'PODTAIL.txt'
      :                      <<'__POD_TAIL';
 =head1 SEE ALSO
 
@@ -520,7 +522,7 @@ sub create_raw_dist($$)
     
     my %manifests;
     foreach my $man (glob "MANIFEST*")
-    {   foreach (read_file $man)
+    {   foreach (read_lines $man)
         {  s/\s{3,}.*$//;
            next if m/^#/;
            next unless length;
