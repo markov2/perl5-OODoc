@@ -7,7 +7,7 @@ version 2.03:
 	Fixes:
 	- wrong place for section examples.
 	- warning on finding a second method with the same name.
-	- use block to declare $VERSION.  GitHUB pull #1 [Haarg]
+	- use block to declare $VERSION.  GitHUB pull #1 [Graham Knop]
 
 	Improvements:
 	- replace File::Slurp by File::Slurper.
