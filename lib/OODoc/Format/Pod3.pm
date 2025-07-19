@@ -1,11 +1,11 @@
 # This code is part of perl distribution OODoc.  It is licensed under the
 # same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
 
+package OODoc::Format::Pod3;
+use parent 'OODoc::Format::Pod';
+
 use strict;
 use warnings;
-
-package OODoc::Format::Pod3;
-use base 'OODoc::Format::Pod';
 
 use Log::Report      'oodoc';
 
@@ -43,7 +43,7 @@ sub init($)
     $self->SUPER::init($args);
 }
 
-#------------
+#------------------------
 =section Template processing
 
 =method createManual %options

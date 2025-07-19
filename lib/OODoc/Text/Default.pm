@@ -2,7 +2,7 @@
 # same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
 
 package OODoc::Text::Default;
-use base 'OODoc::Text';
+use parent 'OODoc::Text';
 
 use strict;
 use warnings;
@@ -50,19 +50,18 @@ sub init($)
 }
 
 #-------------------------------------------
-
 =section Attributes
 
 =method subroutine 
 Returns the subroutine object for this option.
 =cut
 
-sub subroutine() { shift->container }
+sub subroutine() { $_[0]->container }
 
 =method value 
 The value of this default.
 =cut
 
-sub value() { shift->{OTD_value} }
+sub value() { $_[0]->{OTD_value} }
 
 1;

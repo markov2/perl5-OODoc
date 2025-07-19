@@ -2,7 +2,7 @@
 # same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
 
 package OODoc::Manifest;
-use base 'OODoc::Object';
+use parent 'OODoc::Object';
 
 use strict;
 use warnings;

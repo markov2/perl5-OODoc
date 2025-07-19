@@ -2,7 +2,7 @@
 # same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
 
 package OODoc::Text::Example;
-use base 'OODoc::Text';
+use parent 'OODoc::Text';
 
 use strict;
 use warnings;
@@ -24,9 +24,7 @@ in this manual page.
 =chapter METHODS
 
 =c_method new %options
-
 =default type  'Example'
-
 =cut
 
 sub init($)

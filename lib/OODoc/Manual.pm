@@ -2,7 +2,7 @@
 # same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
 
 package OODoc::Manual;
-use base 'OODoc::Object';
+use parent 'OODoc::Object';
 
 use strict;
 use warnings;
@@ -463,7 +463,7 @@ sub collectPackageRelations()
     my $name = $self->package;
     my %tree;
 
-    # The @ISA / use base
+    # The @ISA / use base / use parent
     {  no strict 'refs';
        $tree{isa} = [ @{"${name}::ISA"} ];
     }

@@ -2,7 +2,7 @@
 # same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
 
 package OODoc::Parser::Markov;
-use base 'OODoc::Parser';
+use parent 'OODoc::Parser';
 
 use strict;
 use warnings;
@@ -1266,7 +1266,7 @@ with OODoc), the following happens:
  =c_method new OPTIONS
 
  package OODoc;
- use base 'OODoc::Object';
+ use parent 'OODoc::Object';
  =chapter METHODS
  =c_method new OPTIONS
 

@@ -2,16 +2,16 @@
 # same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
 
 package OODoc::Format::Pod2;
-use base qw/OODoc::Format::Pod OODoc::Format::TemplateMagic/;
+use parent 'OODoc::Format::Pod', 'OODoc::Format::TemplateMagic';
 
 use strict;
 use warnings;
 
 use Log::Report    'oodoc';
-use Template::Magic;
+use Template::Magic ();
 
-use File::Spec;
-use IO::Scalar;
+use File::Spec      ();
+use IO::Scalar      ();
 
 =chapter NAME
 
@@ -103,8 +103,7 @@ sub templateChapter($$)
 {   my ($self, $zone, $args) = @_;
     my $contained = $zone->content;
     defined $contained && length $contained
-        or warning __x"no meaning for container {c} in chapter block"
-             , c => $contained;
+        or warning __x"no meaning for container {c} in chapter block", c => $contained;
 
     my $attrs = $zone->attributes;
     my $name  = $attrs =~ s/^\s*(\w+)\s*\,?// ? $1 : undef;
@@ -117,8 +116,7 @@ sub templateChapter($$)
     my @attrs = $self->zoneGetParameters($attrs);
     my $out   = '';
 
-    $self->showOptionalChapter($name, %$args
-      , output => IO::Scalar->new(\$out), @attrs);
+    $self->showOptionalChapter($name, %$args, output => IO::Scalar->new(\$out), @attrs);
 
     $out;
 }

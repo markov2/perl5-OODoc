@@ -2,7 +2,7 @@
 # same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
 
 package OODoc::Export::JSON;
-use base 'OODoc::Export';
+use parent 'OODoc::Export';
 
 use strict;
 use warnings;

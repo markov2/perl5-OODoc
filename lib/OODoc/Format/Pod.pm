@@ -2,7 +2,7 @@
 # same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
 
 package OODoc::Format::Pod;
-use base 'OODoc::Format';
+use parent 'OODoc::Format';
 
 use strict;
 use warnings;
@@ -677,7 +677,7 @@ pages.
  $doc->create('MyPod', format_options => [...]);
 
  package MyPod;
- use base 'OODoc::Format::Pod';
+ use parent 'OODoc::Format::Pod';
  sub chapterInheritance(@) {shift};
 
 The C<MyPod> package is extending the standard POD generator, by overruling
@@ -688,7 +688,7 @@ the default behavior of C<chapterInheritance()> by producing nothing.
  $doc->create('MyPod', format_options => [...]);
 
  package MyPod;
- use base 'OODoc::Format::Pod';
+ use parent 'OODoc::Format::Pod';
 
  sub chapterCopyrights(@)
  {   my ($self, %args) = @_;
@@ -710,7 +710,7 @@ COMMERCIAL
  $doc->create('MyPod', format_options => [...]);
 
  package MyPod;
- use base 'OODoc::Format::Pod';
+ use parent 'OODoc::Format::Pod';
  use Log::Report 'panic';
 
  sub chapterDiagnostics(@)

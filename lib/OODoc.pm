@@ -2,10 +2,12 @@
 # same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
 
 package OODoc;
-use base 'OODoc::Object';
+use parent 'OODoc::Object';
 
 use strict;
 use warnings;
+
+our $VERSION = '3.00';  # needed here for own release process
 
 use Log::Report    'oodoc';
 

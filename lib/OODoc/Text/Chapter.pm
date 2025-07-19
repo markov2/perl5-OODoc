@@ -2,13 +2,14 @@
 # same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
 
 package OODoc::Text::Chapter;
-use base 'OODoc::Text::Structure';
+use parent 'OODoc::Text::Structure';
 
 use strict;
 use warnings;
 
 use Log::Report    'oodoc';
-use List::Util     'first';
+
+use List::Util     qw/first/;
 
 =chapter NAME
 

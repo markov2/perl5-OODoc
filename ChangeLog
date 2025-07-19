@@ -20,6 +20,8 @@ version 3.00:
 	- export to JSON
 	- ::Parser::Markov errors and warnings use Log::Report
 	- replace glob() by bsd_glob()
+	- add .gitignore
+	- "use base" -> "use parent"
 
 version 2.02: Wed  8 Dec 13:41:32 CET 2021
 
