@@ -48,8 +48,27 @@ sub init($)
     $self;
 }
 
-#-------------------------------------------
+sub publish(%)
+{   my ($self, %args) = @_;
+	$args{subroutine} = $self;
+    my $p = $self->SUPER::publish(%args);
 
+    my $manual   = $args{manual};
+    my $exporter = $args{exporter};
+
+    $p->{type}   = $exporter->plainText($self->type);
+
+    my @d = map $_->publish(%args), $self->diagnostics;
+	$p->{diagnostics} = \@d if @d;
+
+#        use       => $use,
+#        options   => $self->_options($self->options, %args),
+    $p->{inherited} = $exporter->boolean($manual->inherited($self));
+
+	$p;
+}
+
+#-------------------------------------------
 =method extends [$object]
 
 =warning subroutine $name extended by different type:
@@ -84,7 +103,6 @@ sub extends($)
 }
 
 #-------------------------------------------
-
 =section Attributes
 
 =method parameters 
@@ -95,7 +113,6 @@ result may be C<undef> or empty.
 sub parameters() {shift->{OTS_param}}
 
 #-------------------------------------------
-
 =section Location
 
 =method location $manual
@@ -168,16 +185,13 @@ Returns the path of the text structure which contains this subroutine.
 sub path() { shift->container->path }
 
 #-------------------------------------------
-
 =section Collected
 
 =method default $name|$object
-
 In case of a $name, a default object for this method is looked up.  This
 does not search through super classes, but solely which is defined with
 this subroutine.  When passed an $object of type OODoc::Text::Default
 that will be stored.
-
 =cut
 
 sub default($)
@@ -189,8 +203,6 @@ sub default($)
     $self->{OTS_defaults}{$name} = $it;
     $it;
 }
-
-#-------------------------------------------
 
 =method defaults 
 Returns a list of all defaults as defined by this documentation item in
@@ -215,7 +227,6 @@ sub option($)
     $self->{OTS_options}{$name} = $it;
     $it;
 }
-
 
 =method findOption $name
 Does a little more thorough job than M<option()> bu searching the inherited
@@ -276,8 +287,7 @@ sub collectedOptions(@)
 
         unless(exists $options{$name})
         {   my ($fn, $ln) = $default->where;
-            warning __x"no option {name} for default in {file} line {line}"
-              , name => $name, file => $fn, line => $ln;
+            warning __x"no option {name} for default in {file} line {line}", name => $name, file => $fn, line => $ln;
             next;
         }
         $options{$name}[1] = $default;
@@ -288,14 +298,10 @@ sub collectedOptions(@)
         next if defined $options{$name}[1];
 
         my ($fn, $ln) = $option->where;
-        warning __x"no default for option {name} defined in {file} line {line}"
-          , name => $name, file => $fn, line => $ln;
+        warning __x"no default for option {name} defined in {file} line {line}", name => $name, file => $fn, line => $ln;
 
         my $default = $options{$name}[1] =
-        OODoc::Text::Default->new
-          ( name => $name, value => 'undef'
-          , subroutine => $self, linenr => $ln
-          );
+            OODoc::Text::Default->new(name => $name, value => 'undef', subroutine => $self, linenr => $ln);
 
         $self->default($default);
     }

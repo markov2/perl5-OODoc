@@ -66,7 +66,6 @@ sub emptyExtension($)
 }
 
 #-------------------------------------------
-
 =section Attributes
 
 =method level 
@@ -89,7 +88,6 @@ sub niceName()
 }
 
 #-------------------------------------------
-
 =section Location
 
 =method path 
@@ -111,7 +109,6 @@ is returned.
 sub findEntry($) { panic "Not implemented" }
 
 #-------------------------------------------
-
 =section Collected
 
 =method all $method, $parameters
@@ -153,6 +150,18 @@ sub isEmpty()
       : return 1;
 
     not first { !$_->isEmpty } @nested;
+}
+
+sub publish(%)
+{   my ($self, %args) = @_;
+	my $p = $self->SUPER::publish(%args);
+    $p->{level} = $self->level;
+    $p->{path}  = $self->path;
+
+    my @s = map $_->publish(%args), $self->subroutines;
+    $p->{subroutines} = \@s if @s;
+
+    $p;
 }
 
 #-------------------
@@ -211,7 +220,6 @@ sub setSubroutines($)
 }
 
 #-------------------------------------------
-
 =section Commonly used functions
 
 =cut

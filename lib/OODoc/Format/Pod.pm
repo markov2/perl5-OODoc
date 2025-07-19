@@ -34,7 +34,20 @@ operating system specific manual systems, like the Unix C<man> system.
 
 =chapter METHODS
 
-=section Page generation
+=section Constructors
+=c_method new %options
+
+=default format 'pod'
+=cut
+
+sub init($)
+{   my ($self, $args) = @_;
+    $args->{format} //= 'pod';
+    $self->SUPER::init($args);
+}
+
+#------------
+=section Template processing
 
 =method link $manual, $object, [$text]
 
@@ -452,13 +465,12 @@ sub writeTable($@)
     pop @w;   # ignore width of last column
 
     # Table head
-    my $headf  = " -".join("--", map { "\%-${_}s" } @w)."--%s\n";
+    my $headf  = " -".join("--", map "\%-${_}s", @w)."--%s\n";
     $output->printf($headf, @$head);
 
     # Table body
-    my $format = "  ".join("  ", map { "\%-${_}s" } @w)."  %s\n";
-    $output->printf($format, @$_)
-       for @rows;
+    my $format = "  ".join("  ", map "\%-${_}s", @w)."  %s\n";
+    $output->printf($format, @$_) for @rows;
 }
 
 =method removeMarkup STRING
@@ -602,6 +614,7 @@ sub cleanupPOD($$)
     $self;
 }
 
+#----------------------------
 =section Commonly used functions
 
 =chapter DETAILS

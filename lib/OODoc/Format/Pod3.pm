@@ -31,6 +31,21 @@ template system.
 
 =chapter METHODS
 
+=section Constructors
+=c_method new %options
+
+=default format 'pod3'
+=cut
+
+sub init($)
+{   my ($self, $args) = @_;
+    $args->{format} //= 'pod3';
+    $self->SUPER::init($args);
+}
+
+#------------
+=section Template processing
+
 =method createManual %options
 
 =option  template FILENAME
@@ -81,10 +96,6 @@ sub formatManual(@)
          )
       );
 }
-
-=section Template processing
-
-=cut
 
 sub structure($$$)
 {   my ($self, $template, $type, $object) = @_;

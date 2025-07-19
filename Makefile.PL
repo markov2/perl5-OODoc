@@ -2,10 +2,11 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile
   ( NAME	  => 'OODoc'
-  , VERSION   => '2.03'
+  , VERSION   => '3.00'
   , PREREQ_PM =>
     { Test::More              => 0.47
     , File::Slurper           => 0.014
+    , File::Glob              => 0
     , OODoc::Template         => 0.16
     }
   , EXE_FILES    => [ 'bin/oodist' ]

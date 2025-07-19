@@ -9,22 +9,22 @@ use warnings;
 
 use Log::Report    'oodoc';
 
-use OODoc::Text::Chapter;
-use OODoc::Text::Section;
-use OODoc::Text::SubSection;
-use OODoc::Text::SubSubSection;
-use OODoc::Text::Subroutine;
-use OODoc::Text::Option;
-use OODoc::Text::Default;
-use OODoc::Text::Diagnostic;
-use OODoc::Text::Example;
-use OODoc::Manual;
+use OODoc::Text::Chapter       ();
+use OODoc::Text::Section       ();
+use OODoc::Text::SubSection    ();
+use OODoc::Text::SubSubSection ();
+use OODoc::Text::Subroutine    ();
+use OODoc::Text::Option        ();
+use OODoc::Text::Default       ();
+use OODoc::Text::Diagnostic    ();
+use OODoc::Text::Example       ();
+use OODoc::Manual              ();
 
 use File::Spec;
-use IO::File;
 
 my $url_modsearch = "http://search.cpan.org/perldoc?";
 my $url_coderoot  = 'CODE';
+my @default_rules;
 
 =chapter NAME
 
@@ -34,57 +34,19 @@ OODoc::Parser::Markov - Parser for the MARKOV syntax
 
 =chapter DESCRIPTION
 
-The Markov parser is named after the author, because the author likes to
-invite other people to write their own parser as well: every one has
-not only their own coding style, but also their own documentation
-wishes.
+The "Markov parser" is named after the author, because the author likes
+to invite other people to write their own parser as well: every one has
+not only their own coding style, but also their own documentation wishes.
 
-The task for the parser is to strip Perl package files into a code
-part and a documentation tree.  The code is written to a directory
-where the module distribution is built, the documenation tree is
-later formatted into manual pages.
+The task for the parser is to strip Perl package files into a code part
+and a documentation tree.  The code is written to a directory where the
+module distribution is built, the documenation tree is later formatted
+into manual pages.
 
 =chapter METHODS
-=cut
 
-#-------------------------------------------
-
-my @default_rules =
- ( [ '=cut'        => 'docCut'        ]
- , [ '=chapter'    => 'docChapter'    ]
- , [ '=section'    => 'docSection'    ]
- , [ '=subsection' => 'docSubSection' ]
- , [ '=subsubsection' => 'docSubSubSection' ]
- , [ '=method'     => 'docSubroutine' ]
- , [ '=i_method'   => 'docSubroutine' ]
- , [ '=c_method'   => 'docSubroutine' ]
- , [ '=ci_method'  => 'docSubroutine' ]
- , [ '=function'   => 'docSubroutine' ]
- , [ '=tie'        => 'docSubroutine' ]
- , [ '=overload'   => 'docSubroutine' ]
- , [ '=option'     => 'docOption'     ]
- , [ '=default'    => 'docDefault'    ]
- , [ '=requires'   => 'docRequires'   ]
- , [ '=example'    => 'docExample'    ]
- , [ '=examples'   => 'docExample'    ]
- , [ '=error'      => 'docDiagnostic' ]
- , [ '=warning'    => 'docDiagnostic' ]
- , [ '=notice'     => 'docDiagnostic' ]
- , [ '=debug'      => 'docDiagnostic' ]
-
- # deprecated
- , [ '=head1'      => 'docChapter'    ]
- , [ '=head2'      => 'docSection'    ]
- , [ '=head3'      => 'docSubSection' ]
-
- # problem spotter
- , [ qr/^(warn|die|carp|confess|croak)\s/ => 'debugRemains' ]
- , [ qr/^( sub \s+ \w
-         | (?:my|our) \s+ [\($@%]
-         | (?:package|use) \s+ \w+\:
-         )
-       /x => 'forgotCut' ]
- );
+#--------------------------
+=section Constructors
 
 =c_method new %options
 
@@ -110,9 +72,82 @@ sub init($)
     $self;
 }
 
-#-------------------------------------------
+#------------------
+=section Attributes
 
+=method setBlock REF-SCALAR
+Set the scalar where the next documentation lines should be collected
+in.
+=cut
+
+sub setBlock($)
+{   my ($self, $ref) = @_;
+    $self->{OPM_block} = $ref;
+    $self->inDoc(1);
+    $self;
+}
+
+=method inDoc [BOOLEAN]
+When a BOOLEAN is specified, the status changes.  It returns the current
+status of the document reader.
+=cut
+
+sub inDoc(;$)
+{   my $self = shift;
+    $self->{OPM_in_pod} = shift if @_;
+    $self->{OPM_in_pod};
+}
+
+=method currentManual [$manual]
+Returns the manual object which is currently being filled with data.
+With a new $manual, a new one is set.
+=cut
+
+sub currentManual(;$)
+{   my $self = shift;
+    @_ ? ($self->{OPM_manual} = shift) : $self->{OPM_manual};
+}
+
+#-------------------------------------------
 =section Parsing a file
+=cut
+
+@default_rules =
+  ( [ '=cut'        => 'docCut'        ]
+  , [ '=chapter'    => 'docChapter'    ]
+  , [ '=section'    => 'docSection'    ]
+  , [ '=subsection' => 'docSubSection' ]
+  , [ '=subsubsection' => 'docSubSubSection' ]
+  , [ '=method'     => 'docSubroutine' ]
+  , [ '=i_method'   => 'docSubroutine' ]
+  , [ '=c_method'   => 'docSubroutine' ]
+  , [ '=ci_method'  => 'docSubroutine' ]
+  , [ '=function'   => 'docSubroutine' ]
+  , [ '=tie'        => 'docSubroutine' ]
+  , [ '=overload'   => 'docSubroutine' ]
+  , [ '=option'     => 'docOption'     ]
+  , [ '=default'    => 'docDefault'    ]
+  , [ '=requires'   => 'docRequires'   ]
+  , [ '=example'    => 'docExample'    ]
+  , [ '=examples'   => 'docExample'    ]
+  , [ '=error'      => 'docDiagnostic' ]
+  , [ '=warning'    => 'docDiagnostic' ]
+  , [ '=notice'     => 'docDiagnostic' ]
+  , [ '=debug'      => 'docDiagnostic' ]
+ 
+  # deprecated
+  , [ '=head1'      => 'docChapter'    ]
+  , [ '=head2'      => 'docSection'    ]
+  , [ '=head3'      => 'docSubSection' ]
+ 
+  # problem spotter
+  , [ qr/^(warn|die|carp|confess|croak)\s/ => 'debugRemains' ]
+  , [ qr/^( sub \s+ \w
+          | (?:my|our) \s+ [\($@%]
+          | (?:package|use) \s+ \w+\:
+          )
+        /x => 'forgotCut' ]
+  );
 
 =method rule <STRING|Regexp>, <$method|CODE>
 
@@ -135,8 +170,6 @@ sub rule($$)
     push @{$self->{OP_rules}}, [$match, $action];
     $self;
 }
-
-#-------------------------------------------
 
 =method findMatchingRule $line
 Check the list of rules whether this $line matches one of them.  This
@@ -209,11 +242,11 @@ sub parse(@)
     my $version = $args{version}      or panic;
     my $distr   = $args{distribution} or panic;
 
-    my $in     = IO::File->new($input, 'r')
-       or die "ERROR: cannot read document from $input: $!\n";
+    open my $in, '<', $input
+        or fault __x"cannot read document from {file}", file => $input;
 
-    my $out    = IO::File->new($output, 'w')
-       or die "ERROR: cannot write stripped code to $output: $!\n";
+    open my $out, '>', $output
+        or fault __x"cannot write stripped code to {file}", file => $output;
 
     # pure doc files have no package statement included, so it shall
     # be created beforehand.
@@ -292,7 +325,7 @@ sub parse(@)
             $self->inDoc(1);
         }
         elsif(substr($line, 0, 1) eq '=')
-        {   warn "WARNING: unknown markup in $input line $ln:\n $line";
+        {   warning __x"unknown markup in {file} line {linenr}:\n {line}", file => $input, linenr => $ln, line => $line;
             ${$self->{OPM_block}} .= $line;
             $self->inDoc(1);
         }
@@ -300,7 +333,7 @@ sub parse(@)
         {   # add the line to the currently open text block
             my $block = $self->{OPM_block};
             unless($block)
-            {   warn "WARNING: no block for line $ln in file $input\n $line";
+            {   warning __x"no block for line {linenr} in file {file}\n {line}", file => $input, linenr => $ln, line => $line;
                 my $dummy = '';
                 $block = $self->setBlock(\$dummy);
             }
@@ -314,8 +347,8 @@ sub parse(@)
         }
     }
 
-    warn "WARNING: doc did not end in $input.\n"
-        if $self->inDoc && ! $pure_pod;
+    ! $self->inDoc || $pure_pod
+        or warning __x"doc did not end in {file}", file => $input;
 
     $self->closeChapter;
     $in->close && $out->close;
@@ -323,57 +356,8 @@ sub parse(@)
     @manuals;
 }
 
-#-------------------------------------------
-
-=method setBlock REF-SCALAR
-
-Set the scalar where the next documentation lines should be collected
-in.
-
-=cut
-
-sub setBlock($)
-{   my ($self, $ref) = @_;
-    $self->{OPM_block} = $ref;
-    $self->inDoc(1);
-    $self;
-}
-
-#-------------------------------------------
-
-=method inDoc [BOOLEAN]
-
-When a BOOLEAN is specified, the status changes.  It returns the current
-status of the document reader.
-
-=cut
-
-sub inDoc(;$)
-{   my $self = shift;
-    $self->{OPM_in_pod} = shift if @_;
-    $self->{OPM_in_pod};
-}
-
-#-------------------------------------------
-
-=method currentManual [$manual]
-
-Returns the manual object which is currently being filled with data.
-With a new $manual, a new one is set.
-
-=cut
-
-sub currentManual(;$)
-{   my $self = shift;
-    @_ ? $self->{OPM_manual} = shift : $self->{OPM_manual};
-}
-
-#-------------------------------------------
-
-=warning =cut does not terminate any doc in $file line $number
-
+=warning Pod tag $tag does not terminate any doc in $file line $number
 There is no document to end here.
-
 =cut
 
 sub docCut($$$$)
@@ -384,8 +368,8 @@ sub docCut($$$$)
         return;
     }
 
-    warn "WARNING: $match does not terminate any doc in $fn line $ln.\n"
-        unless $self->inDoc;
+    $self->inDoc
+        or warning __x"Pod tag {tag} does not terminate any doc in {file} line {line}", tag => $match, file => $fn, line => $ln;
 
     $self->inDoc(0);
     1;
@@ -395,12 +379,10 @@ sub docCut($$$$)
 # CHAPTER
 
 =error chapter `$name' before package statement in $file line $number
-
 A package file can contain more than one package: more than one
 name space.  The docs are sorted after the name space.  Therefore,
 each chapter must be preceeded by a package statement in the file
 to be sure that the correct name space is used.
-
 =cut
 
 sub docChapter($$$$)
@@ -410,15 +392,14 @@ sub docChapter($$$$)
 
     $self->closeChapter;
 
-    my $manual = $self->currentManual;
-    die "ERROR: chapter $line before package statement in $fn line $ln\n"
-       unless defined $manual;
+    my $manual = $self->currentManual
+        or error __x"chapter {name} before package statement in {file} line {line}", name => $line, file => $fn, line => $ln;
 
     my $chapter = $self->{OPM_chapter} = OODoc::Text::Chapter->new
-     ( name    => $line
-     , manual  => $manual
-     , linenr  => $ln
-     );
+      ( name    => $line
+      , manual  => $manual
+      , linenr  => $ln
+      );
 
     $self->setBlock($chapter->openDescription);
     $manual->chapter($chapter);
@@ -434,7 +415,7 @@ sub closeChapter()
 #-------------------------------------------
 # SECTION
 
-=error section `$name' outside chapter in $file line $number
+=error section '$name' outside chapter in $file line $number
 Sections must be contained in chapters.
 =cut
 
@@ -445,15 +426,14 @@ sub docSection($$$$)
 
     $self->closeSection;
 
-    my $chapter = $self->{OPM_chapter};
-    die "ERROR: section `$line' outside chapter in $fn line $ln\n"
-       unless defined $chapter;
+    my $chapter = $self->{OPM_chapter}
+        or error __x"section '{name}' outside chapter in {file} line {line}", name => $line, file => $fn, line => $ln;
 
     my $section = $self->{OPM_section} = OODoc::Text::Section->new
-     ( name     => $line
-     , chapter  => $chapter
-     , linenr   => $ln
-     );
+      ( name     => $line
+      , chapter  => $chapter
+      , linenr   => $ln
+      );
 
     $chapter->section($section);
     $self->setBlock($section->openDescription);
@@ -469,11 +449,9 @@ sub closeSection()
 #-------------------------------------------
 # SUBSECTION
 
-=error subsection `$name' outside section in $file line $number
-
+=error subsection '$name' outside section in $file line $number
 Subsections are only allowed in a chapter when it is nested within
 a section.
-
 =cut
 
 sub docSubSection($$$$)
@@ -483,15 +461,11 @@ sub docSubSection($$$$)
 
     $self->closeSubSection;
 
-    my $section = $self->{OPM_section};
-    defined $section
-        or die "ERROR: subsection `$line' outside section in $fn line $ln\n";
+    my $section = $self->{OPM_section}
+        or error __x"subsection '{name}' outside section in {file} line {line}", name => $line, file => $fn, line => $ln;
 
-    my $subsection = $self->{OPM_subsection} = OODoc::Text::SubSection->new
-     ( name     => $line
-     , section  => $section
-     , linenr   => $ln
-     );
+    my $subsection = $self->{OPM_subsection} =
+        OODoc::Text::SubSection->new(name => $line, section => $section, linenr => $ln);
 
     $section->subsection($subsection);
     $self->setBlock($subsection->openDescription);
@@ -504,14 +478,12 @@ sub closeSubSection()
     $self->closeSubSubSection;
 }
 
-
 #-------------------------------------------
 # SUBSECTION
 
-=error subsubsection `$name' outside subsection in $file line $number
+=error subsubsection '$name' outside subsection in $file line $number
 Subsubsections are only allowed in a chapter when it is nested within
 a subsection.
-
 =cut
 
 sub docSubSubSection($$$$)
@@ -521,16 +493,11 @@ sub docSubSubSection($$$$)
 
     $self->closeSubSubSection;
 
-    my $subsection = $self->{OPM_subsection};
-    defined $subsection
-     or die "ERROR: subsubsection `$line' outside subsection in $fn line $ln\n";
+    my $subsection = $self->{OPM_subsection}
+        or error __x"subsubsection '{name}' outside section in {file} line {line}", name => $line, file => $fn, line => $ln;
 
-    my $subsubsection
-      = $self->{OPM_subsubsection} = OODoc::Text::SubSubSection->new
-      ( name       => $line
-      , subsection => $subsection
-      , linenr     => $ln
-      );
+    my $subsubsection = $self->{OPM_subsubsection} =
+        OODoc::Text::SubSubSection->new(name => $line, subsection => $subsection, linenr => $ln);
 
     $subsection->subsubsection($subsubsection);
     $self->setBlock($subsubsection->openDescription);
@@ -547,11 +514,9 @@ sub closeSubSubSection()
 # SUBROUTINES
 
 =error subroutine $name outside chapter in $file line $number
-
 Subroutine descriptions (method, function, tie, ...) can only be used
 within a restricted set of chapters.  You have not started any
 chapter yet.
-
 =cut
 
 sub docSubroutine($$$$)
@@ -562,24 +527,15 @@ sub docSubroutine($$$$)
     my $type = $1;
 
     my ($name, $params)
-             = $type eq 'overload' ? ($line, '')
-             :                       $line =~ m/^(\w*)\s*(.*?)\s*$/;
+     = $type eq 'overload' ? ($line, '')
+     :                       $line =~ m/^(\w*)\s*(.*?)\s*$/;
 
-    my $container = $self->{OPM_subsection}
-                 || $self->{OPM_section}
-                 || $self->{OPM_chapter};
-
-    die "ERROR: subroutine $name outside chapter in $fn line $ln\n"
-       unless defined $container;
+    my $container = $self->{OPM_subsection} || $self->{OPM_section} || $self->{OPM_chapter}
+        or error __x"subroutine {name} outside chapter in {file} line {line}", name => $name, file => $fn, line => $ln;
 
     $type    = 'i_method' if $type eq 'method';
-    my $sub  = $self->{OPM_subroutine} = OODoc::Text::Subroutine->new
-     ( type       => $type
-     , name       => $name
-     , parameters => $params
-     , linenr     => $ln
-     , container  => $container
-     );
+    my $sub  = $self->{OPM_subroutine} =
+       OODoc::Text::Subroutine->new(type => $type, name => $name, parameters => $params, linenr => $ln, container => $container);
 
     $self->setBlock($sub->openDescription);
     $container->addSubroutine($sub);
@@ -609,21 +565,20 @@ sub docOption($$$$)
 {   my ($self, $match, $line, $fn, $ln) = @_;
 
     unless($line =~ m/^\=option\s+(\S+)\s+(.+?)\s*$/ )
-    {   warn "WARNING: option line incorrect in $fn line $ln:\n$line";
+    {   warning __x"option line incorrect in {file} line {linenr}:\n {line}", file => $fn, linenr => $ln, line => $line;
         return;
     }
     my ($name, $parameters) = ($1, $2);
 
-    my $sub  = $self->{OPM_subroutine};
-    die "ERROR: option $name outside subroutine in $fn line $ln\n"
-       unless defined $sub;
+    my $sub  = $self->{OPM_subroutine}
+        or error __x"option {name} outside subroutine in {file} line {line}", name => $name, file => $fn, line => $ln;
 
     my $option  = OODoc::Text::Option->new
-     ( name       => $name
-     , parameters => $parameters
-     , linenr     => $ln
-     , subroutine => $sub
-     );
+      ( name       => $name
+      , parameters => $parameters
+      , linenr     => $ln
+      , subroutine => $sub
+      );
 
     $self->setBlock($option->openDescription);
     $sub->option($option);
@@ -631,6 +586,7 @@ sub docOption($$$$)
 }
 
 #-------------------------------------------
+# DEFAULT
 
 =error default for option $name outside subroutine in $file line $number
 A default is set, however there is not subroutine in scope (yet).  It
@@ -647,22 +603,16 @@ sub docDefault($$$$)
 {   my ($self, $match, $line, $fn, $ln) = @_;
 
     unless($line =~ m/^\=default\s+(\S+)\s+(.+?)\s*$/ )
-    {   warn "WARNING: default line incorrect in $fn line $ln:\n$line";
+    {   warning __x"default line incorrect in {file} line {linenr}:\n {line}", file => $fn, linenr => $ln, line => $line;
         return;
     }
 
     my ($name, $value) = ($1, $2);
 
-    my $sub  = $self->{OPM_subroutine};
-    die "ERROR: default for option $name outside subroutine in $fn line $ln\n"
-       unless defined $sub;
+    my $sub = $self->{OPM_subroutine}
+       or error __x"default for option {name} outside subroutine in {file} line {line}", name => $name, file => $fn, line => $ln;
 
-    my $default  = OODoc::Text::Default->new
-     ( name       => $name
-     , value      => $value
-     , linenr     => $ln
-     , subroutine => $sub
-     );
+    my $default = OODoc::Text::Default->new(name => $name, value => $value, linenr => $ln, subroutine => $sub);
 
     $sub->default($default);
     $sub;
@@ -672,7 +622,7 @@ sub docRequires($$$$)
 {   my ($self, $match, $line, $fn, $ln) = @_;
 
     unless($line =~ m/^\=requires\s+(\w+)\s+(.+?)\s*$/ )
-    {   warn "WARNING: requires line incorrect in $fn line $ln:\n$line";
+    {   warning __x"requires line incorrect in {file} line {linenr}:\n {line}", file => $fn, linenr => $ln, line => $line;
         return;
     }
 
@@ -701,20 +651,14 @@ sub docDiagnostic($$$$)
 
     $line =~ s/\s*$//;
     unless(length $line)
-    {   warn "WARNING: no diagnostic message supplied in $fn line $ln";
+    {   warning __x"no diagnostic message supplied in {file} line {line}", file => $fn, line => $ln;
         return;
     }
 
-    my $sub  = $self->{OPM_subroutine};
-    die "ERROR: diagnostic $type outside subroutine in $fn line $ln\n"
-       unless defined $sub;
+    my $sub  = $self->{OPM_subroutine}
+        or error __x"diagnostic {type} outside subroutine in {file} line {line}", type => $type, file => $fn, line => $ln;
 
-    my $diag  = OODoc::Text::Diagnostic->new
-     ( type       => ucfirst($type)
-     , name       => $line
-     , linenr     => $ln
-     , subroutine => $sub
-     );
+    my $diag  = OODoc::Text::Diagnostic->new(type => ucfirst($type), name => $line, linenr => $ln, subroutine => $sub);
 
     $self->setBlock($diag->openDescription);
     $sub->diagnostic($diag);
@@ -743,60 +687,48 @@ sub docExample($$$$)
                  || $self->{OPM_section}
                  || $self->{OPM_chapter};
 
-    die "ERROR: example outside chapter in $fn line $ln\n"
-       unless defined $container;
+    defined $container
+        or error __x"example outside chapter in {file} line {line}", file => $fn, line => $ln;
 
-    my $example  = OODoc::Text::Example->new
-     ( name      => ($line || '')
-     , linenr    => $ln
-     , container => $container
-     );
+    my $example  = OODoc::Text::Example->new(name => ($line || ''), linenr => $ln, container => $container);
 
     $self->setBlock($example->openDescription);
     $container->example($example);
     $example;
 }
 
-#-------------------------------------------
-
 =warning Debugging remains in $filename line $number
-
 The author's way of debugging is by putting warn/die/carp etc on the
 first position of a line.  Other lines in a method are always indented,
 which means that these debugging lines are clearly visible.  You may
 simply ingnore this warning.
-
 =cut
 
 sub debugRemains($$$$)
 {   my ($self, $match, $line, $fn, $ln) = @_;
 
-    warn "WARNING: Debugging remains in $fn line $ln\n"
-       unless $self->inDoc || $self->currentManual->isPurePod;
+    $self->inDoc || $self->currentManual->isPurePod
+        or warning __x"Debugging remains in {file} line {line}", file => $fn, line => $ln;
 
     undef;
 }
-
-#-------------------------------------------
 
 =warning You may have accidentally captured code in doc file $fn line $number
 Some keywords on the first position of a line are very common for code.
 However, code within doc should start with a blank to indicate pre-formatted
 lines.  This warning may be false.
-
 =cut
 
 sub forgotCut($$$$)
 {   my ($self, $match, $line, $fn, $ln) = @_;
 
-    warn "WARNING: You may have accidentally captured code in doc $fn line $ln\n"
-       if $self->inDoc && ! $self->currentManual->isPurePod;
+    $self->inDoc && ! $self->currentManual->isPurePod
+        and warning __x"You may have accidentally captured code in doc {file} line {line}", file => $fn, line => $ln;
 
     undef;
 }
 
 #-------------------------------------------
-
 =section Producing manuals
 
 =method decomposeM $manual, $link
@@ -827,9 +759,7 @@ is not always easy to find.
 sub decomposeM($$)
 {   my ($self, $manual, $link) = @_;
 
-    my ($subroutine, $option)
-      = $link =~ s/(?:^|\:\:) (\w+) \( (.*?) \)$//x ? ($1, $2)
-      :                                               ('', '');
+    my ($subroutine, $option) = $link =~ s/(?:^|\:\:) (\w+) \( (.*?) \)$//x ? ($1, $2) : ('', '');
 
     my $man;
        if(not length($link)) { $man = $manual }
@@ -841,12 +771,11 @@ sub decomposeM($$)
           || $self->skipManualLink($link)
           ) { ; }
         elsif($@ =~ m/Can't locate/ )
-        {  warn "WARNING: module $link is not on your system, found in $manual\n";
+        {   warning __x"module {name} is not on your system, found in {manual}", name => $link, manual => $manual;
         }
         else
         {  $@ =~ s/ at \(eval.*//;
-           warn "WARNING: use problem for module $link in $manual;\n$@";
-           warn " Did you use an 'M' tag on something which is not a module?\n";
+           warning __x"use problem for module {name} in {manual};\n{err}", name => $link, manual => $manual, err => $@;
         }
         $man = $link;
     }
@@ -859,29 +788,31 @@ sub decomposeM($$)
                );
     }
 
-    return (undef, $man)
-        unless defined $subroutine && length $subroutine;
+    defined $subroutine && length $subroutine
+        or return (undef, $man);
 
     my $package = $self->manual($man->package);
     unless(defined $package)
     {   my $want = $man->package;
-        warn "WARNING: no manual for $want (correct casing?)\n";
+        warning __x"no manual for {package} (correct casing?)", package => $want;
         return (undef, "$want subroutine $subroutine");
     }
 
     my $sub     = $package->subroutine($subroutine);
     unless(defined $sub)
-    {   warn "WARNING: subroutine $subroutine() is not defined by $package, but linked to in $manual\n";
+    {   warning __x"subroutine {call}() is not defined by {pkg}, but linked to in {manual}",
+            call => $subroutine, pkg => $package, manual => $manual;
         return ($package, "$package subroutine $subroutine");
     }
 
     my $location = $sub->manual;
-    return ($location, $sub)
-        unless defined $option && length $option;
+    defined $option && length $option
+        or return ($location, $sub);
 
     my $opt = $sub->findOption($option);
     unless(defined $opt)
-    {   warn "WARNING: option \"$option\" unknown for $subroutine() in $location, found in $manual\n";
+    {   warning __x"option '{name}' unknown for {call}() in {where}, found in {manual}",
+            name => $option, call => $subroutine, where => $location, manual => $manual;
         return ($location, "$package subroutine $subroutine option $option");
     }
 
@@ -893,20 +824,20 @@ Decompose the L-tags.  These tags are described in L<perlpod>, but
 they will not refer to items: only headers.
 
 =warning empty L link in $manual
-=warning Manual $manual links to unknown entry "$item" in $manual
+=warning manual $manual links to unknown entry "$item" in $manual
 =cut
 
 sub decomposeL($$)
 {   my ($self, $manual, $link) = @_;
-    my $text = $link =~ s/^([^|]*)\|// ? $1 : undef;
+    my $text  = $link =~ s/^([^|]*)\|// ? $1 : undef;
 
     unless(length $link)
-    {   warn "WARNING: empty L link in $manual";
+    {   warning __x"empty L link in {manual}", manual => $manual;
         return ();
     }
 
     if($link  =~ m/^[a-z]+\:[^:]/ )
-    {   $text         = $link unless defined $text;
+    {   $text = $link unless defined $text;
         return (undef, undef, $link, $text);
     }
 
@@ -920,8 +851,8 @@ sub decomposeL($$)
     my $dest;
     if(!ref $man)
     {   unless(defined $text && length $text)
-        {  $text = "manual $man";
-           $text .= " entry $item" if defined $item && length $item;
+        {   $text  = "manual $man";
+            $text .= " entry $item" if defined $item && length $item;
         }
 
         if($man !~ m/\(\d.*\)\s*$/)
@@ -930,17 +861,18 @@ sub decomposeL($$)
         }
     }
     elsif(!defined $item)
-    {   $dest  = $man;
-        $text  = $man->name unless defined $text;
+    {   $dest   = $man;
+        $text //= $man->name;
     }
     elsif(my @obj = $man->all(findEntry => $item))
-    {   $dest  = shift @obj;
-        $text  = $item unless defined $text;
+    {   $dest   = shift @obj;
+        $text //= $item;
     }
     else
-    {   warn "WARNING: Manual $manual links to unknown entry \"$item\" in $man\n";
-        $dest = $man;
-        $text = "$man" unless defined $text;
+    {   warning __x"manual {manual} links to unknown entry '{item}' in {other_manual}",
+            manual => $manual, entry => $item, other_manual => $man;
+        $dest   = $man;
+        $text //= "$man";
     }
 
     ($man, $dest, undef, $text);
@@ -951,7 +883,7 @@ sub decomposeL($$)
 
 sub cleanupPod($$$)
 {   my ($self, $formatter, $manual, $string) = @_;
-    return '' unless defined $string && length $string;
+    defined $string && length $string or return '';
 
     my @lines   = split /^/, $string;
     my $protect;
@@ -960,18 +892,13 @@ sub cleanupPod($$$)
     {   $protect = $1  if $lines[$i] =~ m/^=(for|begin)\s+\w/;
 
         undef $protect if $lines[$i] =~ m/^=end/;
-
-        undef $protect if $lines[$i] =~ m/^\s*$/
-                       && $protect && $protect eq 'for';
-
+        undef $protect if $lines[$i] =~ m/^\s*$/ && $protect && $protect eq 'for';
         next if $protect;
 
-        $lines[$i] =~
-             s/\bM\<([^>]*)\>/$self->cleanupPodM($formatter,$manual,$1)/ge;
+        $lines[$i] =~ s/\bM\<([^>]*)\>/$self->cleanupPodM($formatter,$manual,$1)/ge;
 
-        $lines[$i] =~
-             s/\bL\<([^>]*)\>/$self->cleanupPodL($formatter,$manual,$1)/ge
-                if substr($lines[$i], 0, 1) eq ' ';
+        $lines[$i] =~ s/\bL\<([^>]*)\>/$self->cleanupPodL($formatter,$manual,$1)/ge
+            if substr($lines[$i], 0, 1) eq ' ';
 
         # permit losing blank lines around pod statements.
         if(substr($lines[$i], 0, 1) eq '=')
@@ -1023,10 +950,6 @@ sub cleanupPodL($$$)
     my ($toman, $to, $href, $text) = $self->decomposeL($manual, $link);
     $text;
 }
-
-#-------------------------------------------
-
-=section Commonly used functions
 
 =method cleanupHtml $formatter, $manual, STRING, [$is_html]
 Some changes will not be made when $is_html is C<true>, for instance,
@@ -1080,7 +1003,7 @@ sub cleanupHtml($$$;$)
         s#\bB\<([^>]*)\>#<b>$1</b>#g;
         s#\bE\<([^>]*)\>#\&$1;#g;
         s#^\=over\s+\d+\s*#\n<ul>\n#gms;
-        s#(?:\A|\n)\=item\s*(?:\*\s*)?([^\n]*)#\n<li><b>$1</b><br />#gms;
+        s#(?:\A|\n)\=item\s*(?:\*\s*)?([^\n]*)#\n<li>$1<br />#gms;
         s#(?:\A|\s*)\=back\b#\n</ul>#gms;
         s#^=pod\b##gm;
 
@@ -1139,7 +1062,6 @@ sub cleanupHtmlL($$$)
 }
 
 #-------------------------------------------
-
 =chapter DETAILS
 
 =section General Description

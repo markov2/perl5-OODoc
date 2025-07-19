@@ -1,10 +1,10 @@
 # This code is part of perl distribution OODoc.  It is licensed under the
 # same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
 
+package OODoc::Format::TemplateMagic;
+
 use strict;
 use warnings;
-
-package OODoc::Format::TemplateMagic;
 
 =chapter NAME
 
@@ -38,14 +38,14 @@ sub zoneGetParameters($)
     $param =~ s/^\s+//;
     $param =~ s/\s+$//;
 
-    return () unless length $param;
+    length $param or return ();
 
-    return split / /, $param       # old style
-       unless $param =~ m/[^\s\w]/;
+    $param =~ m/[^\s\w]/
+        or return split / /, $param       # old style
 
     # new style
     my @params = split /\s*\,\s*/, $param;
-    map { (split /\s*\=\>\s*/, $_, 2) } @params;
+    map split(/\s*\=\>\s*/, $_, 2), @params;
 }
 
 1;

@@ -57,8 +57,16 @@ sub emptyExtension($)
     $empty;
 }
 
-#-------------------------------------------
+sub publish(%)
+{   my ($self, %args) = @_;
+    $args{section} = $self;
+    my $p = $self->SUPER::publish(%args);
+    my @s = map $_->publish(%args), $self->subsections;
+    $p->{nest} = \@s if @s;
+    $p;
+}
 
+#-------------------------------------------
 =section Location
 
 =method chapter 
@@ -98,7 +106,6 @@ sub all($@)
 }
 
 #-------------------------------------------
-
 =section Subsections
 
 =method subsection $name|$object

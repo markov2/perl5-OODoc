@@ -49,7 +49,6 @@ sub init($)
 }
 
 #-------------------------------------------
-
 =section Attributes
 
 =method subroutine 

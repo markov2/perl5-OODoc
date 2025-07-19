@@ -45,17 +45,12 @@ sub init($)
 }
 
 #-------------------------------------------
-
 =section Attributes
 
 =method subroutine 
-
 Returns the subroutine object for this option.
-
 =cut
 
 sub subroutine() { shift->container }
-
-#-------------------------------------------
 
 1;

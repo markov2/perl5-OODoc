@@ -9,13 +9,15 @@ use warnings;
 
 use Log::Report    'oodoc';
 
-use OODoc::Manifest;
+use OODoc::Manifest ();
+use OODoc::Format   ();
 
-use File::Copy;
-use File::Spec;
-use File::Basename;
-use IO::File;
-use List::Util 'first';
+use File::Spec      ();
+use IO::File        ();
+use File::Copy      qw/copy move/;
+use File::Basename  qw/dirname/;
+use List::Util      qw/first/;
+use Scalar::Util    qw/blessed/;
 
 =chapter NAME
 
@@ -27,8 +29,8 @@ OODoc - object oriented production of software documentation
  my $doc = OODoc->new(distribution => 'My Name', version => '0.02');
  $doc->processFiles(workdir => $dest);
  $doc->prepare;
- $doc->create('pod', workdir => $dest);
- $doc->create('html', workdir => '/tmp/html');
+ $doc->formatter('pod', workdir => $dest)->createPages;
+ $doc->formatter('html', workdir => '/tmp/html')->createPages;
 
 or use the oodist script
 
@@ -131,15 +133,13 @@ sub init($)
     }
 
     defined $version
-        or error __x"no version specified for distribution '{dist}'"
-              , dist  => $distribution;
+        or error __x"no version specified for distribution '{dist}'", dist  => $distribution;
 
     $self->{O_version} = $version;
     $self;
 }
 
 #-------------------------------------------
-
 =section Attributes
 
 =method distribution 
@@ -161,7 +161,6 @@ Returns the general project description, by default the distribution name.
 sub project() {shift->{O_project}}
 
 #-------------------------------------------
-
 =section Parser
 
 =method selectFiles $which, LIST
@@ -183,15 +182,15 @@ sub selectFiles($@)
       = ref $files eq 'Regexp' ? sub { $_[0] =~ $files }
       : ref $files eq 'CODE'   ? $files
       : ref $files eq 'ARRAY'  ? $files
-      : error __x"use regex, code reference or array for file selection";
+      :     error __x"use regex, code reference or array for file selection";
 
     return ($select, [])
         if ref $select eq 'ARRAY';
 
     my (@process, @copy);
     foreach my $fn (@_)
-    {   if($select->($fn)) {push @process, $fn}
-        else               {push @copy,    $fn}
+    {   if($select->($fn)) { push @process, $fn }
+        else               { push @copy,    $fn }
     }
 
     ( \@process, \@copy );
@@ -300,8 +299,7 @@ sub processFiles(@)
 
     my $version = $args{version};
     unless(defined $version)
-    {   my $fn  = defined $source ? File::Spec->catfile($source, 'version')
-                :                   'version';
+    {   my $fn  = defined $source ? File::Spec->catfile($source, 'version') : 'version';
         $fn     = -f $fn          ? $fn
                 : defined $source ? File::Spec->catfile($source, 'VERSION')
                 :                   'VERSION';
@@ -356,8 +354,7 @@ sub processFiles(@)
 
     if(defined $dest)
     {   foreach my $filename (@$copy)
-        {   my $fn = defined $source ? File::Spec->catfile($source, $filename)
-                   :                   $filename;
+        {   my $fn = defined $source ? File::Spec->catfile($source, $filename) : $filename;
 
             my $dn = File::Spec->catfile($dest, $fn);
             unless(-f $fn)
@@ -370,8 +367,7 @@ sub processFiles(@)
             {   $self->mkdirhier(dirname $dn);
 
                 copy $fn, $dn
-                   or fault __x"cannot copy distribution file {from} to {to}"
-                        , from => $fn, to => $dest;
+                   or fault __x"cannot copy distribution file {from} to {to}", from => $fn, to => $dest;
 
                 trace "  copied $fn to $dest";
             }
@@ -387,13 +383,12 @@ sub processFiles(@)
     my $parser = $args{parser} || 'OODoc::Parser::Markov';
     my $skip_links = delete $args{skip_links};
 
-    unless(ref $parser)
+    unless(blessed $parser)
     {   eval "require $parser";
-        error __x"cannot compile {pkg} class: {err}", pkg => $parser, err => $@
-            if $@;
+        $@ and error __x"cannot compile {pkg} class: {err}", pkg => $parser, err => $@;
 
         $parser = $parser->new(skip_links => $skip_links)
-           or error __x"parser {name} could not be instantiated", name=>$parser;
+            or error __x"parser {name} could not be instantiated", name=>$parser;
     }
 
     #
@@ -404,8 +399,7 @@ sub processFiles(@)
     {   my $fn = $source ? File::Spec->catfile($source, $filename) : $filename; 
 
         unless(-f $fn)
-        {   warning __x"no file {file} to include in the distribution"
-              , file => $fn;
+        {   warning __x"no file {file} to include in the distribution", file => $fn;
             next;
         }
 
@@ -440,7 +434,6 @@ sub processFiles(@)
 }
 
 #-------------------------------------------
-
 =section Preparation
 
 =method prepare %options
@@ -501,7 +494,7 @@ sub getPackageRelations($)
 
          eval "require $manual";
          warning __x"errors from {manual}: {err}", manual => $manual, err =>$@
-            if $@ && $@ !~ /can't locate/i && $@ !~ /attempt to reload/i;
+             if $@ && $@ !~ /can't locate/i && $@ !~ /attempt to reload/i;
     }
 
     info "detect inheritance relationships";
@@ -536,11 +529,10 @@ sub getPackageRelations($)
 }
 
 #-------------------------------------------
+=section Main entries
 
-=section Formatter
-
-=method create $name|$class|$object, %options
-Create a manual for the set of manuals read so far.  The manuals are
+=method formatter $name|$class|$object, %options
+[2.03] Create a manual for the set of manuals read so far.  The manuals are
 produced by different formatters which produce one page at a time.
 Returned is the formatter which is used: it may contain useful information
 for you.
@@ -551,149 +543,110 @@ and C<html> representing M<OODoc::Format::Pod> and M<OODoc::Format::Html>
 respectively), the name of a $class which needs to be instantiated,
 or an instantiated formatter.
 
+You can also pass many options which are passed to M<OODoc::Format::createPages()>
+
 =requires workdir DIRECTORY
 The directory where the output is going to.
-
-=option  format_options ARRAY
-=default format_options []
-Formatter dependent initialization options.  See the documentation of
-the formatter which will be used for the possible values.
-
-=option  manual_format ARRAY
-=default manual_format []
-Options passed to M<OODoc::Format::createManual(format_options)> when
-a manual page has to be produced.  See the applicable formatter
-manual page for the possible flags and values.
 
 =option  manifest FILENAME|undef
 =default manifest <workdir>/MANIFEST
 The names of the produced files are appended to this file.  When undef
 is given, no file will be written for this.
 
-=option  append STRING|CODE
-=default append C<undef>
-The value is passed on to M<OODoc::Format::createManual(append)>,
-but the behavior is formatter dependent.
+=option  format_options ARRAY
+=default format_options []
+Formatter dependent initialization options.  See the documentation of
+the formatter which will be used for the possible values.
 
-=option  manual_templates DIRECTORY
-=default manual_templates C<undef>
-Passed to M<OODoc::Format::createManual(template)>, and defines the
-location of the set of pages which has to be created for each manual
-page.  Some formatters do not support templates and the valid values
-are formatter dependent.
-
-=option  other_templates DIRECTORY
-=default other_templates C<undef>
-Other files which have to be copied
-passed to M<OODoc::Format::createOtherPages(source)>.
-
-=option  process_files REGEXP
-=default process_files <formatter dependent>
-Selects the files which are to be processed for special markup information.
-Other files, like image files, will be simply copied.  The value will be
-passed to M<OODoc::Format::createOtherPages(process)>.
-
-=option  select CODE|REGEXP
-=default select C<undef>
-Produce only the indicated manuals, which is useful in case of merging
-manuals from different distributions.  When a REGEXP is provided, it
-will be checked against the manual name.  The CODE reference will be
-called with a manual as only argument.
-
-=error formatter $name has compilation errors: $@
-The formatter which is specified does not compile, so can not be used.
-
-=error create requires a directory to write the manuals to
+=error formatter requires a directory to write the manuals to
 You have to give a value to C<workdir>, which will be used as top directory
 for the produced output.  It does not matter whether there is already some
 stuff in that directory.
 
 =cut
 
-our %formatters =
- ( pod   => 'OODoc::Format::Pod'
- , pod2  => 'OODoc::Format::Pod2'
- , pod3  => 'OODoc::Format::Pod3'
- , html  => 'OODoc::Format::Html'
- , html2 => 'OODoc::Format::Html2'
- );
-
-sub create($@)
+sub formatter($@)
 {   my ($self, $format, %args) = @_;
 
     my $dest    = $args{workdir}
-       or error __x"create requires a directory to write the manuals to";
+       or error __x"formatter() requires a directory to write the manuals to";
 
-    #
     # Start manifest
-    #
 
-    my $manfile  = exists $args{manifest} ? $args{manifest}
-                 : File::Spec->catfile($dest, 'MANIFEST');
+    my $manfile  = $args{manifest} // File::Spec->catfile($dest, 'MANIFEST');
     my $manifest = OODoc::Manifest->new(filename => $manfile);
 
     # Create the formatter
 
-    unless(ref $format)
-    {   $format = $formatters{$format}
-            if exists $formatters{$format};
+    return $format
+        if blessed $format && $format->isa('OODoc::Format');
 
-        eval "require $format";
-        error __x"formatter {name} has compilation errors: {err}"
-          , name => $format, err => $@ if $@;
+    my $options = $args{format_options} || [];
 
-        my $options    = delete $args{format_options} || [];
+    OODoc::Format->new
+      ( format      => $format
+      , manifest    => $manifest
+      , workdir     => $dest
+      , project     => $self->distribution
+      , version     => $self->version
+      , @$options
+      );
+}
 
-        $format = $format->new
-          ( manifest    => $manifest
-          , workdir     => $dest
-          , project     => $self->distribution
-          , version     => $self->version
-          , @$options
-          );
-    }
+sub create() { panic 'Interface change in 2.03: use $oodoc->formatter->createPages' }
 
-    #
-    # Create the manual pages
-    #
+=method publish %options
+Convert the documentation data in a beautiful tree.
 
-    my $select = ! defined $args{select}     ? sub {1}
-               : ref $args{select} eq 'CODE' ? $args{select}
-               : sub { $_[0]->name =~ $args{select}};
+=requires exporter M<OODoc::Export>-object
+Manages the conversion from source markup for text into the requested
+markup (f.i. "markov" into "html").
 
+=option  podtail POD
+=default podtail C<undef>
+The last chapters of any produced manual page, in POD syntax.
+
+=option  manuals ARRAY
+=default manuals C<undef>
+Include only information for the manuals (specified as names).
+
+=option  meta HASH
+=default meta C<+{ }>
+Key/string pairs with interesting additional data.
+=cut
+
+sub publish($$%)
+{    my ($self, %args) = @_;
+    my $exporter    = $args{exporter} or panic;
+
+    my $selected_manuals = $args{manuals};
+    my %need_manual = map +($_ => 1), @{$selected_manuals || []};
+    my @podtail_chapters = $exporter->podChapters($args{podtail});
+
+    my %man;
     foreach my $package (sort $self->packageNames)
     {
         foreach my $manual ($self->manualsForPackage($package))
-        {   next unless $select->($manual);
+        {   !$selected_manuals || $need_manual{$manual} or next;
+            my $man = $manual->publish(%args) or next;
 
-            unless($manual->chapters)
-            {   trace "  skipping $manual: no chapters";
-                next;
-            }
-
-            trace "  creating manual $manual with ".(ref $format);
-
-            $format->createManual
-              ( manual         => $manual
-              , template       => $args{manual_templates}
-              , append         => $args{append}
-              , format_options => ($args{manual_format} || [])
-              );
+            push @{$man->{chapters}}, @podtail_chapters;
+            $man{$manual->name} = $man;
         }
     }
 
-    #
-    # Create other pages
-    #
+    my $meta = $args{meta} || {};
+    my %meta = map +($_ => $exporter->plainText($meta->{$_}) ), keys %$meta;
 
-    trace "creating other pages";
-    $format->createOtherPages
-     ( source   => $args{other_templates}
-     , process  => $args{process_files}
-     );
-
-    $format;
+     +{
+        distribution => $exporter->plainText($self->distribution),
+        version      => $exporter->plainText($self->version),
+        project      => $exporter->plainText($self->project),
+        manuals      => \%man,
+        meta         => \%meta,
+      };
 }
+
 
 =method stats 
 Returns a string which contains some statistics about the whole parsed
@@ -708,7 +661,7 @@ sub stats()
 
     my $subs     = map $_->subroutines, @manuals;
     my @options  = map { map $_->options, $_->subroutines } @manuals;
-    my $options  = @options;
+    my $options  = scalar @options;
     my $examples = map $_->examples,    @manuals;
 
     my $diags    = map $_->diagnostics, @manuals;
@@ -727,7 +680,6 @@ STATS
 }
 
 #-------------------------------------------
-
 =section Commonly used functions
 
 =chapter DETAILS

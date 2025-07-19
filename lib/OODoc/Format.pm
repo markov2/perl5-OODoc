@@ -10,6 +10,14 @@ use warnings;
 use OODoc::Manifest;
 use Log::Report    'oodoc';
 
+our %formatters =
+  ( pod   => 'OODoc::Format::Pod'
+  , pod2  => 'OODoc::Format::Pod2'
+  , pod3  => 'OODoc::Format::Pod3'
+  , html  => 'OODoc::Format::Html'
+  , html2 => 'OODoc::Format::Html2'
+  );
+
 =chapter NAME
 
 OODoc::Format - base class for all OODoc formatters
@@ -63,7 +71,12 @@ L<Bundle::Template::Magic> and the ability to run cgi scripts.
 
 =chapter METHODS
 
+=section Constructors
+
 =c_method new %options
+
+=requires format 'pod*'|'html*'|PACKAGE
+Select the formatter to be used.
 
 =requires project STRING
 The short name of this project (module), set by M<OODoc::new(project)>.
@@ -89,10 +102,31 @@ directory must be provided via M<new(workdir)>, but was not specified.
 
 =error formatter does not know the version.
 
+=error formatter $name has compilation errors: $@
+The formatter which is specified does not compile, so can not be used.
+
 =cut
+
+sub new($%)
+{	my ($class, %args) = @_;
+
+	$class eq __PACKAGE__
+        or return $class->SUPER::new(%args);
+
+	my $format = $args{format}
+        or error __x"No formatter specified.";
+
+    my $pkg = $formatters{$format} || $format;
+
+    eval "require $pkg";
+    $@ and error __x"formatter {name} has compilation errors: {err}", name => $format, err => $@;
+
+    $pkg->new(%args);
+}
 
 sub init($)
 {   my ($self, $args) = @_;
+
     $self->SUPER::init($args) or return;
 
     my $name = $self->{OF_project} = delete $args->{project}
@@ -110,7 +144,6 @@ sub init($)
 }
 
 #-------------------------------------------
-
 =section Attributes
 
 =method project 
@@ -132,20 +165,98 @@ Returns the M<OODoc::Manifest> object which maintains the names
 of created files.
 =cut
 
-sub version() {shift->{OF_version}}
-sub workdir() {shift->{OF_workdir}}
+sub version()  {shift->{OF_version}}
+sub workdir()  {shift->{OF_workdir}}
 sub manifest() {shift->{OF_manifest}}
 
 #-------------------------------------------
-
 =section Page generation
 
-=method createManual %options
+=method createPages %options
 
-=option  format_options ARRAY
-=default format_options []
-An ARRAY which contains a list of options which are the defaults
-for formatting a chapter.
+=option  append STRING|CODE
+=default append C<undef>
+The value is passed on to M<createManual(append)>,
+but the behavior is formatter dependent.
+
+=option  manual_templates DIRECTORY
+=default manual_templates C<undef>
+Passed to M<createManual(template)>, and defines the
+location of the set of pages which has to be created for each manual
+page.  Some formatters do not support templates and the valid values
+are formatter dependent.
+
+=option  other_templates DIRECTORY
+=default other_templates C<undef>
+Other files which have to be copied
+passed to M<OODoc::Format::createOtherPages(source)>.
+
+=option  process_files REGEXP
+=default process_files <formatter dependent>
+Selects the files which are to be processed for special markup information.
+Other files, like image files, will be simply copied.  The value will be
+passed to M<OODoc::Format::createOtherPages(process)>.
+
+=option  manual_format ARRAY
+=default manual_format []
+Options passed to M<createManual(format_options)> when
+a manual page has to be produced.  See the applicable formatter
+manual page for the possible flags and values.
+
+=option  select CODE|REGEXP
+=default select <all>
+Produce only the indicated manuals, which is useful in case of merging
+manuals from different distributions.  When a REGEXP is provided, it
+will be checked against the manual name.  The CODE reference will be
+called with a manual as only argument.
+
+=cut
+
+sub createPages(%)
+{   my ($self, %args) = @_;
+
+    my $sel = $args{select} || sub { 1 };
+    my $select = ref $sel eq 'CODE' ? $sel : sub { $_[0]->name =~ $sel };
+
+	# Manual knowledge is global
+
+    my $options = $args{manual_format} || [];
+    foreach my $package (sort $self->packageNames)
+    {
+        foreach my $manual ($self->manualsForPackage($package))
+        {   $select->($manual) or next;
+
+            unless($manual->chapters)
+            {   trace "  skipping $manual: no chapters";
+                next;
+            }
+
+            trace "  creating manual $manual with ".(ref $self);
+
+            $self->createManual
+              ( manual   => $manual
+              , template => $args{manual_templates}
+              , append   => $args{append}
+              , @$options
+              );
+        }
+    }
+
+    #
+    # Create other pages
+    #
+
+    trace "creating other pages";
+    $self->createOtherPages
+      ( source   => $args{other_templates}
+      , process  => $args{process_files}
+      );
+
+    1;
+}
+
+=method createManual %options
+Format a manual into the selected format.
 
 =requires manual MANUAL
 The manual to be formatted.
@@ -539,11 +650,9 @@ sub showSubroutine(@)
 }
 
 =method showExamples %options
-
 =requires examples ARRAY
 =requires manual MANUAL
 =requires output FILE
-
 =cut
 
 sub showExamples(@) {shift}
@@ -593,30 +702,27 @@ sub showOptionTable(@)
     foreach (@$options)
     {   my ($option, $default) = @$_;
         my $optman = $option->manual;
-        my $link   = $manual->inherited($option)
-                   ? $self->link(undef, $optman)
-                   : '';
         push @rows, [ $self->cleanup($manual, $option->name)
-                    , $link
+                    , ($manual->inherited($option) ? $self->link(undef, $optman) : '') 
                     , $self->cleanup($manual, $default->value)
                     ];
     }
 
     my @header = ('Option', 'Defined in', 'Default');
-    unless(grep {length $_->[1]} @rows)
+    unless(grep length $_->[1], @rows)
     {   # removed empty "defined in" column
         splice @$_, 1, 1 for @rows, \@header;
     }
 
     $output->print("\n");
     $self->writeTable
-     ( output => $output
-     , header => \@header
-     , rows   => \@rows
-     , widths => [undef, 15, undef]
-     );
+      ( output => $output
+      , header => \@header
+      , rows   => \@rows
+      , widths => [undef, 15, undef]
+      );
 
-    $self
+    $self;
 }
 
 =method showOptions %options
@@ -674,8 +780,8 @@ sub showOptionUse(@) {shift}
 
 sub showOptionExpand(@) {shift}
 
+#----------------------
 =section Commonly used functions
 =cut
 
 1;
-

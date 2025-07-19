@@ -102,7 +102,6 @@ sub init($)
 }
 
 #-------------------------------------------
-
 =section Attributes
 
 =method name 
@@ -161,8 +160,7 @@ relation to the object: it calls M<OODoc::Object::manual()>.
 
 sub manual(;$)
 {   my $self = shift;
-    @_ ? $self->SUPER::manual(@_)
-       : $self->container->manual;
+    @_ ? $self->SUPER::manual(@_) : $self->container->manual;
 }
 
 =method unique 
@@ -185,11 +183,10 @@ number of the start of it.
 
 sub where()
 {   my $self = shift;
-    ($self->manual->source, $self->{OT_linenr});
+    ( $self->manual->source, $self->{OT_linenr} );
 }
 
 #-------------------------------------------
-
 =section Collected
 
 =method openDescription 
@@ -213,7 +210,7 @@ sub findDescriptionObject()
 {   my $self   = shift;
     return $self if length $self->description;
 
-    my @descr = map { $_->findDescriptionObject } $self->extends;
+    my @descr = map $_->findDescriptionObject, $self->extends;
     wantarray ? @descr : $descr[0];
 }
 
@@ -235,8 +232,34 @@ Returns a list of all examples contained in this text element.
 
 sub examples() { @{shift->{OT_examples}} }
 
-#-------------------------------------------
+=method publish %options
+=requires exporter M<OODoc::Export>-object
+=cut
 
+sub publish(%)
+{   my ($self, %args) = @_;
+    my $exporter = $args{exporter} or panic;
+
+    my %p =
+      ( type => $exporter->plainText($self->type)
+      );
+
+	if(my $name = $self->name)
+	{   $p{name} = $exporter->plainText($name);
+    }
+
+    my $descr = $self->description // '';
+    if(length $descr)
+    {   $p{description} = $exporter->markupBlock($descr);
+    }
+
+	my @e = map $_->publish(%args), $self->examples;
+	$p{examples} = \@e if @e;
+
+	\%p;
+}
+
+#-------------------------------------------
 =section Commonly used functions
 =cut
 

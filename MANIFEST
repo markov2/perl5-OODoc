@@ -9,6 +9,8 @@ examples/markov.pm
 examples/mimetypes.tar.gz
 examples/oodoc.tar.gz
 lib/OODoc.pm
+lib/OODoc/Export.pm
+lib/OODoc/Export/JSON.pm
 lib/OODoc/Format.pm
 lib/OODoc/Format/Html.pm
 lib/OODoc/Format/Pod.pm

@@ -34,6 +34,21 @@ first need to install L<Bundle::Template::Magic>.
 
 =chapter METHODS
 
+=section Constructors
+=c_method new %options
+
+=default format 'pod2'
+=cut
+
+sub init($)
+{   my ($self, $args) = @_;
+    $args->{format} //= 'pod2';
+    $self->SUPER::init($args);
+}
+
+#------------
+=section Template processing
+
 =method createManual %options
 
 =option  template FILENAME
@@ -74,8 +89,6 @@ sub formatManual(@)
     my $created = $template->output(\$layout);
     $output->print($$created);
 }
-
-=section Template processing
 
 =method templateChapter 
 

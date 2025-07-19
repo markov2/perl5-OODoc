@@ -20,6 +20,8 @@ OODoc::Text::Chapter - collects the information of one chapter
 
 =chapter METHODS
 
+=section Constructors
+
 =c_method new %options
 
 =default container M<new(manual)>
@@ -28,7 +30,6 @@ OODoc::Text::Chapter - collects the information of one chapter
 
 =option  manual    OBJECT
 =default manual    undef
-
 The manual in which this chapter is described.
 
 =cut
@@ -38,12 +39,8 @@ sub init($)
     $args->{type}       ||= 'Chapter';
     $args->{container}  ||= delete $args->{manual} or panic;
     $args->{level}      ||= 1;
-
-    $self->SUPER::init($args)
-        or return;
-
+    $self->SUPER::init($args) or return;
     $self->{OTC_sections} = [];
-
     $self;
 }
 
@@ -55,8 +52,8 @@ sub emptyExtension($)
     $empty;
 }
 
-sub manual() {shift->container}
-sub path()   {shift->name}
+sub manual() { $_[0]->container }
+sub path()   { $_[0]->name }
 
 sub findSubroutine($)
 {   my ($self, $name) = @_;
@@ -85,10 +82,23 @@ sub findEntry($)
 
 sub all($@)
 {   my $self = shift;
-    ($self->SUPER::all(@_), map {$_->all(@_)} $self->sections);
+      ( $self->SUPER::all(@_)
+      , map $_->all(@_), $self->sections
+      );
 }
 
+sub publish(%)
+{   my ($self, %args) = @_;
+	$args{chapter} = $self;
+    my $p = $self->SUPER::publish(%args);
+    my @s = map $_->publish(%args), $self->sections;
+	$p->{nest} = \@s if @s;
+    $p;
+}
+
+#-------------------
 =section Sections
+
 A chapters consists of a list of sections, which may contain subsections.
 
 =method section $name|$object
@@ -105,7 +115,7 @@ sub section($)
         return $thing;
     }
 
-    first {$_->name eq $thing} $self->sections;
+    first { $_->name eq $thing } $self->sections;
 }
 
 =method sections [$sections]

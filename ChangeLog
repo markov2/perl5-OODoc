@@ -2,7 +2,13 @@
 All changes where made by Mark Overmeer <perl@overmeer.net>, unless
 explicitly stated otherwise.
 
-version 2.03:
+TODO:
+	- add other Log::Report levels to diagnostics
+
+version 3.00:
+
+	Changes:
+	- $oodoc->create()  -->  $oodoc->formatter->createPages
 
 	Fixes:
 	- wrong place for section examples.
@@ -11,6 +17,9 @@ version 2.03:
 
 	Improvements:
 	- replace File::Slurp by File::Slurper.
+	- export to JSON
+	- ::Parser::Markov errors and warnings use Log::Report
+	- replace glob() by bsd_glob()
 
 version 2.02: Wed  8 Dec 13:41:32 CET 2021
 

@@ -42,6 +42,8 @@ POD, because one manual page may be spread over multiple output files.
 
 =c_method new %options
 
+=default format      'html'
+
 =option  html_root   URI
 =default html_root   '/'
 
@@ -61,6 +63,8 @@ Adds a link to the stylesheet to the meta-data.
 
 sub init($)
 {   my ($self, $args) = @_;
+	$args->{format} //= 'html';
+
     $self->SUPER::init($args) or return;
 
     my $html = delete $args->{html_root} || '/';
@@ -724,7 +728,7 @@ sub format(@)
       scalar $template->processFile($args{template_fn}, \%permitted));
 }
 
-=method templateTitle $templ, $attrs, $if, $else
+=method templateProject $templ, $attrs, $if, $else
 =cut
 
 sub templateProject($$)

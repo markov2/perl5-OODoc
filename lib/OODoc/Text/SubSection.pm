@@ -61,8 +61,16 @@ sub findEntry($)
    $self->name eq $name ? $self : ();
 }
 
-#-------------------------------------------
+sub publish(%)
+{   my ($self, %args) = @_;
+    $args{subsection} = $self;
+    my $p = $self->SUPER::publish(%args);
+    my @s = map $_->publish(%args), $self->subsubsections;
+    $p->{nest} = \@s if @s;
+    $p;
+}
 
+#-------------------------------------------
 =section Location
 
 =method section 
@@ -83,7 +91,6 @@ sub path()
 }
 
 #-------------------------------------------
-
 =section Subsubsections
 
 =method subsubsection $name|$object
@@ -101,7 +108,7 @@ sub subsubsection($)
         return $thing;
     }
 
-    first {$_->name eq $thing} $self->subsubsections;
+    first { $_->name eq $thing } $self->subsubsections;
 }
 
 =method subsubsections [$subsubsections]

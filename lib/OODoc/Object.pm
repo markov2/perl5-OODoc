@@ -8,6 +8,8 @@ use warnings;
 
 use Log::Report    'oodoc';
 
+use List::Util     qw/first/;
+
 =chapter NAME
 
 OODoc::Object - base class for all OODoc classes.
@@ -51,14 +53,12 @@ the object.
 =cut
 
 sub new(@)
-{   my $class = shift;
-
-    my %args = @_;
+{   my ($class, %args) = @_;
     my $self = (bless {}, $class)->init(\%args);
 
     if(my @missing = keys %args)
-    {   error __xn"unknown option {options}", "unknown options {options}"
-           , scalar @missing, options => @missing;
+    {   error __xn"Unknown object attributes {options}", "Unknown object attribute {options}",
+            scalar @missing, options => @missing;
     }
 
     $self;
@@ -71,7 +71,6 @@ sub init($)
 }
 
 #-------------------------------------------
-
 =section Inheritance knowledge
 
 =method extends [$object]
@@ -89,7 +88,6 @@ sub extends(;$)
 }
 
 #-------------------------------------------
-
 =section Commonly used functions
 
 =ci_method mkdirhier $directory
@@ -117,14 +115,10 @@ sub mkdirhier($)
 
 sub filenameToPackage($)
 {   my ($thing, $package) = @_;
-    $package =~ s!^lib/!!;
-    $package =~ s#/#::#g;
-    $package =~ s/\.(pm|pod)$//g;
-    $package;
+    $package =~ s!^lib/!!r =~ s#/#::#gr =~ s/\.(?:pm|pod)$//gr;
 }
 
 #-------------------------------------------
-
 =section Manual Repository
 
 All manuals can be reached everywhere in the program: it is a global
@@ -149,7 +143,7 @@ sub addManual($)
 {   my ($self, $manual) = @_;
 
     ref $manual && $manual->isa('OODoc::Manual')
-         or panic "manual definition requires manual object";
+        or panic "manual definition requires manual object";
 
     push @{$packages{$manual->package}}, $manual;
     $manuals{$manual->name} = $manual;
@@ -163,21 +157,18 @@ documentation for the code of the package $name.
 
 sub mainManual($)
 {  my ($self, $name) = @_;
-   (grep {$_ eq $_->package} $self->manualsForPackage($name))[0];
+   first { $_ eq $_->package } $self->manualsForPackage($name);
 }
 
 =method manualsForPackage $name
-
 Returns a list package objects which are related to the specified $name.
 One $name can appear in more than one file, and therefore a list is
 returned.
-
 =cut
 
 sub manualsForPackage($)
-{   my ($self,$name) = @_;
-    $name ||= 'doc';
-    defined $packages{$name} ? @{$packages{$name}} : ();
+{   my ($self, $name) = @_;
+    @{$packages{$name || 'doc'} || []};
 }
 
 =method manuals 
@@ -188,7 +179,6 @@ sub manuals() { values %manuals }
 
 =method manual $name
 Returns the manual with the specified name, or else C<undef>.
-
 =cut
 
 sub manual($) { $manuals{ $_[1] } }
