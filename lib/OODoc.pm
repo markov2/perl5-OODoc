@@ -229,7 +229,7 @@ The location where the files are located.  This is useful when you collect
 the documentation of other distributions into the main one.  Usually in
 combination with an undefined value for C<workdir>.
 
-=option  parser CLASS|OBJECT
+=option  parser CLASS|$name|OBJECT
 =default parser M<OODoc::Parser::Markov>
 The parser CLASS or OBJECT to be used to process the pages.
 
@@ -383,14 +383,14 @@ sub processFiles(@)
     #
 
     my $parser = $args{parser} || 'OODoc::Parser::Markov';
-    my $skip_links = delete $args{skip_links};
+	$parser    = 'OODoc::Parser::Markov' if $parser eq 'markov';
 
     unless(blessed $parser)
     {   eval "require $parser";
         $@ and error __x"cannot compile {pkg} class: {err}", pkg => $parser, err => $@;
 
-        $parser = $parser->new(skip_links => $skip_links)
-            or error __x"parser {name} could not be instantiated", name=>$parser;
+        $parser = $parser->new(skip_links => delete $args{skip_links})
+            or error __x"parser {name} could not be instantiated", name=> $parser;
     }
 
     #
