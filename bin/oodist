@@ -9,7 +9,7 @@ use Cwd               qw/getcwd realpath/;
 use File::Copy        qw/move copy/;
 use File::Glob        qw/bsd_glob/;
 use File::Slurper     qw/read_text read_binary read_lines/;
-use File::Spec        qw/catfile rel2abs/;
+use File::Spec::Functions qw/catfile rel2abs/;
 use File::Basename    qw/basename dirname/;
 use Getopt::Long      qw/GetOptions :config gnu_getopt/;
 use HTML::Entities    qw/encode_entities/;
@@ -18,6 +18,7 @@ use List::Util        qw/first/;
 use POSIX             qw/strftime/;
 
 use OODoc             ();
+use OODoc::Parser     ();
 
 ###
 ### Some constants
@@ -25,44 +26,48 @@ use OODoc             ();
 
 my $tmpdir      = $ENV{TMPDIR} || '/tmp';
 
-my %licenses =
-  ( artistic => <<__ARTISTIC,
-This program is free software; you can redistribute it and/or modify it
-under the Artistic license.
-See F<http://dev.perl.org/licenses/artistic.html>
-__ARTISTIC
-  , as_perl => <<__PERL,
-This program is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself.
-See F<http://dev.perl.org/licenses/>
-__PERL
-  , gpl => <<__GPL
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-for more details: F<http://www.gnu.org/licenses/gpl.html>
-__GPL
-);
-$licenses{perl}   = $licenses{as_perl};
-$licenses{perl_5} = $licenses{as_perl};
+my $default_pmhead = <<'__PMHEAD';
+Copyrights $year$author.$contrib
+See the manual pages for details on the licensing terms.
+Pod stripped from pm file by OODoc $ooversion.
+__PMHEAD
 
-sub read_makefile($);
-sub read_meta($);
-sub parse_additional_dists(@);
-sub create_pod($$);
-sub create_html($$$$);
-sub create_dist($$);
-sub publish_dist($$);
-sub create_raw_dist($$);
-sub publish_raw_dist($$);
-sub create_html_dist($$);
-sub publish_html_dist($$);
+my $default_podtail = <<'__PODTAIL';
+=head1 SEE ALSO
+
+This module is part of $project distribution version $version,
+built on $today.$web
+
+=head1 LICENSE
+
+Copyrights $year$author.$contrib
+$lictext
+__PODTAIL
+
+
+sub extract_manuals($$);
+sub extract_distro($;$);
+sub create_pod($$$);
+sub create_html($$);
+sub oodist_meta($);
+sub project_meta();
 sub create_heads_and_tails($;$);
 sub create_readme($$$);
 sub create_meta($);
-sub create_export($$$);
-sub skip_links(@);
-sub convert2version3($);
+sub prepare_release($);
+sub run_tests($);
+sub publish_release($);
+sub publish_raw_dist($);
+sub create_html_dist($);
+sub create_export($$);
+sub read_makefile($);
+sub read_meta($);
+sub prepare_license($$);
+sub string_expand_values($$$);
+
+sub convert2version3();
+sub config3();
+sub merge3();
 
 ###
 ### Command-line parsing
@@ -81,10 +86,13 @@ GetOptions
 	'readme=s'      => \(my $readmefn),
 	'tests|t!'      => \(my $run_tests),
 	'verbose|v!'    => \(my $verbose = 0),
-	'workdir|w=s'   => \(my $workdir),
+	'workdir|w=s'   => \(my $distdir),
+
+	'config3'       => \(my $config3),
+	'merge3'        => \(my $merge3),
 	or error __"stopped";
 
-$make_export || ! @ARGV
+! @ARGV
 	or error __x"No command-line arguments expected.";
 
 my $any_requested = $make_release || $make_exports || $make_export || $make_html || $make_pod || $make_raw || $run_tests;
@@ -104,16 +112,16 @@ my $ooversion = $OODoc::VERSION || 'devel';
 system "perl Makefile.PL"
 	and fault "cannot run Makefile.PL for basic information";
 
-my $makefile = read_makefile 'Makefile';
-if($makefile->{DISTDIR})
-{	# Convert pre-version3 into version 3+ data structure
-	convert2version3 $makefile;
-	exit 1;
-}
-
+my $makefile  = read_makefile 'Makefile';
 my $meta      = read_meta 'MYMETA.json';
 
 my $config    = $meta->{x_oodoc} || $meta->{oodoc};
+
+### Help people convert from OODoc2 to OODoc3
+if($config3)  { config3; exit 0 }
+if($merge3)   { merge3; exit 0 }
+if(! $config) { convert2version3; exit 1 }
+
 my $author    = $meta->{author} =~ s/\s+\<(.*?)\>//r;
 my $email     = $meta->{email}   || $1;
 
@@ -121,20 +129,11 @@ my $project   = $meta->{name};
 my $version   = $meta->{version};
 my $distvname = "$project-$version";
 
-$workdir ||= "$tmpdir/$project";
--d $workdir || mkdir $workdir
-	or fault __x"Cannot create workdir at {dir}", dir => $workdir;
-
-$make_html //= -d $html_templates;
-
-my @extends = split /\:/, $extends;
-=cut
-
+$distdir ||= "$tmpdir/$project";
+-d $distdir || mkdir $distdir
+	or fault __x"Cannot create workdir at {dir}", dir => $distdir;
 
 info "*** Producing $project version $version";
-
-convert2version3 $makefile;
-exit 1; ###
 
 ###
 ### Start OODoc
@@ -145,98 +144,31 @@ my $doc  = OODoc->new
   , version      => $version  # version of whole
   );
 
-#
 # Reading all the manual pages
-# This could be called more than once to combine different sets of
-# manual pages in different formats.
-#
-
-print "** Extracting data from the distributions";
-
 my $source  = realpath '.';
 my %distros = ($project => $meta);
-extract_distro 1, $source;
+extract_manuals $source, $distdir;  # produces $distdir
 
-my %included_dirs;
-
-sub extract_distro($$);
-sub extract_distro($$)
-{	my ($is_root, $dir) = @_;
-	return if $included_dirs{$dir};
-
-	my $lib   = "$dir/lib";
-	push @INC, $lib unless grep $_ eq $lib, @INC;
-
-	foreach my $include (@{$config->{includes} || []})
-	{	my $absdir = realpath (rel2abs $include, $dir);
-		extract_distro 0, $absdir;
-	}
-
-	# Do not run Makefile.PL because the included distry may be in broken state.
-
-	my $dist_meta = $is_root ? $meta : read_meta "$dir/MYMETA.json";
-	my $distname  = $dist_meta->{name};
-	my $version   = $dist_meta->{version};
-
-	$distros{$distname}  = $dist_meta;
-	$included_dirs{$dir} = $distname;
-
-	info "* processing files of $distname $version";
-
-	my $parser   = OODoc::Parser->new(
-		%{$dist_meta->{parser} || { }},
-	);
-
-	my ($pmhead, $podtail) = create_heads_and_tails $dist_meta;
-
-	if($is_root)
-	{	$doc->processFiles(
-			workdir    => $workdir,
-			version    => $version,
-			parser     => $parser,
-			notice     => $pmhead,
-		);
-
-		create_readme $doc, $readmefn, $workdir
-			if $readmefn && ! -f $readmefn;
-	}
-	else
-	{	$doc->processFiles(
-			parser     => $parser,
-			select       => qr[^ lib/ .*? \.(pod|pm) $ ]x
-		);
-	}
-}
-
-info "* Preparation phase";
-
+info "** Merge the manuals into one documentation set";
 $doc->prepare;
 
-my $license = ($meta->{license} || [ 'perl_5' ])->[0];
-my $lictext = $licenses{$license} || '';
-if(!$lictext && $license)
-{   $lictext = read_text $license
-		or fault __"cannot read from licence file {file}", file => $license;
-}
-
-my $generate = $meta->{generate} || [];
-foreach my $gen (@$generate)
+# Generate various products
+foreach my $gen (@{$meta->{generate} || []})
 {
 	if(my $format = $gen->{format})
 	{	if($format =~ /^pod/)
-		{	create_pod $doc, $podtail if $make_pod;
+		{	create_pod $doc, $gen, $distdir if $make_pod;
 		}
 		elsif($format =~ /^html/)
-		{	create_html $doc, $podtail if $make_html;
+		{	create_html $doc, $gen if $make_html;
 		}
 		else
 		{	error __x"unknown format '{format}' to generate.", format => $format;
 		}
 	}
 	elsif(my $export = $gen->{export})
-	{	if($make_exports)
-		{	...
-			create_export $doc, $make_export, \@ARGV
+	{	if($make_exports && (!$make_export || $export eq $make_export))
+		{	create_export $doc, $gen;
 		}
 	}
 	else
@@ -246,150 +178,255 @@ foreach my $gen (@$generate)
 
 # Produce release
 
-chdir $workdir
-	or fault __x"cannot go to my {dir}", dir => $workdir;
+if($run_tests || $make_release || $make_raw)
+{
+	prepare_release $distdir;
 
-#create_meta $doc;
+	run_tests $distdir
+		if $run_tests;
 
-if($make_release) {	create_release $meta, $makefile }
-else { info "* release not published" }
-else            { publish_dist $distdir, $temp_distfn }
+	publish_release $distdir
+		if $make_release;
 
-# RAW package
-
-chdir $here
-	or fault __x"cannot go back to {dir}", dir => $here;
-
-my $temp_rawfn = create_raw_dist $rawdir, $makefile;
-publish_raw_dist $rawdir, $temp_rawfn;
-
-# HTML package
-
-if($make_html && $html_package)
-{   chdir $html_output
-		or fault __x"cannot go to produced html in {dir}", dir => $html_output;
-
-	my $temp_htmlfn = create_html_dist $html_package, $makefile;
-	publish_html_dist $html_package, $temp_htmlfn;
-}
-else
-{   info "* no html package published";
+	publish_raw_dist $distdir
+		if $make_raw;
 }
 
 info "* Ready";
 exit 0;
 
+sub extract_manuals($$)
+{	my ($indir, $outdir) = @_;
+
+	print "** Extracting manuals from the distributions";
+	extract_distro $source, $outdir;
+}
+
+my %included_dirs;
+
+sub extract_distro($;$)
+{	my ($dir, $outdir) = @_;
+	return if $included_dirs{$dir};
+
+	my $lib     = "$dir/lib";
+	push @INC, $lib unless grep $_ eq $lib, @INC;
+
+	foreach my $include (@{$config->{includes} || []})
+	{	my $absdir = realpath (rel2abs $include, $dir);
+		extract_distro $absdir;
+	}
+
+	# Do not run Makefile.PL because the included distry may be in broken state.
+
+	my $is_root   = defined $outdir;
+	my $dist_meta = $is_root ? $meta : read_meta "$dir/MYMETA.json";
+	my $dist_name = $dist_meta->{name};
+	my $version   = $dist_meta->{version};
+
+	$distros{$dist_name} = $dist_meta;
+	$included_dirs{$dir} = $dist_name;
+
+	my $dist_config = $dist_meta->{x_oodoc} || $dist_meta->{oodoc};
+	unless($dist_config)
+	{	warning __x"distribution {name} is not yet converted to OODoc v3, hence ignored.", name => $dist_name;
+		return;
+	}
+
+	info "* processing files of $dist_name $version in $dir";
+
+	# Every distribution may have different parser rules.
+	my $p_config = $dist_config->{parser} || { };
+	my $pmheadfn = rel2abs delete $p_config->{pmhead} || 'PMHEAD.txt', $dir;
+	my $parser   = OODoc::Parser->new(%$p_config);
+
+	if($is_root)
+	{	my $pmhead   = -f $pmheadfn ? read_text $pmheadfn : $default_pmhead;
+
+		$doc->processFiles(
+			workdir    => $outdir,
+			version    => $version,
+			parser     => $parser,
+			notice     => string_expand_values($pmhead, $dir, $dist_meta),
+		);
+
+		create_readme $doc, $readmefn, $outdir
+			if $readmefn && ! -f $readmefn;
+	}
+	else
+	{	$doc->processFiles(
+			parser     => $parser,
+			select     => qr[^ lib/ .*? \.(?:pod|pm) $ ]x
+		);
+	}
+}
+
 #
 # Create pods
+# Only for the manuals in the source distribution.
 #
 
-sub create_pod($$)
-{   my ($doc, $podtail) = @_;
+sub create_pod($$$)
+{	my ($doc, $gen, $outdir) = @_;
 
-	info "* Creating POD files with $format_pod";
+	my $format = $gen->{format};
+	info "** Creating POD files with $format";
 
-	$doc->formatter($format_pod, workdir => $workdir)
-		->createPages(
-		    select  => sub { my $manual = shift; $manual->distribution eq $project },
-		    append  => $podtail,
-		  );
+	my $podtailfn = rel2abs +($gen->{podtail} || 'PODTAIL.txt'), $source;
+	my $podtail   = -f $podtailfn ? read_text $podtailfn : $default_podtail;
+
+	$doc->formatter($format,
+		workdir => $outdir,
+	)->createPages(
+	    select  => sub { my $manual = shift; $manual->distribution eq $project },
+	    append  => string_expand_values($podtail, $source, $meta),
+	);
+
+	# The POD output is not published separately, but as part of the release.
 }
 
 #
 # Create html
 #
 
-sub create_html($$$$)
-{   my ($doc, $templates, $output, $url) = @_;
+sub create_html($$)
+{	my ($doc, $gen) = @_;
 
-	info "* Creating HTML with $format_html, files in $output";
+	my $format    = $gen->{format};
+	my $webpages  = $gen->{webpages}
+		or error __x"html generation needs a location for the webpages.";
 
-	$doc->formatter($format_html, workdir => $output,
-		   format_options   => [ html_root => $url, html_stylesheet => $html_stylesheet ])
-		->createPages(
-		   manual_format    => [],
-		   manual_templates => "$templates/manual",
-		   other_templates  => "$templates/other",
-		);
+	info "* Creating HTML with $format, files in $webpages";
+
+	chdir $source or panic;
+
+	my $templates = $gen->{templates} // 'html';
+
+	$doc->formatter($format,
+		workdir         => $webpages,
+	 	html_root       => $gen->{docroot}    // '/',
+		html_stylesheet => $gen->{stylesheet},
+	)->createPages(
+		manual_format    => [],
+		manual_templates => "$templates/manual",
+		other_templates  => "$templates/other",
+	);
+
+	# Only continue when the combined HTML is to be packaged.
+	my $dest     = $gen->{publish} or return;
+	-d $dest || mkdir $dest
+		or fault __x"cannot create {dir}", dir => $dest;
+
+	my $htmlfile = "$distvname-html.tar.gz";
+
+	info "*  building html package $htmlfile";
+	unlink $htmlfile;
+
+	local $" = ' ';
+	system "tar czf $htmlfile *"
+		and fault __x"cannot produce {file} with tar", file => $htmlfile;
+
+	return if $dest eq $source;
+
+	info "*  publish HTML package to $dest/$htmlfile";
+
+	move $htmlfile, $dest
+		or fault __x"cannot move {from} to {to}", from => $htmlfile, to=>$dest;
 }
 
-sub oodist_meta($)
-{   my $makefile = shift;
+#
+# string_expand_values($$$)
+# The pmhead and podtail are flexible texts, which can have some values filled-in.
+# These names are have not changed in v3, but more information is provided.
 
-	my $year = strftime "%Y", localtime;
-	if($firstyear)
-	{   $year = $firstyear =~ m/$year$/ ? $firstyear
+sub string_expand_values($$$)
+{	my ($string, $dir, $dist_meta) = @_;
+	my $config  = $dist_meta->{x_oodoc} || $dist_meta->{oodoc};
+
+	my $year    = strftime "%Y", localtime;
+	if(my $firstyear = $config->{first_year})
+	{	$year = $firstyear =~ m/$year$/ ? $firstyear
 		      : $firstyear =~ m/\D$/    ? $firstyear.$year
 		      : "$firstyear-$year";
 	}
 
-	 +{ today     => (strftime "%B %d, %Y", localtime)
-	  , year      => $year     # license year range, backwards compatible name
-	  , web       => $website ? " Website: F<$website>" : ''
-	  , ooversion => $ooversion
-	  };
-}
+	my $website = $dist_meta->{resources}{homepage};
+	my $author  = $dist_meta->{author};
+	my $email   = $author =~ s/ \<(.*?)\>// ? $1 : undef;
+	$email      = $config->{email} if exists $config->{email};
 
-sub project_meta()
-{
-	my $log  = first { m/^(?:change|contrib)/i } bsd_glob '*';
-
-	 +{ project   => $project
-	  , author    => $author ? " by $author" : ''
-	  , version   => $version
-	  , lictext   => $lictext
-	  , changelog => $log
-	  };
-}
-
-sub create_heads_and_tails($;$)
-{   my ($makefile, $oodist_meta) = @_;
-	$oodist_meta   ||= oodist_meta $makefile;
-	my $project_meta = project_meta;
-
-	$project_meta->{contrib} = $project_meta->{changelog} ? <<__CONTRIB =~ s/\n//r : '';
- For other contributors see $project_meta->{changelog}.
+	my $log     = first { m/^(?:change|contrib)/i } bsd_glob '*';
+	my $contrib = $log ? <<__CONTRIB =~ s/\n//r : '';
+ For other contributors see $log.
 __CONTRIB
 
-	$pmhead
-	  = defined $pmheadfn  ? read_text $pmheadfn
-	  : -f 'PMHEAD.txt'    ? read_text 'PMHEAD.txt'
-	  :                      <<'__PM_HEAD';
-Copyrights $year$author.$contrib
-See the manual pages for details on the licensing terms.
-Pod stripped from pm file by OODoc $ooversion.
-__PM_HEAD
+	my %vars = (
+		today     => (strftime "%B %d, %Y", localtime),
+		year      => $year,     # license year range, backwards compatible name
+	 	web       => $website ? " Website: F<$website>" : '',
+		website   => $website,
+		ooversion => $ooversion,
+		author    => $author ? "by $author" : '',
+		email     => $email || '',
+		project   => $dist_meta->{name},
+		version   => $dist_meta->{version},
+	    lictext   => (prepare_license $dir, $dist_meta),
+	    changelog => $log,
+		contrib   => $contrib,
+	);
 
-	$podtail
-	  = defined $podtailfn ? read_text $podtailfn
-	  : -f 'PODTAIL.txt'   ? read_text 'PODTAIL.txt'
-	  :                      <<'__POD_TAIL';
-=head1 SEE ALSO
-
-This module is part of $project distribution version $version,
-built on $today.$web
-
-=head1 LICENSE
-
-Copyrights $year$author.$contrib
-$lictext
-__POD_TAIL
-
-	foreach ($pmhead, $podtail)
-	{   s/(?: \$(\w+) | \$\{(\w+)\} )/
-		    my $key = $+;
-		    my $t   = $oodist_meta->{$key} || $project_meta->{$key};
-		    defined $t or error __x"unknown head or tail field '{name}' used", name => $key;
-		    $t
-		 /gxe
-	}
-
-	($pmhead, $podtail);
+	$string =~ s/(?: \$(\w+) | \$\{(\w+)\} )/
+		my $key = $+;
+	    exists $vars{$key} or error __x"unknown pmhead or podtail field '{name}'.", name => $key;
+	    $vars{$key};
+	 /grxe;
 }
 
+#
+# License text
+#
+
+my %licenses = (
+	artistic => <<__ARTISTIC,
+This program is free software; you can redistribute it and/or modify it
+under the Artistic license.
+See F<http://dev.perl.org/licenses/artistic.html>
+__ARTISTIC
+	as_perl => <<__PERL,
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+See F<http://dev.perl.org/licenses/>
+__PERL
+	gpl => <<__GPL
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+for more details: F<http://www.gnu.org/licenses/gpl.html>
+__GPL
+);
+$licenses{perl}   = $licenses{as_perl};
+$licenses{perl_5} = $licenses{as_perl};
+
+sub prepare_license($$)
+{	my ($proj_dir, $proj_meta) = @_;
+	my $license = ($proj_meta->{licenses} || [ 'perl_5' ])->[0];
+	my $lictext = $licenses{$license} || '';
+
+	if(!$lictext && $license)
+	{	my $fn = rel2abs $license, $proj_dir;
+		$lictext = read_text $fn
+			or fault __x"cannot read licence from file {file}", file => $fn;
+	}
+
+	$lictext;
+}
+
+#
+# create_readme()
+# When the README file is missing, something useful gets added.
+
 sub create_readme($$$)
-{   my ($doc, $readmefn, $workdir) = @_;
-	my @toplevel = bsd_glob "$workdir/*";
+{	my ($doc, $readmefn, $workdir) = @_;
+	my @toplevel = bsd_glob "$distdir/*";
 
 	my $readme   = first { /\breadme$/i } @toplevel;
 	return 1 if $readme;
@@ -402,10 +439,10 @@ sub create_readme($$$)
 	print MANIFEST "README\n";
 	close MANIFEST;
 
-	$readme      = catfile $workdir, 'README';
+	$readme      = catfile $distdir, 'README';
 
 	if($readmefn)
-	{   # user provided README
+	{	# user provided README
 		info "* copying $readmefn as README\n";
 
 		copy $readmefn, $readme
@@ -414,9 +451,7 @@ sub create_readme($$$)
 		return 1;
 	}
 
-	#
 	# Produce a README text
-	#
 
 	open README, '>:encoding(utf8)', $readme
 		or fault __x"cannot write to {file}", file => $readme;
@@ -458,12 +493,12 @@ __README
 # Since ExtUtils::MakeMaker, the META files only get updated when
 # they already exist.
 sub create_meta($)
-{   my ($doc) = @_;
+{	my ($doc) = @_;
 	my $manifest = first { /\bmanifest$/i } bsd_glob "*";
 	$manifest or panic "No manifest";
 
 	foreach my $fn ('META.yml', 'META.json')
-	{   next if -f $fn;
+	{	next if -f $fn;
 		info "adding $fn";
 		open META, '>>', $fn and close META;
 
@@ -476,32 +511,20 @@ sub create_meta($)
 }
 
 #
-# Create a distribution
+# Run tests
 #
 
-sub prepare_release($)
-{   info "** Creating the release for $distvname in $workdir";
-
-	my $release = $meta->{release} or panic;
-
-	system "perl Makefile.PL"
-		and fault __x"perl Makefile.PL in {dir} failed", dir => $workdir;
-
-	system "make clean >/dev/null"
-		and fault __x"make clean in {dir} failed", dir => $workdir;
-
-	move 'Makefile.old', 'Makefile'
-		or fault __x"cannot reinstate Makefile in {dir}", dir => $workdir;
-
-	system "make distdir >/dev/null"
-	   and fault __x"make in {dir} failed", dir => $workdir;
-}
-
 sub run_tests($)
-{	into "** Running tests";
+{	my ($distdir) = @_;
+ 	info "** Running tests";
+
+	my $tests = $config->{tests} || {};
+
+	chdir $distdir
+		or fault __x"cannot chdir to run tests in {dir}", dir => $distdir;
 
 	foreach my $testdir (qw/t tests xt/)
-	{   -d $testdir or next;
+	{	-d $testdir or next;
 
 		info "* Running tests in $testdir";
 		system "make test TEST_FILES=$testdir/*.t"
@@ -509,25 +532,59 @@ sub run_tests($)
 	}
 }
 
-sub publish_release()
-{	info "** Publish release";
-	my $release = $config->{release} or panic;
+#
+# Create a distribution
+#
 
-	my $dest = $release->{publish} // '.';
+sub prepare_release($)
+{	my ($distdir) = @_;
+
+	info "** Creating the release for $distvname";
+
+	info "*  prepare release in $distdir";
+
+	chdir $distdir
+		or fault __x"cannot chdir to prepare release in {dir}", dir => $distdir;
+
+	system "perl Makefile.PL"
+		and fault __x"perl Makefile.PL failed";
+
+	system "make clean >/dev/null"
+		and fault __x"make clean failed";
+
+	move 'Makefile.old', 'Makefile'
+		or fault __x"cannot reinstate Makefile";
+
+	system "make distdir" # >/dev/null"
+	   and fault __x"make distdir failed";
+}
+
+sub publish_release($)
+{	my ($distdir) = @_;
+
+ 	info "** Publish release";
+
+	my $release = $config->{release}
+		or (info "release output not configured."), return;
+
+	chdir $distdir
+		or fault __x"cannot chdir to publish release in {dir}", dir => $distdir;
+
+	my $dest = rel2abs +($release->{publish} // '.'), $source;
 	-d $dest || mkdir $dest
 		or fault __x"cannot create release directory {dir}", dir => $dest;
 
 	my $distfile = "$distvname.tar.gz";
 
-	info "* building distribution in $distfile";
+	info "*  building distribution in $distfile";
 	unlink $distfile;
 
 	system "make dist >/dev/null"
-		and fault __x"make dist in {dir} failed", dir => $workdir;
+		and fault __x"make dist in {dir} failed", dir => $distdir;
 
-	return if $dest eq $workdir;
+	return if $dest eq $distdir;
 
-	print "Distributed package in $dest/$distfile\n";
+	info "*  publish release in $dest";
 
 	-f $distfile
 		or error __x"cannot find produced {file}", file => $distfile;
@@ -543,114 +600,100 @@ sub publish_release()
 # Create RAW
 #
 
-sub create_raw()
-{   info "** Create package with raw distribution";
+sub create_raw($)
+{	my ($distdir) = @_;
+
+	info "** Create package with raw distribution";
 
 	my $raw     = $config->{raw}
-		or error __x"raw output not configured";
+		or (info "raw output not configured."), return;
 
-	my $rawfile = "$distvname-raw.tar.gz";
+	chdir $distdir
+		or fault __x"cannot chdir to publish raw in {dir}", dir => $distdir;
 
-	info "* building raw package $rawfile";
-	
+	my $rawname = "$distvname-raw";
+	my $rawfile = "$rawname.tar.gz";
+
+	info "*  building raw package $rawfile";
 	unlink $rawfile;
-	
-	my %manifests;
-	foreach my $man (bsd_glob "MANIFEST*")
-	{   foreach (read_lines $man)
+
+	my %include;
+	foreach my $manifest (bsd_glob "MANIFEST*")
+	{	foreach (read_lines $manifest)
 		{	s/\s{3,}.*$//;
 		    next if m/^#/;
 		    next unless length;
 		    chomp;
-		    $manifests{$_}++;
+		    $include{$_}++;
 		}
 	}
-	
-	my @manifests = map "$rawname/$_", sort keys %manifests;
+
+	my @include = map "$rawname/$_", sort keys %include;
 	symlink('.', $rawname) || readlink $rawname eq '.'
 		or fault __x"cannot create temp symlink {name}", name => $rawname;
 
 	local $" = ' ';
-	system "tar czf $rawfile @manifests"
+	system "tar czf $rawfile @include"
 		and fault __x"cannot produce {file} with tar", file => $rawfile;
 
-	my $dest = $raw->{publish} or return;
-
+	my $dest = rel2abs +($raw->{publish} // '.'), $source;
 	-d $dest or mkdir $dest
 		or fault __x"cannot create {dir}", dir => $dest;
 
-	print "* raw package to $dest/$rawfile\n";
+	info "*  publish raw package to $dest";
 
 	move $rawfile, $dest
 		or fault __x"cannot move {from} to {to}", from => $rawfile, to => $dest;
 }
 
 #
-# Create HTMLPKG
-#
-
-sub create_html_dist($)
-{   my $generate = shift;
-	my $htmlfile = "$distvname-html.tar.gz";
-
-	info "* Building html package $htmlfile";
-
-	unlink $htmlfile;
-
-	local $" = ' ';
-	system "tar czf $htmlfile *"
-		and fault __x"cannot produce {file} with tar", file => $htmlfile;
-
-	return if $dest eq $html_output;
-
-	-d $dest || mkdir $dest
-		or fault __x"cannot create {dir}", dir => $dest;
-
-	info "* HTML package to $dest/$htmlfile";
-
-	move $htmlfile, $dest
-		or fault __x"cannot move {from} to {to}", from => $htmlfile, to=>$dest;
-}
-
-#
 # Create EXPORT
 #
 
-sub create_export($$$)
-{   my ($doc, $type, $filters) = @_;
+sub create_export($$)
+{	my ($doc, $gen) = @_;
 
-	info "* Collect the published data.";
+	my $name   = $gen->{export};
+	my $markup = $gen->{markup}  // 'html';
+	my $dest   = $gen->{publish} // '-';
+	my $serial = $gen->{serializer} // 'json';
 
+	info "** Export data-set $name.";
+
+	my $filters = $gen->{include_manuals} || [];
 	my $manuals;
 	if(@$filters)
-	{   my %manuals;
+	{	my %manuals;
 		foreach my $filter (@$filters)
 		{	my @found = grep /^ \Q$filter\E (?: \:\: | $) /ix, map $_->name, $doc->manuals;
-		    @found or warning __x"No manuals match filter '{filter}'.", filter => $filter;
-		    $manuals{$_}++ for @found;
+			@found or warning __x"No manuals match filter '{filter}'.", filter => $filter;
+			$manuals{$_}++ for @found;
 		}
 		$manuals = [ sort keys %manuals ];
 	}
 
-	info "* Creating export $type in markup $markup." ;
+	info "*  creating export with markup $markup." ;
 
 	require OODoc::Export;
-	my $exporter = OODoc::Export->new(serializer => $type, markup => $markup);
+	my $exporter = OODoc::Export->new(serializer => $serial, markup => $markup);
 
 	my $tail = oodist_meta $makefile;
 	my (undef, $podtail) = create_heads_and_tails $makefile, $tail;
 	$tail->{license_year_range} = delete $tail->{year};  # naming improvement
 
-	my $publish = $doc->publish
-	  ( exporter => $exporter
-	  , manuals  => $manuals
-	  , meta     => $tail      # only flat key-value, where value is a string
-	  , podtail  => $podtail   # fragment of POD
-	  );
+	my $tree = $doc->export(
+		exporter => $exporter,
+		manuals  => $manuals,
+		meta     => $tail,      # only flat key-value, where value is a string
+	);
 
-	info "* Export into $output." ;
+	-d $dest || mkdir $dest
+		or fault __x"cannot create export directory {dir}", dir => $dest;
 
-	$exporter->write($output, $publish, pretty_print => 1);
+	my $exportfn = catfile $dest, "$distvname-$name.$serial";
+
+	info "** Publish export into $exportfn." ;
+	$exporter->write($exportfn, $tree, pretty_print => 1);
 
 	1;
 }
@@ -660,14 +703,14 @@ sub create_export($$$)
 # produced by "perl Makefile.PL"
 
 sub read_makefile($)
-{   my $makefile = shift;
+{	my $makefile = shift;
 
 	open MAKEFILE, '<', $makefile
 	   or fault __x"cannot open produced Makefile: {file}", file => $makefile;
 
 	my %makefile;
 	while( <MAKEFILE> )
-	{   $_ .= <MAKEFILE> while !eof MAKEFILE && s/\\$//; # continuations
+	{	$_ .= <MAKEFILE> while !eof MAKEFILE && s/\\$//; # continuations
 		s/\n\t*/ /g;
 
 		$makefile{$1} = $2 if m/^([A-Z_][A-Z\d_]+)\s*\=\s*(.*?)\s*$/;
@@ -693,14 +736,41 @@ sub read_meta($)
 }
 
 ###
-### conver2version3 $makefile
+### convert2version3 $makefile
 #   OODoc versions before 3.0 used fields in the Makefile.PL to configure
 #   the documentation generation process.  But it got too complex, with
 #   growing needs.  Help people convert (help myself to convert 70+ Perl
 #   distributions ;-)
 
-sub convert2version3($)
-{	my $makefile = shift;
+sub convert2version3()
+{
+	print <<__EXPLAIN
+*** Your configuration is based on an old OODoc version: you need to convert
+*** to a (more convenient) new structure.  This only impacts the configuration:
+*** no need to change your documentation.
+
+  ===> 1. Add the output of this to the top of your Makefile.PL:
+
+      $0 --config3
+      (hint:  vi Makefile.PL   :r! oodist --config3)
+
+  ===> 2. Merge the following into your "WriteMakefile" call in Makefile.PL
+
+      $0 --merge3
+      (hint:  vi Makefile.PL   :r! oodist --merge3)
+
+  ===> 3. Remove the "PREAMBLE" with OODoc values from the Makefile.PL
+
+  ===> 4. Be warned that some command-line options to 'oodist' have changed
+
+*** Merge the above with your Makefile.PL.  Be smart with it.  A documented
+*** example can be found in
+***       https://github.com/markov2/perl5-OODoc/blob/master/Makefile.PL
+__EXPLAIN
+}
+
+sub config3()
+{
 	my $p = sub { my $x = $_[0]; !defined $x ? \"undef" : $x =~ m/^\["']/ ? \$x : \qq{"$x"} };
 
 	my $dist    = $makefile->{DISTDIR};
@@ -716,15 +786,15 @@ sub convert2version3($)
 	print <<__HEAD;
 This is an attempt to automatically convert you configuration parameters.
 
-  ===> 1. Add this to the top of your Makefile.PL:
-
 # Use command 'oodist' to produce the documentation before the software release.
 my \$webpages = ${ $p->($webpages) };
 my \$publish  = ${ $p->($publish =~ s!^\Q$webpages\E!\$webpages!r) };
+my \$git      = 'https://github.com/XXX';
+my \$homepage = ${ $p->($makefile->{WEBSITE} // 'https://XXX') };
 
 my \%oodoc = (
 	first_year => ${ $p->($makefile->{FIRST_YEAR}) },
-	email      => ${ $p->($makefile->{EMAIL}) },
+	email    => ${ $p->($makefile->{EMAIL}) },
 __HEAD
 
 	my @include = map "\t\t'$_',\n", sort split /[\: ]+/, $makefile->{EXTENDS};
@@ -733,10 +803,24 @@ __HEAD
 	include  => [\n@include],
 __INCLUDE
 
+	my @links   = map "\t\t'$_',\n", sort split /[\: ]+/, $makefile->{SKIP_LINKS} // '';
+	my $pmhead  = $makefile->{PMHEAD} // (-f 'PMHEAD.txt'  ? 'PMHEAD.txt'  : undef);
+
+	print <<__PARSER;
+
+	parser   => {
+		syntax        => 'markov',
+		skip_links    => [@links],
+		pmhead        => ${ $p->($pmhead) },
+	},
+__PARSER
+
 	print <<__RELEASE;
 
+	tests    => {
+	},
+
 	release  => {
-		workdir  => ${ $p->('/tmp/' . ($makefile->{NAME} =~ s/::/-/g) },
 		publish  => "\$publish/${ \basename $dist }",
 	},
 __RELEASE
@@ -748,24 +832,12 @@ __RELEASE
 	},
 __RAW
 
-	my @links   = map "\t\t'$_',\n", sort split /[\: ]+/, $makefile->{SKIP_LINKS} // '';
-	my $pmhead  = $makefile->{PMHEAD}  // -f 'PMHEAD.txt'  ? 'PMHEAD.txt'  : undef;
-	my $podtail = $makefile->{PODTAIL} // -f 'PODTAIL.txt' ? 'PODTAIL.txt' : undef;
-
-	print <<__PARSER;
-
-	parser   => {
-		syntax        => 'markov',
-		skip_links    => [@links],
-		pmhead        => ${ $p->($pmhead) },
-		podtail       => ${ $p->($podtail) },
-	},
-__PARSER
-
 	my @generate;
+	my $podtail = $makefile->{PODTAIL} // (-f 'PODTAIL.txt' ? 'PODTAIL.txt' : undef);
 
 	push @generate, <<__POD;
 	  {	format         => 'pod3',
+		podtail        => ${ $p->($podtail) },
 	  },
 __POD
 
@@ -788,12 +860,11 @@ __HTML
 );
 
 __TAIL
+}
 
+sub merge3()
+{
 	print <<__MERGE
-  ===> 2. Merge the following into your "WriteMakefile" call in Makefile.PL
-
-my \$git      = 'https://github.com/XXX';
-my \$homepage = ${ $p->($makefile->{WEBSITE} // 'https://XXX') };
 
 WriteMakefile
 	...
@@ -823,22 +894,6 @@ WriteMakefile
 		x_oodoc => \\\%oodoc,
 	};
 __MERGE
-
-  ===> 3. Remove the "PREAMBLE" with OODoc values from the Makefile.PL
-
-  ===> 4. Be warned that some command-line options to 'oodist' has changed
-
-	print <<__EXPLAIN;
-
-*** Your configuration is based on an old OODoc version: you need to convert
-*** to a (more convenient) new structure.  This only impacts the configuration:
-*** no need to change your documentation.
-
-*** Merge the above with your Makefile.PL.  Be smart with it.  A documented
-*** example can be found in
-***       https://github.com/markov2/perl5-OODoc/blob/master/Makefile.PL
-__EXPLAIN
-
 }
 
 __END__
@@ -864,6 +919,10 @@ oodist - create perl distributions with OODoc
    --readme        <file>    constructured
    --workdir  | -w <dir>     /tmp/<DISTVNAME>
    --verbose  | -v           true when specified
+
+  OPTIONS to help convert OODoc2 to OODoc3 style configuration
+   --config3                 settings rewrite
+   --merge3                  merge meta block
 
 =head1 DESCRIPTION
 

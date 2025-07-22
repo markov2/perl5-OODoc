@@ -15,7 +15,7 @@ our %formatters =
   , pod2  => 'OODoc::Format::Pod2'
   , pod3  => 'OODoc::Format::Pod3'
   , html  => 'OODoc::Format::Html'
-  , html2 => 'OODoc::Format::Html2'
+  , html2 => 'OODoc::Format::Html2'   # not (yet) included in the OODoc release
   );
 
 =chapter NAME

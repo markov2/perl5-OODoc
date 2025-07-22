@@ -10,6 +10,11 @@ use warnings;
 use Log::Report    'oodoc';
 use List::Util     'first';
 
+our %syntax_implementation = (
+    markov => 'OODoc::Parser::Markov',
+);
+
+#------------------
 =chapter NAME
 
 OODoc::Parser - base class for all OODoc parsers.
@@ -27,7 +32,7 @@ can be configured).
 Currently distributed parsers:
 
 =over 4
-=item * M<OODoc::Parser::Markov>
+=item * M<OODoc::Parser::Markov> (markov)
 The Markov parser understands standard POD, but adds logical markup tags
 and the C<M&lt;&gt;> links.
 =back
@@ -35,12 +40,14 @@ and the C<M&lt;&gt;> links.
 =cut
 
 #-------------------------------------------
-
 =chapter METHODS
 
 =section Constructors
 
 =c_method new %options
+
+=option  syntax PACKAGE|$name
+=default syntax 'markov'
 
 =option  skip_links ARRAY|REGEXP|STRING
 =default skip_links undef
@@ -48,6 +55,16 @@ The parser should not attempt to load modules which match the REGEXP
 or are equal or sub-namespace of STRING.  More than one of these
 can be passed in an ARRAY.
 =cut
+
+sub new(%)
+{   my ($class, %args) = @_;
+    return $class->SUPER::new(%args) unless $class eq __PACKAGE__;
+
+    my $syntax = delete $args{syntax} || 'markov';
+    my $pkg    = $syntax_implementation{$syntax} || $syntax;
+    eval "require $pkg" or die $@;
+    $pkg->new(%args);
+}
 
 sub init($)
 {   my ($self, $args) = @_;
@@ -62,7 +79,6 @@ sub init($)
 }
 
 #-------------------------------------------
-
 =section Parsing a file
 
 =method parse %options
@@ -83,7 +99,6 @@ platform dependend black hole is used (/dev/null on UNIX).
 sub parse(@) {panic}
 
 #-------------------------------------------
-
 =section Formatting text pieces
 
 After the manuals have been parsed into objects, the information can

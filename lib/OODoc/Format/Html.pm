@@ -83,8 +83,8 @@ sub init($)
 }
 
 #-------------------------------------------
-
 =section Attributes
+
 =method manual [$manual]
 Returns (optionally after setting) the $manual which is being processed.
 =cut
@@ -92,7 +92,6 @@ Returns (optionally after setting) the $manual which is being processed.
 sub manual(;$) {my $s = shift; @_ ? $s->{OFH_manual}=shift : $s->{OFH_manual}}
 
 #-------------------------------------------
-
 =section Page generation
 
 =method cleanupString $manual, $object

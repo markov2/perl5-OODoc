@@ -9,7 +9,7 @@ my $publish  = "$webpages/oodoc";
 my $homepage = 'https://perl.overmeer.net/oodoc/';
 
 # Use command 'oodist' to produce the documentation before the software release.
-# Lines marked with '#O' are optional: ignored components or have a good default
+# Lines marked with '#O' are optional: skippable components or have a good default
 my %oodoc = (
 	first_year       => 2003,                  #   Year of first release, for copyright statement
 	email            => 'perl@overmeer.net',   #O  Contact email address for this project
@@ -17,6 +17,16 @@ my %oodoc = (
 	include          => [                      #O  List of repository roots for modules which belong
 		'../OODoc-Template',                   #O     to the documentation tree of this module.
 	],
+
+	parser => {                                #O  Describes the input files
+		syntax       => 'markov',              #O  name or class.  'markov' supports plain pod as well
+		skip_links   => [                      #O  list of classes linked to, but not parser for the docs
+		],
+		pmhead       => 'PMHEAD.txt'           #O  lines to add to each stripped pm file
+    },
+
+	tests => {                                 #O  Test configuration
+	},
 
 	release => {                               #   The CPAN release
 		publish      => "$publish/source",     #   where a $dist-$version.tar.gz is produced
@@ -26,29 +36,22 @@ my %oodoc = (
 		publish      => "$publish/raw",        #  where a $dist-$version-raw.tar.gz is produced
 	},
 
-	parser => {                                #O  Describes the input files
-		syntax       => 'markov',              #O  name or class.  'markov' supports plain pod as well
-		skip_links   => [                      #O  list of classes linked to, but not parser for the docs
-		],
-		pmhead       => 'PMHEAD.txt'           #O  lines to add to each stripped pm file
-		podtail      => 'PODTAIL.txt',         #O  chapters to be added to the end of each manual in this dist
-    },
-
 	generate => [
 	  {	format       => 'pod3',                #O  Pod files are merged into the distribution
+		podtail      => 'PODTAIL.txt',         #O  chapters to be added to the end of each manual in this dist
 	  },
 	  {	format       => 'html',                #O  Produce static HTML output
 		webpages     => "$publish/html",       #   where the pages are created
-		templates    => './html',              #   templates to be used
-		docroot      => '/oodoc/html',         #   the root for each generated website link
+		templates    => './html',              #O  templates to be used
+		docroot      => '/oodoc/html',         #O  the root for each generated website link
 		publish      => "$publish/htmlpkg",    #   where a $dist-$version-html.tar.gz is produced
-		stylesheet   => '/oodoc.css',          #   use the generic style sheet (under docroot)
+		stylesheet   => '/oodoc.css',          #O  use the generic style sheet (under docroot)
 	  },
-	  {	export       => 'new-website'          #   Name of export
+	  {	export       => 'new-website',         #   Name of export
 		serializer   => 'json',                #O  Serializer to produce export
 		markup       => 'html',                #O  markup to be used for the output texts
-		publish      => "$publish/doctree",    #   where the $dist-$version-doc.json will be produced
-		output       => '-',                   #O  where to send the output, default STDOUT
+		publish      => "$publish/doctree",    #   where the $dist-$version-$name.json will be produced
+		include_manuals => undef,              #O  array of package prefixes
 	  },
 	],
 );

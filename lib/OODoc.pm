@@ -14,7 +14,7 @@ use Log::Report    'oodoc';
 use OODoc::Manifest ();
 use OODoc::Format   ();
 
-use File::Spec      ();
+use File::Spec      qw/catfile/;   sub catfile(@);
 use IO::File        ();
 use File::Copy      qw/copy move/;
 use File::Basename  qw/dirname/;
@@ -38,42 +38,42 @@ or use the oodist script
 
 =chapter DESCRIPTION
 
-OODoc stands for "Object Oriented Documentation": to produce manual-pages
-in HTML or the usual man-page UNIX format, describing Perl programs.
+OODoc stands for "Object Oriented Documentation": to produce better
+manual-pages in HTML or perl POD format than the standard offerings
+of the Perl tool-chain.
+
 The OO part of the name refers to two things: this module simplifies
-writing documentation for Object Oriented programs, and at the same time,
+writing documentation for Object Oriented programs, and, at the same time,
 it is Object Oriented itself: easily extensible.
 
 Before you read any further, decide:
 
 =over 4
-
 =item 1
-to use your own modified version of the mkdist and mkdoc scripts, as provided
-in the examples which come with this module, or
+Write your own wrapper around the OODoc module; or
 
 =item 2
-use the oodist, which is less flexible but much simpler, and only requires
-some additions to your Makefile.PL.
-
+use script C<oodist>, which manages your whole distribution process
+configured by your Makefile.PL.
 =back
 
-OODoc has been used for small and for very large modules.  It can also
-be used to integrate manual-pages from many modules into one homogeneous
-set.
+OODoc has been used for small and for very large sets of modules, like
+the MailBox suite.  It can also be used to integrate manual-pages from
+many modules into one homogeneous set.
 
-The documentation syntax can be changed, by configuring the parser
-or adding a new one.  The M<OODoc::Parser::Markov> parser understands POD
-and has additional logical markup tags.  See M<OODoc::Parser> about what
-each parser needs to support.
+The documentation syntax can be changed, by configuring the
+provided parser or adding a new one.  The M<OODoc::Parser::Markov>
+parser understands POD and has many additional logical markup tags.
+See M<OODoc::Parser> about what each parser needs to support.
 
-The output is produced by formatters.  The current implementation contains
-two POD formatters and one HTML formatter.  See M<OODoc::Format>.
+The output is produced by formatters and exporteds.  The current
+implementation contains three POD formatters and one HTML formatter,
+and a JSON exporter.  See M<OODoc::Format> and M<OODoc::Export>.
 
-Do not forget to B<read> the L<DETAILS> section, later on this manual-page to
+Do not forget to B<read> the L<DETAILS> section later on this manual-page to
 get started.  Please contribute ideas.  Have a look at the main website
 of this project at L<http://perl.overmeer.net/oodoc/>.  That is also an
-example of the produced output.
+example of the produced html output.
 
 =chapter METHODS
 
@@ -112,9 +112,9 @@ sub init($)
 
     $self->SUPER::init($args) or return;
 
-    $self->{O_pkg}    = {};
+    $self->{O_pkg}     = {};
 
-    my $distribution  = $self->{O_distribution} = delete $args->{distribution};
+    my $distribution   = $self->{O_distribution} = delete $args->{distribution};
     defined $distribution
         or error __x"the produced distribution needs a project description";
 
@@ -134,10 +134,9 @@ sub init($)
         }
     }
 
-    defined $version
+    $self->{O_version} = $version
         or error __x"no version specified for distribution '{dist}'", dist  => $distribution;
 
-    $self->{O_version} = $version;
     $self;
 }
 
@@ -301,9 +300,9 @@ sub processFiles(@)
 
     my $version = $args{version};
     unless(defined $version)
-    {   my $fn  = defined $source ? File::Spec->catfile($source, 'version') : 'version';
+    {   my $fn  = defined $source ? catfile($source, 'version') : 'version';
         $fn     = -f $fn          ? $fn
-                : defined $source ? File::Spec->catfile($source, 'VERSION')
+                : defined $source ? catfile($source, 'VERSION')
                 :                   'VERSION';
         if(defined $fn)
         {   my $v = IO::File->new($fn, "r")
@@ -330,14 +329,14 @@ sub processFiles(@)
 
     my $manfile
       = exists $args{manifest} ? $args{manifest}
-      : defined $source        ? File::Spec->catfile($source, 'MANIFEST')
+      : defined $source        ? catfile($source, 'MANIFEST')
       :                          'MANIFEST';
 
     my $manifest = OODoc::Manifest->new(filename => $manfile);
 
     my $manout;
     if(defined $dest)
-    {   my $manif = File::Spec->catfile($dest, 'MANIFEST');
+    {   my $manif = catfile($dest, 'MANIFEST');
         $manout   = OODoc::Manifest->new(filename => $manif);
         $manout->add($manif);
     }
@@ -356,12 +355,11 @@ sub processFiles(@)
 
     if(defined $dest)
     {   foreach my $filename (@$copy)
-        {   my $fn = defined $source ? File::Spec->catfile($source, $filename) : $filename;
+        {   my $fn = defined $source ? catfile($source, $filename) : $filename;
 
-            my $dn = File::Spec->catfile($dest, $fn);
+            my $dn = catfile($dest, $fn);
             unless(-f $fn)
-            {   warning __x"no file {file} to include in the distribution"
-                  , file => $fn;
+            {   warning __x"no file {file} to include in the distribution", file => $fn;
                 next;
             }
 
@@ -369,7 +367,7 @@ sub processFiles(@)
             {   $self->mkdirhier(dirname $dn);
 
                 copy $fn, $dn
-                   or fault __x"cannot copy distribution file {from} to {to}", from => $fn, to => $dest;
+                    or fault __x"cannot copy distribution file {from} to {to}", from => $fn, to => $dest;
 
                 trace "  copied $fn to $dest";
             }
@@ -398,7 +396,7 @@ sub processFiles(@)
     #
 
     foreach my $filename (@$process)
-    {   my $fn = $source ? File::Spec->catfile($source, $filename) : $filename; 
+    {   my $fn = $source ? catfile($source, $filename) : $filename; 
 
         unless(-f $fn)
         {   warning __x"no file {file} to include in the distribution", file => $fn;
@@ -407,7 +405,7 @@ sub processFiles(@)
 
         my $dn;
         if($dest)
-        {   $dn = File::Spec->catfile($dest, $fn);
+        {   $dn = catfile($dest, $fn);
             $self->mkdirhier(dirname $dn);
             $manout->add($dn);
         }
@@ -442,7 +440,6 @@ sub processFiles(@)
 Add information to the documentation tree about inheritance relationships
 of the packages.  C<prepare> must be called between M<processFiles()>
 and M<create()>.
-
 =cut
 
 sub prepare(@)
@@ -481,8 +478,8 @@ manual-pages as well...
 =cut
 
 sub getPackageRelations($)
-{   my $self = shift;
-    my @manuals  = $self->manuals;  # all
+{   my $self    = shift;
+    my @manuals = $self->manuals;  # all
 
     #
     # load all distributions (which are not loaded yet)
@@ -516,14 +513,14 @@ sub getPackageRelations($)
         {   my $isa = $self->mainManual($_) || $_;
 
             $manual->superClasses($isa);
-            $isa->subClasses($manual) if ref $isa;
+            $isa->subClasses($manual) if blessed $isa;
         }
 
         if(my $realizes = $uses{realizes})
         {   my $to  = $self->mainManual($realizes) || $realizes;
 
             $manual->realizes($to);
-            $to->realizers($manual) if ref $to;
+            $to->realizers($manual) if blessed $to;
         }
     }
 
@@ -555,11 +552,6 @@ The directory where the output is going to.
 The names of the produced files are appended to this file.  When undef
 is given, no file will be written for this.
 
-=option  format_options ARRAY
-=default format_options []
-Formatter dependent initialization options.  See the documentation of
-the formatter which will be used for the possible values.
-
 =error formatter requires a directory to write the manuals to
 You have to give a value to C<workdir>, which will be used as top directory
 for the produced output.  It does not matter whether there is already some
@@ -570,12 +562,12 @@ stuff in that directory.
 sub formatter($@)
 {   my ($self, $format, %args) = @_;
 
-    my $dest    = $args{workdir}
+    my $dest     = delete $args{workdir}
        or error __x"formatter() requires a directory to write the manuals to";
 
     # Start manifest
 
-    my $manfile  = $args{manifest} // File::Spec->catfile($dest, 'MANIFEST');
+    my $manfile  = delete $args{manifest} // catfile($dest, 'MANIFEST');
     my $manifest = OODoc::Manifest->new(filename => $manfile);
 
     # Create the formatter
@@ -583,21 +575,19 @@ sub formatter($@)
     return $format
         if blessed $format && $format->isa('OODoc::Format');
 
-    my $options = $args{format_options} || [];
-
-    OODoc::Format->new
-      ( format      => $format
-      , manifest    => $manifest
-      , workdir     => $dest
-      , project     => $self->distribution
-      , version     => $self->version
-      , @$options
-      );
+    OODoc::Format->new(
+        %args,
+        format      => $format,
+        manifest    => $manifest,
+        workdir     => $dest,
+        project     => $self->distribution,
+        version     => $self->version,
+    );
 }
 
 sub create() { panic 'Interface change in 2.03: use $oodoc->formatter->createPages' }
 
-=method publish %options
+=method export %options
 Convert the documentation data in a beautiful tree.
 
 =requires exporter M<OODoc::Export>-object
@@ -617,7 +607,7 @@ Include only information for the manuals (specified as names).
 Key/string pairs with interesting additional data.
 =cut
 
-sub publish($$%)
+sub export($$%)
 {    my ($self, %args) = @_;
     my $exporter    = $args{exporter} or panic;
 
