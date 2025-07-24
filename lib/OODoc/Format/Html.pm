@@ -126,9 +126,10 @@ sub cleanupString($$)
 
 	#XXX $self->cleanup(@_) =~ s!</p>\s*<p>!<br>!grs =~ s!\</?p\>!!gr cause
 	#XXX Perl5.26.1 and Perl5.38.1 to misbehave in some runs :-(
-    # $self->cleanup(@_) =~ s!</p>\s*<p>!<br>!grs =~ s!\</?p\>!!gr;
-    my $text = $self->cleanup(@_);
-    $text =~ s!</p>\s*<p>!<br>!grs =~ s!\</?p\>!!gr;
+    $self->cleanup(@_) =~ s!</p>\s*<p>!<br>!grs =~ s!\</?p\>!!gr;
+
+#   my $text = $self->cleanup(@_);
+#   $text =~ s!</p>\s*<p>!<br>!grs =~ s!\</?p\>!!gr;
 }
 
 =method link $manual, $object, [$text]
