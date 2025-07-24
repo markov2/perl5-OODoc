@@ -831,15 +831,11 @@ sub decomposeL($$)
 {   my ($self, $manual, $link) = @_;
     my $text  = $link =~ s/^([^|]*)\|// ? $1 : undef;
 
-    unless(length $link)
-    {   warning __x"empty L link in {manual}", manual => $manual;
-        return ();
-    }
+    length $link
+        or (warning __x"empty L link in {manual}", manual => $manual), return ();
 
-    if($link  =~ m/^[a-z]+\:[^:]/ )
-    {   $text = $link unless defined $text;
-        return (undef, undef, $link, $text);
-    }
+    return (undef, undef, $link, $text // $link)
+        if $link  =~ m/^[a-z]+\:[^:]/;
 
     my ($name, $item) = $link =~ m[(.*?)(?:/(.*))?$];
 
@@ -958,7 +954,7 @@ a "E<lt>" will stay that way, not being translated in a "E<amp>lt;".
 
 sub cleanupHtml($$$;$)
 {   my ($self, $formatter, $manual, $string, $is_html) = @_;
-    return '' unless defined $string && length $string;
+    defined $string && length $string or return '';
 
     if($string =~ m/(?:\A|\n)                   # start of line
                     \=begin\s+(:?\w+)\s*        # begin statement

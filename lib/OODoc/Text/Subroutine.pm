@@ -19,7 +19,7 @@ OODoc::Text::Subroutine - collects information about one documented sub
 
 Perl has various things we can call "sub" (for "subroutine") one
 way or the other.  This object tries to store all types of them:
-methods, funtion, ties, and overloads. Actually, these are the
+methods, functions, ties, and overloads.  Actually, these are the
 most important parts of the documentation.  The share more than
 they differ.
 
@@ -229,7 +229,7 @@ sub option($)
 }
 
 =method findOption $name
-Does a little more thorough job than M<option()> bu searching the inherited
+Does a little more thorough job than M<option()> by searching the inherited
 options for this subroutine as well.
 =cut
 

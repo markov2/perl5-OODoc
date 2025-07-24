@@ -131,16 +131,13 @@ sub cleanup($$$)
 {   my ($self, $formatter, $manual, $string) = @_;
 
     return $self->cleanupPod($formatter, $manual, $string)
-       if $formatter->isa('OODoc::Format::Pod');
+        if $formatter->isa('OODoc::Format::Pod');
 
     return $self->cleanupHtml($formatter, $manual, $string)
-       if $formatter->isa('OODoc::Format::Html')
-       || $formatter->isa('OODoc::Format::Html2');
+        if $formatter->isa('OODoc::Format::Html')
+        || $formatter->isa('OODoc::Format::Html2');
 
-    error __x"the formatter type {type} is not known for cleanup"
-      , type => ref $formatter;
-
-    $string;
+    error __x"the formatter type {type} is not known for cleanup", type => ref $formatter;
 }
 
 =section Commonly used functions

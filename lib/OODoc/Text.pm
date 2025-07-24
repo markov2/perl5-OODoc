@@ -47,7 +47,6 @@ use overload '=='   => sub {$_[0]->unique == $_[1]->unique}
            , 'bool' => sub {1};
 
 #-------------------------------------------
-
 =chapter METHODS
 
 =c_method new %options
@@ -91,9 +90,7 @@ sub init($)
         or panic "no text container specified for the {pkg} object"
              , pkg => ref $self;
 
-    # may be undef
-    $self->{OT_container}= delete $args->{container};
-
+    $self->{OT_container}= delete $args->{container};    # may be undef
     $self->{OT_descr}    = delete $args->{description} || '';
     $self->{OT_examples} = [];
     $self->{OT_unique}   = $unique++;
@@ -150,19 +147,6 @@ sub container(;$)
 
 sub linenr() { $_[0]->{OT_linenr} }
 
-=section Location
-
-=method manual [$name]
-Without a $name, the manual of the text object is returned. With a $name,
-the manual with that name is returned, even when that does not have a
-relation to the object: it calls M<OODoc::Object::manual()>.
-=cut
-
-sub manual(;$)
-{   my $self = shift;
-    @_ ? $self->SUPER::manual(@_) : $self->container->manual;
-}
-
 =method unique 
 Returns a unique id for this text item.  This is the easiest way to
 see whether two references to the same (overloaded) objects point to
@@ -174,7 +158,7 @@ the same thing. The ids are numeric.
 
 =cut
 
-sub unique() {shift->{OT_unique}}
+sub unique() { $_[0]->{OT_unique} }
 
 =method where 
 Returns the source of the text item: the filename name and the line
@@ -183,7 +167,21 @@ number of the start of it.
 
 sub where()
 {   my $self = shift;
-    ( $self->manual->source, $self->{OT_linenr} );
+    ( $self->manual->source, $self->linenr );
+}
+
+#-------------
+=section Manual Repository
+
+=method manual [$name]
+Without a $name, the manual of the text object is returned. With a $name,
+the manual with that name is returned, even when that does not have a
+relation to the object: it calls M<OODoc::Object::manual()>.
+=cut
+
+sub manual(;$)
+{   my $self = shift;
+    @_ ? $self->SUPER::manual(@_) : $self->container->manual;
 }
 
 #-------------------------------------------

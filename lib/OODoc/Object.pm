@@ -57,8 +57,8 @@ sub new(@)
     my $self = (bless {}, $class)->init(\%args);
 
     if(my @missing = keys %args)
-    {   error __xn"Unknown object attributes {options}", "Unknown object attribute {options}",
-            scalar @missing, options => @missing;
+    {   error __xn"Unknown object attribute '{options}'", "Unknown object attributes: {options}",
+            scalar @missing, options => \@missing;
     }
 
     $self;
@@ -85,37 +85,6 @@ sub extends(;$)
     push @$ext, @_;
 
     wantarray ? @$ext : $ext->[0];
-}
-
-#-------------------------------------------
-=section Commonly used functions
-
-=ci_method mkdirhier $directory
-Creates this $directory and all its non-existing parents.
-=cut
-
-sub mkdirhier($)
-{   my $thing = shift;
-    my @dirs  = File::Spec->splitdir(shift);
-    my $path  = $dirs[0] eq '' ? shift @dirs : '.';
-
-    while(@dirs)
-    {   $path = File::Spec->catdir($path, shift @dirs);
-        -d $path || mkdir $path
-            or fault __x"cannot create {dir}", dir => $path;
-    }
-
-    $thing;
-}
-
-=ci_method filenameToPackage $filename
-=example
- print $self->filenameToPackage('Mail/Box.pm'); # prints Mail::Box
-=cut
-
-sub filenameToPackage($)
-{   my ($thing, $package) = @_;
-    $package =~ s!^lib/!!r =~ s#/#::#gr =~ s/\.(?:pm|pod)$//gr;
 }
 
 #-------------------------------------------
@@ -188,5 +157,36 @@ Returns the names of all defined packages.
 =cut
 
 sub packageNames() { keys %packages }
+
+#-------------------------------------------
+=section Commonly used functions
+
+=ci_method mkdirhier $directory
+Creates this $directory and all its non-existing parents.
+=cut
+
+sub mkdirhier($)
+{   my $thing = shift;
+    my @dirs  = File::Spec->splitdir(shift);
+    my $path  = $dirs[0] eq '' ? shift @dirs : '.';
+
+    while(@dirs)
+    {   $path = File::Spec->catdir($path, shift @dirs);
+        -d $path || mkdir $path
+            or fault __x"cannot create {dir}", dir => $path;
+    }
+
+    $thing;
+}
+
+=ci_method filenameToPackage $filename
+=example
+ print $self->filenameToPackage('Mail/Box.pm'); # prints Mail::Box
+=cut
+
+sub filenameToPackage($)
+{   my ($thing, $package) = @_;
+    $package =~ s!^lib/!!r =~ s#/#::#gr =~ s/\.(?:pm|pod)$//gr;
+}
 
 1;

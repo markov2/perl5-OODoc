@@ -41,7 +41,7 @@ sub zoneGetParameters($)
     length $param or return ();
 
     $param =~ m/[^\s\w]/
-        or return split / /, $param       # old style
+        or return split " ", $param;      # old style
 
     # new style
     my @params = split /\s*\,\s*/, $param;

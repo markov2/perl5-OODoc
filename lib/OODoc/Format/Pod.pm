@@ -9,9 +9,9 @@ use warnings;
 
 use Log::Report    'oodoc';
 
-use File::Spec   ();
-use List::Util   qw/max/;
-use Pod::Escapes qw/e2char/;
+use File::Spec::Functions qw/catfile/;
+use List::Util            qw/max/;
+use Pod::Escapes          qw/e2char/;
 
 =chapter NAME
 
@@ -20,11 +20,10 @@ OODoc::Format::Pod - Produce POD pages from the doc tree
 =chapter SYNOPSIS
 
  my $doc = OODoc->new(...);
- $doc->create
-   ( 'pod'
-   , format_options => [show_examples => 'NO']
-   , append         => "extra text\n"
-   );
+ $doc->formatter(pod =>
+     show_examples => 'NO',
+     append         => "extra text\n",
+ );
 
 =chapter DESCRIPTION
 
@@ -90,24 +89,20 @@ See M<formatManual(append)> for an explanation.
 sub createManual($@)
 {   my ($self, %args) = @_;
     my $manual   = $args{manual} or panic;
-    my $options  = $args{format_options} || [];
+    my $podname  = $manual->source =~ s/\.pm$/.pod/r;
+    my $tmpname  = $podname . 't';
 
-    my $podname  = $manual->source;
-    $podname     =~ s/\.pm$/.pod/;
-    my $tmpname  =  $podname . 't';
+    my $tmpfile  = catfile $self->workdir, $tmpname;
+    my $podfile  = catfile $self->workdir, $podname;
 
-    my $tmpfile  = File::Spec->catfile($self->workdir, $tmpname);
-    my $podfile  = File::Spec->catfile($self->workdir, $podname);
-
-    my $output  = IO::File->new($tmpfile, "w")
-        or fault __x"cannot write prelimary pod manual to {file}"
-            , file => $tmpfile;
+    open my $output, '>:encoding(utf8)', $tmpfile
+        or fault __x"cannot write prelimary pod manual to {file}", file => $tmpfile;
 
     $self->formatManual
       ( manual => $manual
       , output => $output
       , append => $args{append}
-      , @$options
+      , %args
       );
 
     $output->close;
@@ -122,8 +117,7 @@ sub createManual($@)
 
 =method formatManual %options
 
-The %options are a collection of all options available to show* methods.
-They are completed with the defaults set by M<createManual(format_options)>.
+The %options are a collection of all options available to C<show*()> methods.
 
 =requires manual MANUAL
 =requires output FILE
@@ -193,12 +187,11 @@ sub showStructureExpand(@)
     $self->showExamples(%args, examples => [$text->examples])
          if $examples eq 'EXPAND';
 
-    return $self;
+    $self;
 }
 
 sub showStructureRefer(@)
 {   my ($self, %args) = @_;
-
     my $text     = $args{structure} or panic;
 
     my $name     = $text->name;
@@ -217,13 +210,13 @@ sub chapterDescription(@)
     $self->showRequiredChapter(DESCRIPTION => %args);
 
     my $manual  = $args{manual} or panic;
-    my $details = $manual->chapter('DETAILS');
-
-    return $self unless defined $details;
+    my $details = $manual->chapter('DETAILS')
+	    // return $self;
 
     my $output  = $args{output} or panic;
     $output->print("\nSee L</DETAILS> chapter below\n");
     $self->showChapterIndex($output, $details, "   ");
+	$self;
 }
 
 sub chapterDiagnostics(@)
@@ -252,7 +245,7 @@ sub chapterDiagnostics(@)
 
 sub showChapterIndex($$;$)
 {   my ($self, $output, $chapter, $indent) = @_;
-    $indent = '' unless defined $indent;
+    $indent //= '';
 
     foreach my $section ($chapter->sections)
     {   $output->print($indent, $section->name, "\n");
@@ -266,7 +259,7 @@ sub showChapterIndex($$;$)
 sub showExamples(@)
 {   my ($self, %args) = @_;
     my $examples = $args{examples} or panic;
-    return unless @$examples;
+    @$examples or return;
 
     my $manual    = $args{manual}  or panic;
     my $output    = $args{output}  or panic;
@@ -283,7 +276,7 @@ sub showExamples(@)
 sub showDiagnostics(@)
 {   my ($self, %args) = @_;
     my $diagnostics = $args{diagnostics} or panic;
-    return unless @$diagnostics;
+    @$diagnostics or return;
 
     my $manual    = $args{manual}  or panic;
     my $output    = $args{output}  or panic;
@@ -370,15 +363,14 @@ sub showSubroutineName(@)
     my $output     = $args{output}     or panic;
     my $name       = $subroutine->name;
 
-    my $url
-     = $manual->inherited($subroutine)
-     ? "M<".$subroutine->manual."::$name>"
-     : "M<$name>";
+    my $url = $manual->inherited($subroutine)
+      ? "M<".$subroutine->manual."::$name>"
+      : "M<$name>";
 
     $output->print
-     ( $self->cleanup($manual, $url)
-     , ($args{last} ? ".\n" : ",\n")
-     );
+      ( $self->cleanup($manual, $url)
+      , ($args{last} ? ".\n" : ",\n")
+      );
 }
 
 sub showOptions(@)
@@ -395,9 +387,7 @@ sub showOptionUse(@)
     my $option = $args{option} or panic;
     my $manual = $args{manual}  or panic;
 
-    my $params = $option->parameters;
-    $params    =~ s/\s+$//;
-    $params    =~ s/^\s+//;
+    my $params = $option->parameters =~ s/\s+$//r =~ s/^\s+//r;
     $params    = " => ".$self->cleanup($manual, $params) if length $params;
 
     $output->print("=item $option$params\n\n");
@@ -414,9 +404,7 @@ sub showOptionExpand(@)
 
     my $where = $option->findDescriptionObject or return $self;
     my $descr = $self->cleanup($manual, $where->description);
-    $output->print("\n$descr\n\n")
-        if length $descr;
-
+    $output->print("\n$descr\n\n") if length $descr;
     $self;
 }
 
@@ -440,7 +428,7 @@ sub writeTable($@)
     my $head   = $args{header} or panic;
     my $output = $args{output} or panic;
     my $rows   = $args{rows}   or panic;
-    return unless @$rows;
+    @$rows or return;
 
     # Convert all elements to plain text, because markup is not
     # allowed in verbatim pod blocks.
@@ -587,10 +575,10 @@ clean-up activities may be implemented later.
 
 sub cleanupPOD($$)
 {   my ($self, $infn, $outfn) = @_;
-    my $in = IO::File->new($infn, 'r')
+    open my $in, "<:encoding(utf8)", $infn
         or fault __x"cannot read prelimary pod from {file}", file => $infn;
 
-    my $out = IO::File->new($outfn, 'w')
+    open my $out, ">:encoding(utf8)", $outfn
         or fault __x"cannot write final pod to {file}", file => $outfn;
 
     my $last_is_blank = 1;
@@ -627,7 +615,7 @@ Therefore, there are a few ways to adapt the output.
 
 =subsection Configuring with format options
 
-M<createManual(format_options)> or M<OODoc::create(format_options)>
+M<createManual()> or M<OODoc::formatter()>
 can be used with a list of formatting options which are passed to
 M<showChapter()>.  This will help you to produce pages which have
 pre-planned changes in layout.
@@ -638,13 +626,12 @@ pre-planned changes in layout.
  my $doc = OODoc->new(...);
  $doc->processFiles(...);
  $doc->prepare;
- $doc->create(pod =>
-    format_options => [ show_subs_index     => 'NAMES'
-                      , show_inherited_subs => 'NO'
-                      , show_described_subs => 'USE'
-                      , show_option_table   => 'NO'
-                      ]
-   );
+ $doc->formatter(pod =>
+    show_subs_index     => 'NAMES',
+    show_inherited_subs => 'NO',
+    show_described_subs => 'USE',
+    show_option_table   => 'NO',
+ );
 
 =subsection Configuring by appending
 
@@ -659,7 +646,7 @@ a very simple approach simply using M<createManual(append)>.
  my $doc = OODoc->new(...);
  $doc->processFiles(...);
  $doc->prepare;
- $doc->create('pod', append => <<'TEXT');
+ $doc->formatter('pod', append => <<'TEXT');
 
  =head2 COPYRIGHTS
  ...
@@ -674,7 +661,7 @@ pages.
 
 =example remove chapter inheritance
 
- $doc->create('MyPod', format_options => [...]);
+ $doc->formatter('MyPod', %format_options);
 
  package MyPod;
  use parent 'OODoc::Format::Pod';
@@ -685,7 +672,7 @@ the default behavior of C<chapterInheritance()> by producing nothing.
 
 =example changing the chapter's output
 
- $doc->create('MyPod', format_options => [...]);
+ $doc->formatter('MyPod', %format_options);
 
  package MyPod;
  use parent 'OODoc::Format::Pod';
@@ -707,7 +694,7 @@ COMMERCIAL
 
 =example adding to a chapter's output
 
- $doc->create('MyPod', format_options => [...]);
+ $doc->formatter('MyPod', %format_options);
 
  package MyPod;
  use parent 'OODoc::Format::Pod';
@@ -727,7 +714,7 @@ COMMERCIAL
 
 =subsection Configuring with OODoc::Template
 
-When using 'pod2' in stead of 'pod' when M<OODoc::create()> is called,
+When using 'pod2' in stead of 'pod' when M<OODoc::formatter()> is called,
 the M<OODoc::Format::Pod2> will be used.   It's nearly a drop-in
 replacement by its default behavior.  When you specify
 your own template file, every thing can be made.
@@ -738,11 +725,10 @@ your own template file, every thing can be made.
  my $doc = OODoc->new(...);
  $doc->processFiles(...);
  $doc->prepare;
- $doc->create(pod2, template => '/some/file',
-    format_options => [ show_subs_index     => 'NAMES'
-                      , show_option_table   => 'NO'
-                      ]
-    )
+ $doc->formatter(pod2, template => '/some/file',
+    show_subs_index     => 'NAMES',
+    show_option_table   => 'NO',
+ );
 
 =example format options within template
 

@@ -32,7 +32,7 @@ A formater produces manual pages in some way or an other which contain
 (parts of) the module documentation.  Each formatter class is based on
 this OODoc::Format class, which should not be instantiated directly.
 By far most users will never explicitly create a formatter by themselves:
-it is created implicitly when M<OODoc::create()> is called on a M<OODoc>
+it is created implicitly when M<OODoc::formatter()> is called on a M<OODoc>
 object.
 
 Currently available formatters:
@@ -128,18 +128,18 @@ sub init($)
 {   my ($self, $args) = @_;
 
     $self->SUPER::init($args) or return;
+	$self->{OF_format}   = delete $args->{format};
 
     my $name = $self->{OF_project} = delete $args->{project}
         or error __x"formatter knows no project name";
 
-    $self->{OF_version} = delete $args->{version}
+    $self->{OF_version}  = delete $args->{version}
         or error __x"formatter for {name} does not know the version", name => $name;
 
-    $self->{OF_workdir} = delete $args->{workdir}
+    $self->{OF_workdir}  = delete $args->{workdir}
         or error __x"no working directory specified for {name}", name => $name;
 
     $self->{OF_manifest} = delete $args->{manifest} || OODoc::Manifest->new;
-
     $self;
 }
 
@@ -163,11 +163,15 @@ the output files.
 =method manifest 
 Returns the M<OODoc::Manifest> object which maintains the names
 of created files.
+
+=method format
+Code for the format.
 =cut
 
-sub version()  {shift->{OF_version}}
-sub workdir()  {shift->{OF_workdir}}
-sub manifest() {shift->{OF_manifest}}
+sub version()  { $_[0]->{OF_version} }
+sub workdir()  { $_[0]->{OF_workdir} }
+sub manifest() { $_[0]->{OF_manifest} }
+sub format()   { $_[0]->{OF_format} }
 
 #-------------------------------------------
 =section Page generation
@@ -189,17 +193,17 @@ are formatter dependent.
 =option  other_templates DIRECTORY
 =default other_templates C<undef>
 Other files which have to be copied
-passed to M<OODoc::Format::createOtherPages(source)>.
+passed to M<createOtherPages(source)>.
 
 =option  process_files REGEXP
 =default process_files <formatter dependent>
 Selects the files which are to be processed for special markup information.
 Other files, like image files, will be simply copied.  The value will be
-passed to M<OODoc::Format::createOtherPages(process)>.
+passed to M<createOtherPages(process)>.
 
 =option  manual_format ARRAY
 =default manual_format []
-Options passed to M<createManual(format_options)> when
+Options passed to M<createManual()> when
 a manual page has to be produced.  See the applicable formatter
 manual page for the possible flags and values.
 
@@ -346,8 +350,6 @@ sub showChapter(@)
     }
 }
 
-#-------------------------------------------
-
 =method showStructureExpanded %options
 
 =option   show_chapter_examples 'NO'|'EXPAND'
@@ -364,8 +366,6 @@ sub showStructureExpanded(@) {panic}
 
 sub showStructureRefer(@) {panic}
 
-#-------------------------------------------
-
 sub chapterName(@)        {shift->showRequiredChapter(NAME        => @_)}
 sub chapterSynopsis(@)    {shift->showOptionalChapter(SYNOPSIS    => @_)}
 sub chapterInheritance(@) {shift->showOptionalChapter(INHERITANCE => @_)}
@@ -378,23 +378,16 @@ sub chapterDetails(@)     {shift->showOptionalChapter(DETAILS     => @_)}
 sub chapterReferences(@)  {shift->showOptionalChapter(REFERENCES  => @_)}
 sub chapterCopyrights(@)  {shift->showOptionalChapter(COPYRIGHTS  => @_)}
 
-#-------------------------------------------
-
 =method showRequiredChapter $name, %options
-
 =warning missing required chapter $name in $manual
-
 =cut
 
 sub showRequiredChapter($%)
 {   my ($self, $name, %args) = @_;
     my $manual  = $args{manual} or panic;
-    my $chapter = $manual->chapter($name);
 
-    unless(defined $chapter)
-    {   alert "missing required chapter $name in $manual";
-        return;
-    }
+    my $chapter = $manual->chapter($name)
+        or (alert "missing required chapter $name in $manual"), return;
 
     $self->showChapter(chapter => $chapter, %args);
 }
@@ -405,10 +398,7 @@ sub showRequiredChapter($%)
 sub showOptionalChapter($@)
 {   my ($self, $name, %args) = @_;
     my $manual  = $args{manual} or panic;
-
-    my $chapter = $manual->chapter($name);
-    return unless defined $chapter;
-
+    my $chapter = $manual->chapter($name) or return;
     $self->showChapter(chapter => $chapter, %args);
 }
 
@@ -564,16 +554,16 @@ sub showSubroutine(@)
 
     my $use    = $args{show_subroutine} || 'EXPAND';
     my ($show_use, $expand)
-     = $use eq 'EXPAND' ? ('showSubroutineUse',  1)
-     : $use eq 'USE'    ? ('showSubroutineUse',  0)
-     : $use eq 'NAMES'  ? ('showSubroutineName', 0)
-     : $use eq 'NO'     ? (undef,                0)
-     : error __x"illegal value for show_subroutine: {value}", value => $use;
+      = $use eq 'EXPAND' ? ('showSubroutineUse',  1)
+      : $use eq 'USE'    ? ('showSubroutineUse',  0)
+      : $use eq 'NAMES'  ? ('showSubroutineName', 0)
+      : $use eq 'NO'     ? (undef,                0)
+      : error __x"illegal value for show_subroutine: {value}", value => $use;
 
     $self->$show_use(%args, subroutine => $subroutine)
-       if defined $show_use;
+        if defined $show_use;
 
-    return unless $expand;
+    $expand or return;
 
     $args{show_inherited_options} ||= 'USE';
     $args{show_described_options} ||= 'EXPAND';

@@ -10,8 +10,7 @@ use warnings;
 use Log::Report     'oodoc';
 use OODoc::Template ();
 
-use IO::File        ();
-use File::Spec      ();
+use File::Spec::Functions qw/catfile catdir/;
 use File::Find      qw/find/;
 use File::Basename  qw/basename dirname/;
 use File::Copy      qw/copy/;
@@ -74,7 +73,7 @@ sub init($)
     $self->{OFH_jump} = delete $args->{jump_script} || "$html/jump.cgi";
 
     my $meta  = delete $args->{html_meta_data} || '';
-    if(my $ss = $self->{OFH_style} = delete $args->{html_stylesheet})
+    if(my $ss = delete $args->{html_stylesheet})
     {   my $base = basename $ss;
         $meta   .= qq[<link rel="STYLESHEET" href="/$base">];
     }
@@ -87,25 +86,49 @@ sub init($)
 
 =method manual [$manual]
 Returns (optionally after setting) the $manual which is being processed.
+
+=method jumpScript
+
+=method htmlRoot
+Without trailing slash.
+
+=method markers [$filehandle]
+The filehandle where M<createManual()> writes the 'mark's to: the jump
+points.
+
+=method filename [$filename]
+The name of the documentation file which M<createManual()> is currently
+processing.
+
+=method meta
+Returns a string with html for the page header block.
 =cut
 
-sub manual(;$) {my $s = shift; @_ ? $s->{OFH_manual}=shift : $s->{OFH_manual}}
+sub jumpScript() { $_[0]->{OFH_jump} }
+sub htmlRoot()   { $_[0]->{OFH_html} }
+sub meta()       { $_[0]->{OFH_meta} }
+
+sub manual(;$)   { @_==2 ? $_[0]->{OFH_manual} = $_[1] : $_[0]->{OFH_manual} }
+sub markers(;$)  { @_==2 ? $_[0]->{OFH_mark} = $_[1] : $_[0]->{OFH_mark} }
+sub filename(;$) { @_==2 ? $_[0]->{OFH_fn}   = $_[1] : $_[0]->{OFH_fn}   }
 
 #-------------------------------------------
 =section Page generation
 
 =method cleanupString $manual, $object
-The general M<cleanup()> is over eager: it turns all pieces of text
+The general M<cleanup()> is over-eager: it turns all pieces of text
 into paragraphs.  So things, like names of chapters, are not paragraphs
 at all: these simple strings are to be cleaned from paragraph information.
 =cut
 
 sub cleanupString($$)
 {   my $self = shift;
+
+	#XXX $self->cleanup(@_) =~ s!</p>\s*<p>!<br>!grs =~ s!\</?p\>!!gr cause
+	#XXX Perl5.26.1 and Perl5.38.1 to misbehave in some runs :-(
+    # $self->cleanup(@_) =~ s!</p>\s*<p>!<br>!grs =~ s!\</?p\>!!gr;
     my $text = $self->cleanup(@_);
-    $text =~ s!</p>\s*<p>!<br>!gs;
-    $text =~ s!\</?p\>!!g;
-    $text;
+    $text =~ s!</p>\s*<p>!<br>!grs =~ s!\</?p\>!!gr;
 }
 
 =method link $manual, $object, [$text]
@@ -116,16 +139,16 @@ to the name of the $object.
 
 sub link($$;$)
 {   my ($self, $manual, $object, $text) = @_;
-    $text = $object->name unless defined $text;
+    $text //= $object->name;
 
     my $jump;
     if($object->isa('OODoc::Manual'))
     {   (my $manname = $object->name) =~ s!\:\:!_!g;
-        $jump = "$self->{OFH_html}/$manname/index.html";
+        $jump = $self->htmlRoot . "/$manname/index.html";
     }
     else
     {   (my $manname = $manual->name) =~ s!\:\:!_!g;
-        $jump = $self->{OFH_jump}.'?'.$manname.'&'.$object->unique;
+        $jump = $self->jumpScript . "?$manname&". $object->unique;
     }
 
     qq[<a href="$jump" target="_top">$text</a>];
@@ -137,8 +160,8 @@ Write a marker to items file.  This locates an item to a frameset.
 
 sub mark($$)
 {   my ($self, $manual, $id) = @_;
-    $manual =~ s/\:\:/_/g;
-    $self->{OFH_markers}->print("$id $manual $self->{OFH_filename}\n");
+	my @fields = ($id, $manual =~ s/\:\:/_/gr, $self->filename);
+    $self->markers->print(join(' ', @fields), "\n");
 }
 
 =method createManual %options
@@ -149,9 +172,7 @@ sub mark($$)
 A DIRECTORY containing all template files which have to be filled-in
 and copied per manual page created.  You may also specify an HASH
 of file- and directory names and format options for each of those files.
-These options overrule the general M<createManual(format_options)> values
-and the defaults.  These options can be overruled by values specified
-in the template file.
+These options can be overruled by values specified in the template file.
 
 =example template specification
 
@@ -167,32 +188,30 @@ Complex:
 
 =error cannot write markers to $filename: $!
 =error cannot write html manual to $filename: $!
-
 =cut
 
 sub createManual($@)
 {   my ($self, %args) = @_;
     my $verbose  = $args{verbose} || 0;
     my $manual   = $args{manual} or panic;
-    my $options  = $args{format_options} || [];
 
     # Location for the manual page files.
 
-    my $template = $args{template} || File::Spec->catdir('html', 'manual');
-    my %template = $self->expandTemplate($template, $options);
+    my $template = $args{template} || (catdir 'html', 'manual');
+    my %template = $self->expandTemplate($template, [ %args ]);
 
-    (my $manfile  = "$manual") =~ s!\:\:!_!g;
-    my $dest = File::Spec->catdir($self->workdir, $manfile);
+    my $manfile  = "$manual" =~ s!\:\:!_!gr;
+    my $dest = catdir $self->workdir, $manfile;
     $self->mkdirhier($dest);
 
     # File to trace markers must be open.
 
-    unless(defined $self->{OFH_markers})
-    {   my $markers = File::Spec->catdir($self->workdir, 'markers');
-        my $mark = IO::File->new($markers, 'w')
+    unless(defined $self->markers)
+    {   my $markers = catfile $self->workdir, 'markers';
+        open my $mark, ">:encoding(utf8)", $markers
             or fault __x"cannot write markers to {fn}", fn => $markers;
-        $self->{OFH_markers} = $mark;
-        $mark->print($self->{OFH_html}, "\n");
+        $self->markers($mark);
+        $mark->print($self->htmlRoot, "\n");
     }
 
     #
@@ -201,27 +220,23 @@ sub createManual($@)
 
     my $manifest = $self->manifest;
     while(my($raw, $options) = each %template)
-    {   my $cooked = File::Spec->catfile($dest, basename $raw);
+    {   my $cooked = catfile $dest, basename $raw;
 
         print "$manual: $cooked\n" if $verbose > 2;
         $manifest->add($cooked);
 
-        my $output  = IO::File->new($cooked, 'w')
+        open my $output, ">:encoding(utf8)", $cooked
             or fault __x"cannot write html manual to {fn}", fn => $cooked;
 
-        $self->{OFH_filename} = basename $raw;
+        $self->filename(basename $raw);
 
         $self->manual($manual);
-        $self->format
-          ( output      => $output
-          , template_fn => $raw
-          , @$options
-          );
+        $self->format(output => $output, template_fn => $raw, @$options);
         $self->manual(undef);
         $output->close;
     }
 
-    delete $self->{OFH_filename};
+    $self->filename(undef);
     $self;
 }
 
@@ -238,25 +253,25 @@ sub createManual($@)
 sub createOtherPages(@)
 {   my ($self, %args) = @_;
 
-    my $verbose  = $args{verbose} || 0;
+    my $verbose = $args{verbose} || 0;
 
     #
     # Collect files to be processed
     #
 
-    my $source   = $args{source};
+    my $source  = $args{source};
     if(defined $source)
     {   -d $source
              or fault __x"html source directory {dir}", dir => $source;
     }
     else
-    {   $source = File::Spec->catdir("html", "other");
+    {   $source = catdir "html", "other";
         -d $source or return $self;
     }
 
-    my $process  = $args{process}  || qr/\.(s?html|cgi)$/;
+    my $process = $args{process} || qr/\.(?:s?html|cgi)$/;
 
-    my $dest = $self->workdir;
+    my $dest    = $self->workdir;
     $self->mkdirhier($dest);
 
     my @sources;
@@ -280,7 +295,7 @@ sub createOtherPages(@)
 
         if($raw =~ $process)
         {   $self->mkdirhier(dirname $cooked);
-            my $output  = IO::File->new($cooked, 'w')
+            open my $output, ">:encoding(utf8)", $cooked
                 or fault __x"cannot write html to {fn}", fn => $cooked;
 
             my $options = [];
@@ -293,15 +308,13 @@ sub createOtherPages(@)
             $output->close;
          }
          else
-         {   copy($raw, $cooked)
-                or fault __x"copy from {from} to {to} failed"
-                     , from => $raw, to => $cooked;
+         {   copy $raw, $cooked
+                or fault __x"copy from {from} to {to} failed", from => $raw, to => $cooked;
          }
 
          my $rawmode = (stat $raw)[2] & 07777;
          chmod $rawmode, $cooked
-             or fault __x"chmod of {fn} to {mode%o} failed"
-                  , fn => $cooked, mode => $rawmode;
+             or fault __x"chmod of {fn} to {mode%o} failed", fn => $cooked, mode => $rawmode;
     }
 
     $self;
@@ -372,18 +385,16 @@ sub showStructureExpand(@)
 
     my $name     = $text->name;
     my $level    = $text->level +1;  # header level, chapter = H2
-    my $output   = $args{output}  or panic;
-    my $manual   = $args{manual}  or panic;
+    my $output   = $args{output} or panic;
+    my $manual   = $args{manual} or panic;
 
     # Produce own chapter description
 
     my $descr   = $self->cleanup($manual, $text->description);
     my $unique  = $text->unique;
-    (my $id     = $name) =~ s/\W+/_/g;
+    my $id      = $name =~ s/\W+/_/gr;
 
-    $output->print(
-        qq[\n<h$level id="$id"><a name="$unique">$name</a></h$level>\n$descr]
-                  );
+    $output->print( qq[\n<h$level id="$id"><a name="$unique">$name</a></h$level>\n$descr] );
 
     $self->mark($manual, $unique);
 
@@ -396,8 +407,8 @@ sub showStructureExpand(@)
 
     if(defined $super)
     {   my $superman = $super->manual;   #  :-)
-        $output->print( "<p>See ", $self->link($superman, $super), " in "
-                      , $self->link(undef, $superman), "</p>\n");
+        $output->print( "<p>See ", $self->link($superman, $super),
+            " in " , $self->link(undef, $superman), "</p>\n");
     }
 
     # Show the subroutines and examples.
@@ -420,8 +431,7 @@ sub showStructureRefer(@)
     my $manual   = $args{manual}  or panic;
 
     my $link     = $self->link($manual, $text);
-    $output->print(
-       qq[\n<h$level id="$name"><a href="$link">$name</a><h$level>\n]);
+    $output->print( qq[\n<h$level id="$name"><a href="$link">$name</a><h$level>\n] );
     $self;
 }
 
@@ -840,7 +850,8 @@ sub templateHref($$)
     my $path   = $path_lookup{$to}
         or error __x"missing path for {dest}", dest => $to;
 
-    qq[<a href="$self->{OFH_html}$path" target="$window">];
+	my $root   = $self->htmlRoot;
+    qq[<a href="$root$path" target="$window">];
 }
 
 =method templateMeta $templ, $attrs, $if, $else
@@ -851,7 +862,7 @@ method, or extend its implementation.
 
 sub templateMeta($$)
 {   my ($self, $templ, $attrs, $if, $else) = @_;
-    $self->{OFH_meta};
+    $self->meta;
 }
 
 =method templateInheritance $templ, $attrs, $if, $else
@@ -964,25 +975,24 @@ Produce a table with that number of columns.
 sub templateIndex($$)
 {   my ($self, $templ, $attrs, $if, $else) = @_;
 
-    warning __x"no meaning for container {c} in list block", c => $if
-        if defined $if && length $if;
+    ! defined $if || ! length $if
+        or warning __x"no meaning for container {c} in list block", c => $if;
 
-    my $group  = first { !/[a-z]/ } keys %$attrs;
-    defined $group
+    my $group  = first { !/[a-z]/ } keys %$attrs
         or error __x"no group named as attribute for list";
 
     my $start  = $attrs->{starting_with} || 'ALL';
     my $types  = $attrs->{type}          || 'ALL';
 
     my $select = sub { @_ };
-    unless($start eq 'ALL')
+    if($start ne 'ALL')
     {   $start =~ s/_/[\\W_]/g;
         my $regexp = qr/^$start/i;
         $select    = sub { grep $_->name =~ $regexp, @_ };
     }
-    unless($types eq 'ALL')
-    {   my @take   = map { $_ eq 'method' ? '.*method' : $_ }
-                         split /[_|]/, $types;
+
+    if($types ne 'ALL')
+    {   my @take   = map { $_ eq 'method' ? '.*method' : $_ } split /[_|]/, $types;
         local $"   = ')|(';
         my $regexp = qr/^(@take)$/i;
         my $before = $select;

@@ -14,12 +14,11 @@ use Log::Report    'oodoc';
 use OODoc::Manifest ();
 use OODoc::Format   ();
 
-use File::Spec      qw/catfile/;   sub catfile(@);
-use IO::File        ();
-use File::Copy      qw/copy move/;
-use File::Basename  qw/dirname/;
-use List::Util      qw/first/;
-use Scalar::Util    qw/blessed/;
+use File::Basename        qw/dirname/;
+use File::Copy            qw/copy move/;
+use File::Spec::Functions qw/catfile/;
+use List::Util            qw/first/;
+use Scalar::Util          qw/blessed/;
 
 =chapter NAME
 
@@ -34,46 +33,18 @@ OODoc - object oriented production of software documentation
  $doc->formatter('pod', workdir => $dest)->createPages;
  $doc->formatter('html', workdir => '/tmp/html')->createPages;
 
-or use the oodist script
+or use the oodist script (advised)
 
 =chapter DESCRIPTION
 
 OODoc stands for "Object Oriented Documentation": to produce better
-manual-pages in HTML or perl POD format than the standard offerings
+manual-pages in HTML and perl's POD format than the standard offerings
 of the Perl tool-chain.
 
-The OO part of the name refers to two things: this module simplifies
-writing documentation for Object Oriented programs, and, at the same time,
-it is Object Oriented itself: easily extensible.
-
-Before you read any further, decide:
-
-=over 4
-=item 1
-Write your own wrapper around the OODoc module; or
-
-=item 2
-use script C<oodist>, which manages your whole distribution process
-configured by your Makefile.PL.
-=back
-
-OODoc has been used for small and for very large sets of modules, like
-the MailBox suite.  It can also be used to integrate manual-pages from
-many modules into one homogeneous set.
-
-The documentation syntax can be changed, by configuring the
-provided parser or adding a new one.  The M<OODoc::Parser::Markov>
-parser understands POD and has many additional logical markup tags.
-See M<OODoc::Parser> about what each parser needs to support.
-
-The output is produced by formatters and exporteds.  The current
-implementation contains three POD formatters and one HTML formatter,
-and a JSON exporter.  See M<OODoc::Format> and M<OODoc::Export>.
-
-Do not forget to B<read> the L<DETAILS> section later on this manual-page to
-get started.  Please contribute ideas.  Have a look at the main website
-of this project at L<http://perl.overmeer.net/oodoc/>.  That is also an
-example of the produced html output.
+Do not forget to B<read> the L</DETAILS> section further on this
+manual-page to get started.  Please contribute ideas.  Have a look at
+the main website of this project at L<http://perl.overmeer.net/oodoc/>.
+That is also an example of the produced html output.
 
 =chapter METHODS
 
@@ -126,7 +97,7 @@ sub init($)
                        : -f 'VERSION' ? 'VERSION'
                        : undef;
         if(defined $fn)
-        {   my $v = IO::File->new($fn, 'r')
+        {   open my $v, "<", $fn
                 or fault __x"cannot read version from file {file}", file=> $fn;
             $version = $v->getline;
             $version = $1 if $version =~ m/(\d+\.[\d\.]+)/;
@@ -292,7 +263,7 @@ sub processFiles(@)
 {   my ($self, %args) = @_;
 
     exists $args{workdir}
-        or error __x"requires a directory to write the distribution to";
+        or panic "requires a directory to write the distribution to";
 
     my $dest    = $args{workdir};
     my $source  = $args{source};
@@ -305,7 +276,7 @@ sub processFiles(@)
                 : defined $source ? catfile($source, 'VERSION')
                 :                   'VERSION';
         if(defined $fn)
-        {   my $v = IO::File->new($fn, "r")
+        {   open my $v, '<', $fn
                 or fault __x"cannot read version from {file}", file => $fn;
             $version = $v->getline;
             $version = $1 if $version =~ m/(\d+\.[\d\.]+)/;
@@ -336,7 +307,7 @@ sub processFiles(@)
 
     my $manout;
     if(defined $dest)
-    {   my $manif = catfile($dest, 'MANIFEST');
+    {   my $manif = catfile $dest, 'MANIFEST';
         $manout   = OODoc::Manifest->new(filename => $manif);
         $manout->add($manif);
     }
@@ -381,7 +352,7 @@ sub processFiles(@)
     #
 
     my $parser = $args{parser} || 'OODoc::Parser::Markov';
-	$parser    = 'OODoc::Parser::Markov' if $parser eq 'markov';
+    $parser    = 'OODoc::Parser::Markov' if $parser eq 'markov';
 
     unless(blessed $parser)
     {   eval "require $parser";
@@ -438,8 +409,8 @@ sub processFiles(@)
 
 =method prepare %options
 Add information to the documentation tree about inheritance relationships
-of the packages.  C<prepare> must be called between M<processFiles()>
-and M<create()>.
+of the packages.  This C<prepare> must be called after the last
+M<processFiles()> call, before the formatters are called.
 =cut
 
 sub prepare(@)
@@ -563,7 +534,7 @@ sub formatter($@)
 {   my ($self, $format, %args) = @_;
 
     my $dest     = delete $args{workdir}
-       or error __x"formatter() requires a directory to write the manuals to";
+        or error __x"formatter() requires a directory to write the manuals to";
 
     # Start manifest
 
@@ -657,7 +628,7 @@ sub stats()
     my $examples = map $_->examples,    @manuals;
 
     my $diags    = map $_->diagnostics, @manuals;
-    my $distribution   = $self->distribution;
+    my $distribution = $self->distribution;
     my $version  = $self->version;
 
     <<STATS;
@@ -676,25 +647,49 @@ STATS
 
 =chapter DETAILS
 
-=section Why use OODoc in stead of POD
+=section OODoc
+
+The "OO" part of the name refers to two things: this module simplifies
+writing documentation for Object Oriented programs.  At the same time,
+it is Object Oriented itself: easily extensible.  It can be used to
+integrate manual-pages from many distributions into one homogeneous set.
+OODoc has been used for small single package upto very large sets of
+modules, like the MailBox suite.
+
+=subsection Adding logical markup
 
 POD (Perl's standard Plain Old Document format) has a very simple
 syntax.  POD is very simple to learn, and the produced manual pages
-look like normal Unix manual pages.  However, when you start writing
-larger programs, you start seeing the weaker sides of POD.
+look like standard Unix manual pages.  However, when you start writing
+larger programs, you start seeing the weaker aspects of POD.
 
 One of the main problems with POD is that is using a visual markup
 style: you specify information by how it must be presented to the
 viewer.  This in contrast with logical markup where you specify the
 information more abstract, and a visual representation is created by
-translation.  For instance in HTML defines a C<I > tag (visual markup
-italic) and C<EM> (logical markup emphasis, which will usually show
-as italic).
+an application.  For instance in HTML defines an C<I> tag as visual markup
+Italic, and C<EM> as logical markup for EMphasis, which will usually show
+in italic.
 
-The main disadvantage of visual markup is lost information: the
+The main disadvantage of visual markup is limited expression: the
 formatter of the manual page can not help the author of the documentation
-to produce more consistent manual pages.  This is not a problem for small
-distributions, but is much more needed when programs grow larger.
+to produce more consistent and complete manual pages.  This is not a
+problem for small distributions, but is much more needed when code
+grows larger.
+
+=subsection Application
+
+This module can be used directly, but you may also use the C<oodist>
+script which comes with this distribution.  That command will also help
+you with your whole distribution release process.
+
+The documentation syntax can be changed by configuring the provided
+parser or adding a new one.  The M<OODoc::Parser::Markov> parser
+extends standard POD, which uses visual markup, with logical markup tags.
+
+The output is produced by formatters and exporters.  The current
+implementation contains three POD formatters, one HTML formatter,
+and a JSON exporter.
 
 =section How OODoc works
 
@@ -702,41 +697,70 @@ Like with POD, you simply mix your documentation with your code.  When
 the module is distributed, this information is stripped from the files
 by a I<parser>, and translated into an object tree.  This tree is then
 optimized: items combined, reorganized, etc, to collect all information
-required to produce useable manual pages.  Then, a I<formatter> is called
-to generate the manual pages.
+required to produce useable manual pages.
+
+Then, a I<formatter> is called to generate the manual pages in real
+POD or HTML.  You may also use an I<exporter> to serialize that tree
+(into JSON).
+
+  My-Dist -------+                      +--formatter--> POD
+  My-Other-Dist -|--parser--> DocTree --|--formatter--> HTML
+  Even-More -----+                      +--exporter---> JSON/HTML
 
 =subsection The parser
 
-The parser reads the package files, and (by default) strip them from all
-documentation.  The stripped files are written to a temporary directory
-which is used to create the module distribution.
+The parser reads the package files, and (by default) strips them from
+all documentation fragments.  The stripped C<pm> files are written to
+a temporary directory which is used to create the distribution release.
+Existing M<pod> files will also be consumed, but published untouched.
+
+The parser produces an object tree, which is a structured representation
+of the documentation.  That tree is parser independent, and organized
+by manual page.
 
 It is possible to use more than one parser for your documentation.  On
-this moment, there is only one parser implemented: the Markov parser,
-named after the author.  But you can add your own parser, if you want to. 
-Within one distribution, different files can be parsed by different parsers.
+this moment, there is only one parser implemented: the "Markov parser",
+named after the author.  You can add your own parser, if you prefer to. 
+Within one distribution, different files may be parsed by different parsers.
 
-The parser produces an object tree, which is a structured representation of
-the documentation.  The tree is parser independent, and organized by
-manual page.
-
-=subsection Collecting relations
+=subsection collecting relations
 
 The second phase of the manual page generation process figures out the
 relations between the manual pages.  It collects inheritance relations
-and other organizational information which is to be used by the
+and other organizational information, which is to be used by the
 manual page generators.
 
-=subsection The formatter
+Links are being checked.  The Markov parser let you refer to subroutines
+and even documented options within a sub.
+
+Information of super-classes is merged: sections, methods, method options
+and their defaults.  Methods are sorted by name per ((sub)sub)section.
+
+=subsection formatter
 
 The final phase can be called more than once: based on the same object
-tree, documents can be produced in various formats.  The initial
-implementation produces POD and HTML.
+tree, documents can be produced in various formats.  The current
+implementations produce POD and HTML.
 
-=section Getting Started from scratch
+More details in the M<OODoc::Format> base-class.
 
-To use OODoc, you need to create a scripts which helps you producing
-the distribution of your module.  The simpest script look like this:
+=subsection exporters
+
+You may also export the documentation tree to be used with your own
+separate application.  At this moment, that dump will be made in JSON
+with HTML-formatted text fragments only.
+
+More details in the M<OODoc::Export> base-class.
+
+=section Release process
+
+OODoc, as document generator, will need to be integrated into your
+software release process.
+
+=subsection do it yourself
+
+To use OODoc, you need a script which helps you producing
+the distribution of your module.  The simpest script looks like this:
 
  use OODoc;
  my $dist = '/tmp/abc';
@@ -745,48 +769,37 @@ the distribution of your module.  The simpest script look like this:
   , version      => '0.01'
   );
 
- $doc->processFiles(workdir => $dist);  # parsing
- $doc->prepare;                         # collecting
- $doc->create('pod', workdir => $dist); # formatting to POD
+ $doc->processFiles(...);  # parsing
+ $doc->prepare;            # collecting
+ $doc->formatter('pod', ...)->createPages(...);
+                           # formatting to POD
 
 The default parser will be used to process the files, see
 M<OODoc::Parser::Markov> for its syntax.  The formatter is described
 in M<OODoc::Format::Pod>.  Once you have this working, you may decide
 to add options to the calls to adapt the result more to your own taste.
 
-=section Getting Started by Cloning
+=subsection use oodist
 
-A much easier way to start, is to simply pick one of the examples
-which are distributed with OODoc.  They come in three sizes: for a
-small module (mimetypes and orl), an average sized set-up (for OODoc
-itself), and a huge one (mailbox, over 140 packages).
+This distribution comes with a script named C<oodist>, which automates
+a most steps of your release process.  To start using OODoc with your
+existing distribution, simply run this:
 
-All examples are written by the same person, and therefore follow the
-same set-up.  Copy the files C<mkdoc>, C<mkdist> and C<MANIFEST.extra>
-plus the directory C<html> to the top directory of your distribution.
-Edit all the files, to contain the name of your module.
+=over 4
+=item 1. go to the root of your module
+=item 2. run 'oodist'
+=item 3. follow the instructions to configure OODoc
+=item 4. run 'oodist -v'
+=back
 
-It expects a C<MANIFEST> file to be present, like standard for Perl
-modules.  That file lists your own code, pod and additional files
-which need to be included in the release.  OODoc will extend this
-file with produced POD files.
+This should take you more than a few minutes.  When the output looks fine,
+then start playing with the advantages of the Markov extended POD syntax.
 
-The demo-scripts use a C<version> file, which contains something like
-C<< $VERSION = 0.1 >>.  This is not required: you can specify to
-take a version from any file, in the traditional Perl way.  However,
-when you glue multiple modules together into one big HTML documentation
-website (see the mailbox example), then this separate file simplifies
-the production script.
+=subsection Checking the produced manual pages
 
-To test the document production,
-try (on UNIX/Linux)  C<<pod2man xyz.pod | man -l - >>
+To test the document production for C<My::Module>, try (on UNIX/Linux)
 
-To get a prepared distribution, use C<./mkdist 1>.  This will first
-produce all documentation, and then run C<make test> and C<make dist>.
-It generates two distributions: the C<module-version.tar.gz> which
-can be uploaded to CPAN, and the C<module-version-raw.tar.gz> which
-is for yourself.  The latter contains the whole setup which is used
-to generate the distribution, so the unprocessed files!
+  pod2man $dist/lib/My/Module.pod | man -l -
 
 =cut
 

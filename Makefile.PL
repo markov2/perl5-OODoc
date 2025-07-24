@@ -2,6 +2,7 @@ use ExtUtils::MakeMaker;
 
 use warnings;
 use strict;
+use 5.16.1;
 
 my $git      = "https://github.com/markov2/perl5-OODoc";
 my $webpages = '../public_html';
@@ -10,7 +11,7 @@ my $homepage = 'https://perl.overmeer.net/oodoc/';
 
 # Use command 'oodist' to produce the documentation before the software release.
 # Lines marked with '#O' are optional: skippable components or have a good default
-my %oodoc = (
+my %oodist = (
 	first_year       => 2003,                  #   Year of first release, for copyright statement
 	email            => 'perl@overmeer.net',   #O  Contact email address for this project
 
@@ -30,6 +31,7 @@ my %oodoc = (
 
 	release => {                               #   The CPAN release
 		publish      => "$publish/source",     #   where a $dist-$version.tar.gz is produced
+		readme       => undef,                 #O  take pre-produced readme file
 	},
 
 	raw  => {                                  #O Keep development sources as package
@@ -104,5 +106,5 @@ WriteMakefile
 				}
 			},
 		},
-		x_oodoc => \%oodoc,
+		x_oodist => \%oodist,
 	};
