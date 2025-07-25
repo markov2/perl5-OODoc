@@ -763,7 +763,7 @@ sub decomposeM($$)
 
     my $man;
        if(not length($link)) { $man = $manual }
-    elsif(defined($man = $self->manual($link))) { ; }
+    elsif(defined($man = $self->findManual($link))) { ; }
     else
     {   eval "no warnings; require $link";
         if(  ! $@
@@ -791,7 +791,7 @@ sub decomposeM($$)
     defined $subroutine && length $subroutine
         or return (undef, $man);
 
-    my $package = $self->manual($man->package);
+    my $package = $self->findManual($man->package);
     unless(defined $package)
     {   my $want = $man->package;
         warning __x"no manual for {package} (correct casing?)", package => $want;
@@ -805,7 +805,7 @@ sub decomposeM($$)
         return ($package, "$package subroutine $subroutine");
     }
 
-    my $location = $sub->manual;
+    my $location = $sub->findManual;
     defined $option && length $option
         or return ($location, $sub);
 
@@ -842,7 +842,7 @@ sub decomposeL($$)
     ($name, $item)    = (undef, $name) if $name =~ m/^".*"$/;
     $item     =~ s/^"(.*)"$/$1/        if defined $item;
 
-    my $man   = length $name ? ($self->manual($name) || $name) : $manual;
+    my $man   = length $name ? ($self->findManual($name) || $name) : $manual;
 
     my $dest;
     if(!ref $man)

@@ -37,7 +37,7 @@ OODoc::Manual - one manual about a package
  my $doc    = OODoc->new(...);
  my $manual = OODoc::Manual->new(name => ..., source => ...);
 
- $doc->manual($manual);
+ $doc->findManual($manual);
  my @manual = $doc->manualsForPackage('Mail::Box');
 
  print $manual->name;
