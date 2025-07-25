@@ -712,7 +712,7 @@ POD or HTML.  You may also use an I<exporter> to serialize that tree
 The parser reads the package files, and (by default) strips them from
 all documentation fragments.  The stripped C<pm> files are written to
 a temporary directory which is used to create the distribution release.
-Existing M<pod> files will also be consumed, but published untouched.
+Existing C<pod> files will also be consumed, but published untouched.
 
 The parser produces an object tree, which is a structured representation
 of the documentation.  That tree is parser independent, and organized

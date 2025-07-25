@@ -146,11 +146,11 @@ All manuals are returned.
 
 sub manuals() { values %manuals }
 
-=method manual $name
-Returns the manual with the specified name, or else C<undef>.
+=method findManual $name
+[3.00] Returns the manual with the specified name, or else C<undef>.
 =cut
 
-sub manual($) { $manuals{ $_[1] } }
+sub findManual($) { $manuals{ $_[1] } }
 
 =method packageNames 
 Returns the names of all defined packages.

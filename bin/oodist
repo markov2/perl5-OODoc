@@ -27,9 +27,13 @@ use OODoc::Parser     ();
 my $tmpdir      = $ENV{TMPDIR} || '/tmp';
 
 my $default_pmhead = <<'__PMHEAD';
-Copyrights $year$author.$contrib
+This code is part of Perl distribution $distribution.
+The POD got stripped from this file by OODoc version $ooversion.
+
+$license_ref
 See the manual pages for details on the licensing terms.
-Pod stripped from pm file by OODoc $ooversion.
+Copyrights $license_years$author.
+$contrib
 __PMHEAD
 
 my $default_podtail = <<'__PODTAIL';
@@ -40,7 +44,8 @@ built on $today.$web
 
 =head1 LICENSE
 
-Copyrights $year$author.$contrib
+Copyrights $license_years$author.
+$contrib
 $lictext
 __PODTAIL
 
@@ -49,7 +54,7 @@ my %licenses = (
 	artistic => <<__ARTISTIC,
 This program is free software; you can redistribute it and/or modify it
 under the Artistic license.
-See F<http://dev.perl.org/licenses/artistic.html>
+See F<https://spdx.org/licenses/Artistic-2.0.html>
 __ARTISTIC
 	as_perl => <<__PERL,
 This program is free software; you can redistribute it and/or modify it
@@ -395,13 +400,15 @@ sub string_expand_values($$$)
 	}
 
 	my $website = $dist_meta->{resources}{homepage};
-	my $author  = $dist_meta->{author};
-	my $email   = $author =~ s/ \<(.*?)\>// ? $1 : undef;
+	my $authors = $dist_meta->{author} or panic "no author";
+	my $email   = $author->[0] =~ m! \<(.*?)\>! ? $1 : undef;
 	$email      = $config->{email} if exists $config->{email};
 
+	my $author  = join ', ', map s/ \<(.*?)\>$//r, @$authors;   # names only
+
 	my $log     = first { m/^(?:change|contrib)/i } bsd_glob '*';
-	my $contrib = $log ? <<__CONTRIB =~ s/\n//r : '';
- For other contributors see $log.
+	my $contrib = $log ? <<__CONTRIB : "\n";
+For other contributors see file $log.
 __CONTRIB
 
 	my $licenses = $dist_meta->{licenses} || [ ];
@@ -420,7 +427,7 @@ __CONTRIB
 	# is only applied to the pm files of the release which is being produced.
 
 	my %vars = (
-		author    => $author ? " by $author" : '',  # name only
+		author    => " by $author",
 	    changelog => $log,
 		contrib   => $contrib,
 		email     => $email || '',

@@ -170,18 +170,13 @@ sub where()
     ( $self->manual->source, $self->linenr );
 }
 
-#-------------
-=section Manual Repository
-
-=method manual [$name]
-Without a $name, the manual of the text object is returned. With a $name,
-the manual with that name is returned, even when that does not have a
-relation to the object: it calls M<OODoc::Object::manual()>.
+=method manual
+The manual of the text object is returned.
 =cut
 
 sub manual(;$)
 {   my $self = shift;
-    @_ ? $self->SUPER::manual(@_) : $self->container->manual;
+    $self->container->manual;
 }
 
 #-------------------------------------------

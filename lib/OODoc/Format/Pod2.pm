@@ -47,7 +47,7 @@ sub init($)
 }
 
 #------------
-=section Template processing
+=section Page generation
 
 =method createManual %options
 
@@ -134,9 +134,6 @@ sub templateAppend($$)
     $self->showAppend(%$args, output => IO::Scalar->new(\$out));
     $out;
 }
-
-=section Commonly used functions
-=cut
 
 1;
 

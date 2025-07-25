@@ -44,7 +44,7 @@ sub init($)
 }
 
 #------------------------
-=section Template processing
+=section Page generation
 
 =method createManual %options
 

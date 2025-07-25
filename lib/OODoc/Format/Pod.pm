@@ -46,7 +46,7 @@ sub init($)
 }
 
 #------------
-=section Template processing
+=section Page generation
 
 =method link $manual, $object, [$text]
 

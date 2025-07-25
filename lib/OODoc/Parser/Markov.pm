@@ -805,7 +805,7 @@ sub decomposeM($$)
         return ($package, "$package subroutine $subroutine");
     }
 
-    my $location = $sub->findManual;
+    my $location = $sub->manual;
     defined $option && length $option
         or return ($location, $sub);
 

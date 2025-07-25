@@ -26,7 +26,7 @@ OODoc::Format::Html - Produce HTML pages using OODoc::Template
  my $doc = OODoc->new(...);
  $doc->createManual
    ( 'html'   # or 'OODoc::Format::Html'
-   , format_options => [show_examples => 'NO']
+   , show_examples => 'NO',
    );
 
 =chapter DESCRIPTION
@@ -123,13 +123,7 @@ at all: these simple strings are to be cleaned from paragraph information.
 
 sub cleanupString($$)
 {   my $self = shift;
-
-	#XXX $self->cleanup(@_) =~ s!</p>\s*<p>!<br>!grs =~ s!\</?p\>!!gr cause
-	#XXX Perl5.26.1 and Perl5.38.1 to misbehave in some runs :-(
     $self->cleanup(@_) =~ s!</p>\s*<p>!<br>!grs =~ s!\</?p\>!!gr;
-
-#   my $text = $self->cleanup(@_);
-#   $text =~ s!</p>\s*<p>!<br>!grs =~ s!\</?p\>!!gr;
 }
 
 =method link $manual, $object, [$text]
@@ -232,7 +226,7 @@ sub createManual($@)
         $self->filename(basename $raw);
 
         $self->manual($manual);
-        $self->format(output => $output, template_fn => $raw, @$options);
+        $self->interpolate(output => $output, template_fn => $raw, @$options);
         $self->manual(undef);
         $output->close;
     }
@@ -300,7 +294,7 @@ sub createOtherPages(@)
                 or fault __x"cannot write html to {fn}", fn => $cooked;
 
             my $options = [];
-            $self->format
+            $self->interpolate
              ( manual      => undef
              , output      => $output
              , template_fn => $raw
@@ -698,7 +692,7 @@ sub showSubroutineDescriptionRefer(@)
 
 =section Template processing
 
-=method format %options
+=method interpolate %options
 
 =option  manual MANUAL
 =default manual undef
@@ -720,7 +714,7 @@ our %producers =
  , version     => 'templateVersion'
  );
 
-sub format(@)
+sub interpolate(@)
 {   my ($self, %args) = @_;
     my $output    = delete $args{output};
 
@@ -734,8 +728,7 @@ sub format(@)
           };
     }
 
-    $output->print(
-      scalar $template->processFile($args{template_fn}, \%permitted));
+    $output->print(scalar $template->processFile($args{template_fn}, \%permitted));
 }
 
 =method templateProject $templ, $attrs, $if, $else
@@ -754,8 +747,7 @@ sub templateTitle($$)
 {   my ($self, $templ, $attrs, $if, $else) = @_;
 
     my $manual = $self->manual
-        or error __x"not a manual, so no automatic title in {fn}"
-            , fn => scalar $templ->valueFor('template_fn');
+        or error __x"not a manual, so no automatic title in {fn}", fn => scalar $templ->valueFor('template_fn');
 
     my $name   = $self->cleanupString($manual, $manual->name);
     $name      =~ s/\<[^>]*\>//g;
@@ -770,8 +762,7 @@ sub templateManual($$)
 {   my ($self, $templ, $attrs, $if, $else) = @_;
 
     my $manual = $self->manual
-        or error __x"not a manual, so no manual name for {fn}"
-            , fn => scalar $templ->valueFor('template_fn');
+        or error __x"not a manual, so no manual name for {fn}", fn => scalar $templ->valueFor('template_fn');
 
     $self->cleanupString($manual, $manual->name);
 }
@@ -911,8 +902,7 @@ sub templateChapter($$)
 
     my $name  = first { !/[a-z]/ } keys %$attrs;
     defined $name
-        or error __x"chapter without name in template {fn}"
-            , fn => scalar $templ->valueFor('template_fn');
+        or error __x"chapter without name in template {fn}", fn => scalar $templ->valueFor('template_fn');
 
     my $manual  = $self->manual;
     defined $manual or panic;
@@ -1043,8 +1033,7 @@ DIAG
         {   my $details  = $manual->chapter("DETAILS") or next;
             my @sections;
             foreach my $section ($details->sections)
-            {   my @subsect = grep !$manual->inherited($_) && $_->description
-                  , $section->subsections;
+            {   my @subsect = grep !$manual->inherited($_) && $_->description, $section->subsections;
                 push @sections, $section
                     if @subsect || $section->description;
             }
@@ -1052,17 +1041,14 @@ DIAG
             @sections || length $details->description
                 or next;
 
-            my $sections = join "\n"
-              , map { "<li>".$self->link($manual, $_)."</li>" }
-                    @sections;
+            my $sections = join "\n", map "<li>".$self->link($manual, $_)."</li>", @sections;
 
             push @rows, $self->link($manual, $details, "Details in $manual")
               . qq[\n<ul>\n$sections</ul>\n]
         }
     }
     elsif($group eq 'MANUALS')
-    {   @rows = map $self->link(undef, $_, $_->name)
-          , sort $select->($self->manuals);
+    {   @rows = map $self->link(undef, $_, $_->name), sort $select->($self->manuals);
     }
     else
     {   error __x"unknown group {name} as list attribute", name => $group;
@@ -1130,8 +1116,7 @@ sub templateList($$)
 
     my $selected = sub { @_ };
     unless($types eq 'ALL')
-    {   my @take   = map { $_ eq 'method' ? '.*method' : $_ }
-                         split /[_|]/, $types;
+    {   my @take   = map { $_ eq 'method' ? '.*method' : $_ } split /[_|]/, $types;
         local $"   = ')|(?:';
         my $regexp = qr/^(?:@take)$/;
         $selected  = sub { grep $_->type =~ $regexp, @_ };
@@ -1152,11 +1137,9 @@ sub templateList($$)
         my $show_sec = $attrs->{show_sections} || 'LINK';
         my @sections = $show_sec eq 'NO' ? () : $chapter->sections;
 
-        my @subs = $sorted->($selected->( @sections
-                                        ? $chapter->subroutines
-                                        : $chapter->all('subroutines')
-                                        )
-                             );
+        my @subs = $sorted->(
+            $selected->( @sections ? $chapter->subroutines : $chapter->all('subroutines'))
+        );
 
         $output  .= $self->link($manual, $chapter, $chapter->niceName); 
         my $count = @subs && $show_sub eq 'COUNT' ? ' ('.@subs.')' : '';
@@ -1214,19 +1197,7 @@ sub indexListSubroutines(@)
 {   my $self   = shift;
     my $manual = shift;
 
-    join ",\n"
-       , map { $self->link($manual, $_, $_) }
-            @_;
+    join ",\n", map $self->link($manual, $_, $_), @_;
 }
-
-#-------------------------------------------
-
-=section Commonly used functions
-
-=chapter DETAILS
-
-=section Configuring
-
-=cut
 
 1;
