@@ -13,10 +13,15 @@ my $homepage = 'https://perl.overmeer.net/oodoc/';
 # Lines marked with '#O' are optional: skippable components or have a good default
 my %oodist = (
 	first_year       => 2003,                  #   Year of first release, for copyright statement
-	email            => 'perl@overmeer.net',   #O  Contact email address for this project
+	email            => 'perl@overmeer.net',   #O  contact email address for this project
+	license_holder   => undef,                 #O  defaults to author name
 
 	include          => [                      #O  List of repository roots for modules which belong
 		'../OODoc-Template',                   #O     to the documentation tree of this module.
+	],
+
+	use              => [                      #O  List of repo roots, which are not recursively
+		'../Log-Report',                       #O     included in the documentation.
 	],
 
 	parser => {                                #O  Describes the input files
@@ -62,20 +67,21 @@ WriteMakefile
 	NAME         => 'OODoc',
 	VERSION_FROM => 'lib/OODoc.pm',
 	PREREQ_PM    => {
-		'File::Basename'  => 0,
-		'File::Copy'      => 0,
-		'File::Find'      => 0,
-		'File::Glob'      => 0,
-		'File::Slurper'   => 0.014,
-		'File::Spec'      => 0,
-		'HTML::Entities'  => 0,
-		'IO::File'        => 0,
-		'JSON'            => 0,
-		'List::Util'      => 0,
-		'Log::Report'     => 0,
-		'OODoc::Template' => 0.16,
-		'Pod::Escapes'    => 0,
-		'Scalar::Util'    => 0,
+		'File::Basename'    => 0,
+		'File::Copy'        => 0,
+		'File::Find'        => 0,
+		'File::Glob'        => 0,
+		'File::Slurper'     => 0.014,
+		'File::Spec'        => 0,
+		'HTML::Entities'    => 0,
+		'IO::File'          => 0,
+		'JSON'              => 0,
+		'List::Util'        => 0,
+		'Log::Report'       => 0,
+		'OODoc::Template'   => 0.16,
+		'Pod::Escapes'      => 0,
+		'Scalar::Util'      => 0,
+		'Software::License' => 0.103014,
 	},
 	EXE_FILES    => [ 'bin/oodist' ],
 

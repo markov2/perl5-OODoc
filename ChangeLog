@@ -11,6 +11,7 @@ version 3.00:
 	- $oodoc->create()  -->  $oodoc->formatter->createPages
 	- parameters to oodist and in the Makefile.PL via META
 	- $doc->manual($name) --> $doc->findManual($name)
+	- default licenses in PM and POD-tail via Software::License
 
 	Fixes:
 	- wrong place for section examples.

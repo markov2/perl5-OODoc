@@ -16,6 +16,7 @@ use HTML::Entities    qw/encode_entities/;
 use JSON              ();
 use List::Util        qw/first/;
 use POSIX             qw/strftime/;
+use Software::LicenseUtils ();
 
 use OODoc             ();
 use OODoc::Parser     ();
@@ -27,55 +28,30 @@ use OODoc::Parser     ();
 my $tmpdir      = $ENV{TMPDIR} || '/tmp';
 
 my $default_pmhead = <<'__PMHEAD';
-This code is part of Perl distribution $distribution.
+This code is part of Perl distribution $distribution version $version.
 The POD got stripped from this file by OODoc version $ooversion.
-
-$license_ref
-See the manual pages for details on the licensing terms.
-Copyrights $license_years$author.
 $contrib
+${lictext}SPDX-License-Identifier: $spdx
+
 __PMHEAD
 
 my $default_podtail = <<'__PODTAIL';
 =head1 SEE ALSO
 
-This module is part of $project distribution version $version,
+This module is part of $distribution version $version,
 built on $today.$web
 
 =head1 LICENSE
 
-Copyrights $license_years$author.
 $contrib
 $lictext
 __PODTAIL
 
-
-my %licenses = (
-	artistic => <<__ARTISTIC,
-This program is free software; you can redistribute it and/or modify it
-under the Artistic license.
-See F<https://spdx.org/licenses/Artistic-2.0.html>
-__ARTISTIC
-	as_perl => <<__PERL,
-This program is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself.
-See F<http://dev.perl.org/licenses/>
-__PERL
-	gpl => <<__GPL
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-for more details: F<http://www.gnu.org/licenses/gpl.html>
-__GPL
-);
-$licenses{perl}   = $licenses{as_perl};
-$licenses{perl_5} = $licenses{as_perl};
-
 my $makefile_example = 'https://github.com/markov2/perl5-OODoc/blob/master/Makefile.PL';
 my $rt_issue_queue   = 'https://rt.cpan.org/Public/Dist/Display.html?Name=';
 
-sub extract_manuals($$);
-sub extract_distro($;$);
+sub extract_manuals($$$);
+sub extract_distro($%);
 sub create_pod($$$);
 sub create_html($$);
 sub string_expand_values($$$);
@@ -175,7 +151,6 @@ __INFO
 	exit 1;
 }
 
-my $author    = $meta->{author} =~ s/\s+\<(.*?)\>//r;
 my $email     = $meta->{email}   || $1;
 
 my $project   = $meta->{name};
@@ -200,7 +175,7 @@ my $doc  = OODoc->new
 # Reading all the manual pages
 my $source  = realpath '.';
 my %distros = ($project => $meta);
-extract_manuals $source, $distdir;  # produces $distdir
+extract_manuals $source, $distdir, $config;  # produces $distdir
 
 info "** Merge the manuals into one documentation set";
 $doc->prepare;
@@ -248,23 +223,29 @@ if($run_tests || $make_release || $make_raw)
 info "** Ready";
 exit 0;
 
-sub extract_manuals($$)
-{	my ($indir, $outdir) = @_;
+### extract($release_dir, $publish_dir, $config)
+#   Extract documentation from all manuals.  When the manual is part of the
+#   release to be made, it will produce a stripped pm's into $publish_dir
+#   at the same time.
 
-	info "** Extracting manuals from the distributions";
-	extract_distro $source, $outdir;
+sub extract_manuals($$$)
+{	my ($indir, $outdir, $config) = @_;
+
+	info "** Extracting manuals from distributions";
+	extract_distro $source, release_dir => $outdir, config => $config, recurse => 1;
 }
 
 my %included_dirs;
 
-sub extract_distro($;$)
-{	my ($dir, $outdir) = @_;
+sub extract_distro($%)
+{	my ($dir, %args) = @_;
 	return if $included_dirs{$dir};
 
 	my $lib       = "$dir/lib";
 	push @INC, $lib unless grep $_ eq $lib, @INC;
 
 	# Do not run Makefile.PL because the included distry may be in broken state.
+	my $outdir    = delete $args{release_dir};
 	my $is_root   = defined $outdir;
 	my $dist_meta = $is_root ? $meta : read_meta "$dir/MYMETA.json";
 	my $dist_name = $dist_meta->{name};
@@ -273,17 +254,24 @@ sub extract_distro($;$)
 	$included_dirs{$dir} = $dist_name;
 	$distros{$dist_name} = $dist_meta;
 
-	my $dist_config = $dist_meta->{x_oodist} || $dist_meta->{oodist};
+	my $dist_config = delete $args{config} || $dist_meta->{x_oodist} || $dist_meta->{oodist};
 	unless($dist_config)
 	{	warning __x"distribution {name} is not yet converted to OODoc v3, hence ignored.", name => $dist_name;
 		return;
 	}
 
-	foreach my $include (@{$dist_config->{include} || []})
-	{	my $absdir = realpath (rel2abs $include, $dir);
-		extract_distro $absdir;
+	if($args{recurse})
+	{
+		foreach my $include (@{$dist_config->{include} || []})
+		{	my $absdir = realpath (rel2abs $include, $dir);
+			extract_distro $absdir, %args, recurse => 1;
+		}
+	
+		foreach my $use (@{$dist_config->{use} || []})
+		{	my $absdir = realpath (rel2abs $use, $dir);
+			extract_distro $absdir, %args, recurse => 0;
+		}
 	}
-
 
 	info "*  processing files of $dist_name $version from $dir";
 
@@ -388,61 +376,71 @@ sub create_html($$)
 # The pmhead and podtail are flexible texts, which can have some values filled-in.
 # These names are have not changed in v3, but more information is provided.
 
-sub string_expand_values($$$)
-{	my ($string, $dir, $dist_meta) = @_;
-	my $config  = $dist_meta->{x_oodist} || $dist_meta->{oodist};
+sub _get_licenses($$)
+{	my ($dist_meta, $config) = @_;
 
-	my $year    = strftime "%Y", localtime;
+	my $year  = strftime "%Y", localtime;
 	if(my $firstyear = $config->{first_year})
 	{	$year = $firstyear =~ m/$year$/ ? $firstyear
 		      : $firstyear =~ m/\D$/    ? $firstyear.$year
 		      : "$firstyear-$year";
 	}
 
+	my $liccodes = $dist_meta->{license}
+		or error __x"The distribution does not specify a license (required)";
+
+	my $meta_spec = $dist_meta->{'meta-spec'}{version} || 1;
+
+	my @licenses;
+	foreach my $liccode (@$liccodes)
+	{	my ($class) = Software::LicenseUtils->guess_license_from_meta_key($liccode, $meta_spec)
+			or error __x"cannot find license code '{code}'", code => $liccode;
+
+		my $authors = $dist_meta->{author};
+		push @licenses, $class->new({
+			holder  => $dist_meta->{license_holder} || $authors->[0] =~ s/\s+\<(.*?)\>//r,
+			year    => $year,
+			program => $dist_meta->{name},
+			Program => ucfirst($dist_meta->{name}),
+		});
+	}
+
+	@licenses;
+}
+
+sub string_expand_values($$$)
+{	my ($string, $dir, $dist_meta) = @_;
+	my $config  = $dist_meta->{x_oodist} || $dist_meta->{oodist};
+
 	my $website = $dist_meta->{resources}{homepage};
 	my $authors = $dist_meta->{author} or panic "no author";
-	my $email   = $author->[0] =~ m! \<(.*?)\>! ? $1 : undef;
+	my $email   = $authors->[0] =~ m! \<(.*?)\>! ? $1 : undef;
 	$email      = $config->{email} if exists $config->{email};
-
 	my $author  = join ', ', map s/ \<(.*?)\>$//r, @$authors;   # names only
 
 	my $log     = first { m/^(?:change|contrib)/i } bsd_glob '*';
-	my $contrib = $log ? <<__CONTRIB : "\n";
-For other contributors see file $log.
-__CONTRIB
+	my $contrib = $log ? "For contributors see file $log.\n" : "";
 
-	my $licenses = $dist_meta->{licenses} || [ ];
-	my $license  = $licenses->[0] || 'perl_5';
-	my $lictext  = $licenses{$license} || '';
-
-	if(!$lictext && $license)
-	{	my $fn   = rel2abs $license, $dir;
-		$lictext = read_text $fn
-			or fault __x"cannot read licence from file {file}", file => $fn;
-	}
-
-	# When multiple distributions are merged into one tree, than most of
-	# the fields below contain the defaults of the actual dist, not the
-	# integrated project.  For 'pmhead' this, does not matter, where it
-	# is only applied to the pm files of the release which is being produced.
+	my ($license) = _get_licenses $dist_meta, $config;
+	my $year      = $license->year;
 
 	my %vars = (
 		author    => " by $author",
 	    changelog => $log,
 		contrib   => $contrib,
 		email     => $email || '',
-		licenses  => (join ', ', @$licenses),
-	    lictext   => $lictext,
+	    lictext   => $license->notice,
 		ooversion => $ooversion,  # OODoc's version which produces this docs
 		project   => $project,    # overall project name
+		spdx      => $license->spdx_expression,
 		today     => (strftime "%B %d, %Y", localtime),
 		version   => $dist_meta->{version},
 	 	web       => $website ? " Website: F<$website>" : '',
 		website   => $website,
-		year      => $year,       # license year range, backwards compatible name
+		year      => $license->year,       # license year range, backwards compatible name
 
 		distribution  => $dist_meta->{name},
-		license_years => $year,
+		license_years => $license->year,
 	);
 
 	$string =~ s/(?: \$(\w+) | \$\{(\w+)\} )/
@@ -866,7 +864,9 @@ __HEAD
 	my @include = map "\t\t'$_',\n", sort split /[\: ]+/, $makefile->{EXTENDS} // '';
 	print @include ? <<__INCLUDE : '';
 
-	include  => [\n@include],
+	include  => [\n@include], # recursively include
+
+	use      => [\n\n],       # only as reference
 __INCLUDE
 
 	my @links   = map "\t\t'$_',\n", sort split /[\: ]+/, $makefile->{SKIP_LINKS} // '';

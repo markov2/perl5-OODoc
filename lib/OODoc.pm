@@ -1,6 +1,3 @@
-# This code is part of perl distribution OODoc.  It is licensed under the
-# same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
-
 package OODoc;
 use parent 'OODoc::Object';
 
@@ -93,9 +90,7 @@ sub init($)
 
     my $version        = delete $args->{version};
     unless(defined $version)
-    {   my $fn         = -f 'version' ? 'version'
-                       : -f 'VERSION' ? 'VERSION'
-                       : undef;
+    {   my $fn         = -f 'version' ? 'version' : -f 'VERSION' ? 'VERSION' : undef;
         if(defined $fn)
         {   open my $v, "<", $fn
                 or fault __x"cannot read version from file {file}", file=> $fn;
@@ -290,7 +285,7 @@ sub processFiles(@)
 
     my $notice = '';
     if($notice = $args{notice})
-    {   $notice =~ s/^(\#\s)?/# /mg;       # put comments if none
+    {   $notice =~ s/^([^#\n])/# $1/mg;       # put comments if none
     }
 
     #
