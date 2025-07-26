@@ -21,7 +21,7 @@ OODoc::Format::Pod3 - Produce POD pages using OODoc::Template
  my $doc = OODoc->new(...);
  $doc->create
    ( 'pod3'   # or 'OODoc::Format::Pod3'
-   , format_options => [show_examples => 'NO']
+   , show_examples => 'NO',
    );
 
 =chapter DESCRIPTION
@@ -64,37 +64,35 @@ my $default_template;
 
 sub createManual(@)
 {   my ($self, %args) = @_;
-    $self->{O_template} = delete $args{template} || \$default_template;
+    $self->{OFP_template} = delete $args{template} || \$default_template;
     $self->SUPER::createManual(%args);
 }
 
-sub formatManual(@)
+sub _formatManual(@)
 {   my ($self, %args) = @_;
     my $output    = delete $args{output};
 
-    my $template  = OODoc::Template->new
-     ( markers    => [ '<{', '}>' ]
-     , manual_obj => delete $args{manual}
-     , chapter_order =>
-         [ qw/NAME INHERITANCE SYNOPSIS DESCRIPTION OVERLOADED METHODS
-              FUNCTIONS CONSTANTS EXPORTS DIAGNOSTICS DETAILS REFERENCES
-              COPYRIGHTS/
-         ]
-     , %args
-     );
+    my $template  = OODoc::Template->new(
+        markers       => [ '<{', '}>' ],
+        manual_obj    => delete $args{manual},
+        chapter_order => [ qw/
+            NAME INHERITANCE SYNOPSIS DESCRIPTION OVERLOADED METHODS
+            FUNCTIONS CONSTANTS EXPORTS DIAGNOSTICS DETAILS REFERENCES
+            COPYRIGHTS
+        / ],
+        %args,
+    );
 
-    $output->print
-      (  scalar $template->process
-         ( $self->{O_template}
-         , manual         => sub { shift; ( {}, @_ ) }
-         , chapters       => sub { $self->chapters($template, @_) }
-         , sections       => sub { $self->sections($template, @_) }
-         , subsections    => sub { $self->subsections($template, @_) }
-         , subsubsections => sub { $self->subsubsections($template, @_) }
-         , subroutines    => sub { $self->subroutines($template, @_) }
-         , diagnostics    => sub { $self->diagnostics($template, @_) }
-         )
-      );
+    $output->print(scalar $template->process(
+        $self->{OFP_template},
+        manual         => sub { shift; ( {}, @_ ) },
+        chapters       => sub { $self->chapters($template, @_) },
+        sections       => sub { $self->sections($template, @_) },
+        subsections    => sub { $self->subsections($template, @_) },
+        subsubsections => sub { $self->subsubsections($template, @_) },
+        subroutines    => sub { $self->subroutines($template, @_) },
+        diagnostics    => sub { $self->diagnostics($template, @_) },
+    ));
 }
 
 sub structure($$$)
@@ -120,27 +118,21 @@ sub structure($$$)
     }
 
     my @extends;
+    @extends = map +{manual => $_->manual, header => $name}, $object->extends
+        if $name ne 'NAME' && $name ne 'SYNOPSIS';
 
-    unless($name eq 'NAME' || $name eq 'SYNOPSIS') 
-    {   @extends = map +{manual => $_->manual, header => $name}
-           , $object->extends;
-    }
-
-    +{ $type        => $name
-     , $type.'_obj' => $object
-     , description  => $descr
-     , examples     => \@examples
-     , extends      => \@extends
-     };
+     +{ $type        => $name
+      , $type.'_obj' => $object
+      , description  => $descr
+      , examples     => \@examples
+      , extends      => \@extends
+      };
 }
 
 sub chapters($$$$$)
 {   my ($self, $template, $tag, $attrs, $then, $else) = @_;
-    my $manual = $template->valueFor('manual_obj');
-
-    my @chapters
-       = map $self->structure($template, chapter => $_)
-           , $manual->chapters;
+    my $manual   = $template->valueFor('manual_obj');
+    my @chapters = map $self->structure($template, chapter => $_), $manual->chapters;
 
     if(my $order = $attrs->{order})
     {   my @order = ref $order eq 'ARRAY' ? @$order : split( /\,\s*/, $order);
@@ -151,8 +143,7 @@ sub chapters($$$$$)
         $order{$_} = $count++ for @order;
         $order{$_->{chapter}} ||= $count++ for @chapters;
 
-        @chapters = sort { $order{$a->{chapter}} <=> $order{$b->{chapter}} }
-           @chapters;
+        @chapters = sort { $order{$a->{chapter}} <=> $order{$b->{chapter}} } @chapters;
     }
 
     ( \@chapters, $attrs, $then, $else );
@@ -162,12 +153,10 @@ sub sections($$$$$)
 {   my ($self, $template, $tag, $attrs, $then, $else) = @_;
     my $chapter = $template->valueFor('chapter_obj');
 
-    return ([], $attrs, $then, $else)
-        unless first {!$_->isEmpty} $chapter->sections;
+    first {!$_->isEmpty} $chapter->sections
+        or return ([], $attrs, $then, $else);
 
-    my @sections
-       = map { $self->structure($template, section => $_) }
-             $chapter->sections;
+    my @sections = map $self->structure($template, section => $_), $chapter->sections;
 
     ( \@sections, $attrs, $then, $else );
 }
@@ -176,12 +165,10 @@ sub subsections($$$$$)
 {   my ($self, $template, $tag, $attrs, $then, $else) = @_;
     my $section = $template->valueFor('section_obj');
 
-    return ([], $attrs, $then, $else)
-        unless first {!$_->isEmpty} $section->subsections;
+    first {!$_->isEmpty} $section->subsections
+        or return ([], $attrs, $then, $else);
 
-    my @subsections
-       = map { $self->structure($template, subsection => $_) }
-             $section->subsections;
+    my @subsections = map $self->structure($template, subsection => $_), $section->subsections;
 
     ( \@subsections, $attrs, $then, $else );
 }
@@ -190,12 +177,10 @@ sub subsubsections($$$$$)
 {   my ($self, $template, $tag, $attrs, $then, $else) = @_;
     my $subsection = $template->valueFor('subsection_obj');
 
-    return ([], $attrs, $then, $else)
-        unless first {!$_->isEmpty} $subsection->subsubsections;
+    first {!$_->isEmpty} $subsection->subsubsections
+        or return ([], $attrs, $then, $else);
 
-    my @subsubsections
-       = map { $self->structure($template, subsubsection => $_) }
-             $subsection->subsubsections;
+    my @subsubsections = map $self->structure($template, subsubsection => $_), $subsection->subsubsections;
 
     ( \@subsubsections, $attrs, $then, $else );
 }
@@ -213,27 +198,28 @@ sub subroutines($$$$$$)
         or return ();
 
     my $out  = '';
-    open OUT, '>',\$out;
+    open my $fh, '>:encoding(utf8)', \$out;
 
-    my @show = map +($_ => scalar $template->valueFor($_)),
-       qw/show_described_options show_described_subs show_diagnostics
-          show_examples show_inherited_options show_inherited_subs
-          show_option_table show_subs_index/;
+    my @show = map +($_ => scalar $template->valueFor($_)), qw/
+        show_described_options show_described_subs show_diagnostics
+        show_examples show_inherited_options show_inherited_subs
+        show_option_table show_subs_index
+    /;
 
     # This is quite weak: the whole POD section for a sub description
     # is produced outside the template.  In the future, this may get
     # changed: if there is a need for it: of course, we can do everything
     # in the template system.
 
-    $self->showSubroutines
-      ( subroutines => [ $parent->subroutines ]
-      , manual      => $parent->manual
-      , output      => \*OUT
-      , @show
-      );
+    $self->showSubroutines(
+        subroutines => [ $parent->subroutines ],
+        manual      => $parent->manual,
+        output      => $fh,
+        @show,
+    );
 
-    close OUT;
-    length $out or return;
+    $fh->close;
+    length $out or return ();
 
     $out =~ s/\n*$/\n\n/;
     ($out);
@@ -244,9 +230,9 @@ sub diagnostics($$$$$$)
     my $manual = $template->valueFor('manual_obj');
     
     my $out  = '';
-    open OUT, '>',\$out;
-    $self->chapterDiagnostics(%$attrs, manual => $manual, output => \*OUT);
-    close OUT;
+    open my $fh, '>:encoding(utf8)', \$out;
+    $self->chapterDiagnostics(%$attrs, manual => $manual, output => $fh);
+    $fh->close;
 
     $out =~ s/\n*$/\n\n/;
     ($out);

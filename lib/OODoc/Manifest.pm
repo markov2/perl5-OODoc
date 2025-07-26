@@ -34,7 +34,6 @@ use overload '@{}' => sub { [ shift->files ] };
 use overload bool  => sub {1};
 
 #-------------------------------------------
-
 =chapter METHODS
 
 =c_method new %options
@@ -53,42 +52,32 @@ sub init($)
 
     my $filename = $self->{OM_filename} = delete $args->{filename};
 
-    $self->{O_files} = {};
+    $self->{OM_files} = {};
     $self->read if defined $filename && -e $filename;
     $self->modified(0);
     $self;
 }
 
 #-------------------------------------------
-
 =section Attributes
 
 =method filename 
-
 The name of the file which is read or will be written.
-
 =cut
 
 sub filename() {shift->{OM_filename}}
 
 #-------------------------------------------
-
 =section The manifest list
 
 =method files 
-
 Returns an unsorted list with all filenames in this manifest.
-
 =cut
 
-sub files() { keys %{shift->{O_files}} }
-
-#-------------------------------------------
+sub files() { keys %{shift->{OM_files}} }
 
 =method add $filenames
-
 Adds the $filenames to the manifest, doubles are ignored.
-
 =cut
 
 sub add($)
@@ -96,45 +85,38 @@ sub add($)
     while(@_)
     {   my $add = $self->relative(shift);
         $self->modified(1) unless exists $self->{O_file}{$add};
-        $self->{O_files}{$add}++;
+        $self->{OM_files}{$add}++;
     }
     $self;
 }
 
 #-------------------------------------------
-
 =section Internals
 
 =method read 
-
 Read the MANIFEST file.  The comments are stripped from the lines.
 
 =error Cannot read manifest file $filename: $!
-
 The manifest file could not be opened for reading.
-
 =cut
 
 sub read()
 {   my $self = shift;
     my $filename = $self->filename;
-    my $file = IO::File->new($filename, "r")
+
+    open my $file, "<:encoding(utf8)", $filename
        or fault __x"cannot read manifest file {file}", file => $filename;
 
     my @dist = $file->getlines;
     $file->close;
 
     s/\s+.*\n?$// for @dist;
-    $self->{O_files}{$_}++ foreach @dist;
+    $self->{OM_files}{$_}++ foreach @dist;
     $self;
 }
 
-#-------------------------------------------
-
 =method modified [BOOLEAN]
-
 Whether filenames have been added to the list after initiation.
-
 =cut
 
 sub modified(;$)
@@ -142,13 +124,9 @@ sub modified(;$)
     @_ ? $self->{OM_modified} = @_ : $self->{OM_modified};
 }
 
-#-------------------------------------------
-
 =method write 
-
 Write the MANIFEST file if it has changed.  The file will automatically
 be written when the object leaves scope.
-
 =cut
 
 sub write()
@@ -156,7 +134,7 @@ sub write()
     return unless $self->modified;
     my $filename = $self->filename || return $self;
 
-    my $file = IO::File->new($filename, "w")
+    open my $file, ">:encoding(utf8)", $filename
       or fault __x"cannot write manifest {file}", file => $filename;
 
     $file->print($_, "\n") foreach sort $self->files;
@@ -168,10 +146,7 @@ sub write()
 
 sub DESTROY() { shift->write }
 
-#-------------------------------------------
-
 =method relative $filename
-
 Returns the name of the file relative to the location of the MANIFEST
 file.  The MANIFEST file should always be in top of the directory tree,
 so the $filename should be in the same directory and below.
@@ -182,7 +157,6 @@ The MANIFEST file of a distributed package should be located in the top
 directory of that packages.  All files of the distribution are in that
 same directory, or one of its sub-directories, otherwise they will not
 be packaged.
-
 =cut
 
 sub relative($)
@@ -199,16 +173,13 @@ sub relative($)
         return $filename;
     }
 
-    warn "WARNING: MANIFEST file ".$self->filename
-            . " lists filename outside (sub)directory: $filename\n";
+    warn "WARNING: MANIFEST file ".$self->filename." lists filename outside (sub)directory: $filename\n";
 
     $filename;
 }
 
 #-------------------------------------------
-
 =section Commonly used functions
-
 =cut
 
 1;

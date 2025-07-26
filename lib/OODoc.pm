@@ -13,7 +13,7 @@ use OODoc::Format   ();
 
 use File::Basename        qw/dirname/;
 use File::Copy            qw/copy move/;
-use File::Spec::Functions qw/catfile/;
+use File::Spec::Functions qw/catfile splitpath/;
 use List::Util            qw/first/;
 use Scalar::Util          qw/blessed/;
 
@@ -30,7 +30,7 @@ OODoc - object oriented production of software documentation
  $doc->formatter('pod', workdir => $dest)->createPages;
  $doc->formatter('html', workdir => '/tmp/html')->createPages;
 
-or use the oodist script (advised)
+or use the C<oodist> script, included in this distribution (advised).
 
 =chapter DESCRIPTION
 
@@ -38,7 +38,7 @@ OODoc stands for "Object Oriented Documentation": to produce better
 manual-pages in HTML and perl's POD format than the standard offerings
 of the Perl tool-chain.
 
-Do not forget to B<read> the L</DETAILS> section further on this
+Do not forget to B<read> the L</DETAILS> section further down on this
 manual-page to get started.  Please contribute ideas.  Have a look at
 the main website of this project at L<http://perl.overmeer.net/oodoc/>.
 That is also an example of the produced html output.
@@ -80,10 +80,7 @@ sub init($)
 
     $self->SUPER::init($args) or return;
 
-    $self->{O_pkg}     = {};
-
-    my $distribution   = $self->{O_distribution} = delete $args->{distribution};
-    defined $distribution
+    my $distribution   = $self->{O_distribution} = delete $args->{distribution}
         or error __x"the produced distribution needs a project description";
 
     $self->{O_project} = delete $args->{project} || $distribution;
@@ -113,19 +110,19 @@ sub init($)
 Returns the nice name for the distribution.
 =cut
 
-sub distribution() {shift->{O_distribution}}
+sub distribution() { $_[0]->{O_distribution} }
 
 =method version 
 Returns the version string for the distribution.
 =cut
 
-sub version() {shift->{O_version}}
+sub version() { $_[0]->{O_version} }
 
 =method project 
 Returns the general project description, by default the distribution name.
 =cut
 
-sub project() {shift->{O_project}}
+sub project() { $_[0]->{O_project} }
 
 #-------------------------------------------
 =section Parser
@@ -257,10 +254,7 @@ as argument to M<OODoc::new()> or M<OODoc::processFiles()>.
 sub processFiles(@)
 {   my ($self, %args) = @_;
 
-    exists $args{workdir}
-        or panic "requires a directory to write the distribution to";
-
-    my $dest    = $args{workdir};
+    my $dest    = $args{workdir} or panic "requires a directory to write the distribution to";
     my $source  = $args{source};
     my $distr   = $args{distribution} || $self->distribution;
 
@@ -323,7 +317,7 @@ sub processFiles(@)
     {   foreach my $filename (@$copy)
         {   my $fn = defined $source ? catfile($source, $filename) : $filename;
 
-            my $dn = catfile($dest, $fn);
+            my $dn = catfile $dest, $fn;
             unless(-f $fn)
             {   warning __x"no file {file} to include in the distribution", file => $fn;
                 next;
@@ -371,7 +365,8 @@ sub processFiles(@)
 
         my $dn;
         if($dest)
-        {   $dn = catfile($dest, $fn);
+        {   my ($volume, $path, $file) = splitpath $fn;
+			$dn = catfile $dest, @$path, $fn;
             $self->mkdirhier(dirname $dn);
             $manout->add($dn);
         }
@@ -574,11 +569,11 @@ Key/string pairs with interesting additional data.
 =cut
 
 sub export($$%)
-{    my ($self, %args) = @_;
-    my $exporter    = $args{exporter} or panic;
+{    my ($self, %args)   = @_;
+    my $exporter         = $args{exporter} or panic;
 
     my $selected_manuals = $args{manuals};
-    my %need_manual = map +($_ => 1), @{$selected_manuals || []};
+    my %need_manual      = map +($_ => 1), @{$selected_manuals || []};
     my @podtail_chapters = $exporter->podChapters($args{podtail});
 
     my %man;
@@ -605,7 +600,6 @@ sub export($$%)
       };
 }
 
-
 =method stats 
 Returns a string which contains some statistics about the whole parsed
 document set.
@@ -621,10 +615,9 @@ sub stats()
     my @options  = map { map $_->options, $_->subroutines } @manuals;
     my $options  = scalar @options;
     my $examples = map $_->examples,    @manuals;
-
     my $diags    = map $_->diagnostics, @manuals;
-    my $distribution = $self->distribution;
     my $version  = $self->version;
+    my $distribution = $self->distribution;
 
     <<STATS;
 $distribution version $version

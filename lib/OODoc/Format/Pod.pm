@@ -76,14 +76,22 @@ sub link($$;$)
 }
 
 =method createManual %options
+The %options are a collection of all options available to C<show*()> methods.
 
 =option  append STRING|CODE
 =default append ''
-Text to be added at the end of each manual page.
-See M<formatManual(append)> for an explanation.
+Used after each manual page has been formatting according to the
+standard rules.  When a STRING is specified, it will be appended to
+the manual page.  When a CODE reference is given, that function is
+called with all the options that M<showChapter()> usually gets.
+
+Using C<append> is one of the alternatives to create the correct
+Reference, Copyrights, etc chapters at the end of each manual
+page.  See L</Configuring>.
 
 =error no package name for pod production
 =error cannot write pod manual at $manfile: $!
+=error no directory to put pod manual for $name in
 =cut
 
 sub createManual($@)
@@ -98,7 +106,7 @@ sub createManual($@)
     open my $output, '>:encoding(utf8)', $tmpfile
         or fault __x"cannot write prelimary pod manual to {file}", file => $tmpfile;
 
-    $self->formatManual
+    $self->_formatManual
       ( manual => $manual
       , output => $output
       , append => $args{append}
@@ -115,30 +123,7 @@ sub createManual($@)
     $self;
 }
 
-=method formatManual %options
-
-The %options are a collection of all options available to C<show*()> methods.
-
-=requires manual MANUAL
-=requires output FILE
-
-=option  append STRING|CODE
-=default append ''
-
-Used after each manual page has been formatting according to the
-standard rules.  When a STRING is specified, it will be appended to
-the manual page.  When a CODE reference is given, that function is
-called with all the options that M<showChapter()> usually gets.
-
-Using C<append> is one of the alternatives to create the correct
-Reference, Copyrights, etc chapters at the end of each manual
-page.  See L</Configuring>.
-
-=error no package name for pod production
-=error no directory to put pod manual for $name in
-=cut
-
-sub formatManual(@)
+sub _formatManual(@)
 {   my $self = shift;
     $self->chapterName(@_);
     $self->chapterInheritance(@_);
@@ -665,7 +650,7 @@ pages.
 
  package MyPod;
  use parent 'OODoc::Format::Pod';
- sub chapterInheritance(@) {shift};
+ sub chapterInheritance(@) {shift}
 
 The C<MyPod> package is extending the standard POD generator, by overruling
 the default behavior of C<chapterInheritance()> by producing nothing.
@@ -725,9 +710,10 @@ your own template file, every thing can be made.
  my $doc = OODoc->new(...);
  $doc->processFiles(...);
  $doc->prepare;
- $doc->formatter(pod2, template => '/some/file',
-    show_subs_index     => 'NAMES',
-    show_option_table   => 'NO',
+ $doc->formatter(pod2 =>
+    template          => '/some/file',
+    show_subs_index   => 'NAMES',
+    show_option_table => 'NO',
  );
 
 =example format options within template

@@ -4,6 +4,9 @@ explicitly stated otherwise.
 
 TODO:
 	- add other Log::Report levels to diagnostics
+	- format_options processed correctly?
+	- convert OODoc::Template to v3
+	- check generated HTML
 
 version 3.00:
 
@@ -12,6 +15,7 @@ version 3.00:
 	- parameters to oodist and in the Makefile.PL via META
 	- $doc->manual($name) --> $doc->findManual($name)
 	- default licenses in PM and POD-tail via Software::License
+	- hide ::Pod*::formatManual()
 
 	Fixes:
 	- wrong place for section examples.

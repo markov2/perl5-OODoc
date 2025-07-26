@@ -110,13 +110,13 @@ this name method.
  print $text;   # via overload
 =cut
 
-sub name() {shift->{OT_name}}
+sub name() { $_[0]->{OT_name} }
 
 =method type 
 Returns the type name of this data object.
 =cut
 
-sub type() {shift->{OT_type}}
+sub type() { $_[0]->{OT_type} }
 
 =method description 
 Returns the description text for this object.  Nearly all objects
@@ -124,8 +124,7 @@ contains some kind of introductory description.
 =cut
 
 sub description()
-{   my $text  = shift->{OT_descr};
-    my @lines = split /^/m, $text;
+{   my @lines = split /^/m, shift->{OT_descr};
     shift @lines while @lines && $lines[ 0] =~ m/^\s*$/;
     pop   @lines while @lines && $lines[-1] =~ m/^\s*$/;
     join '', @lines;

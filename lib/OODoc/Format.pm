@@ -203,9 +203,9 @@ passed to M<createOtherPages(process)>.
 
 =option  manual_format ARRAY
 =default manual_format []
-Options passed to M<createManual()> when
-a manual page has to be produced.  See the applicable formatter
-manual page for the possible flags and values.
+Options passed to M<createManual()> when a manual page has to be produced.
+See the applicable formatter manual page for the possible flags and
+values.
 
 =option  select CODE|REGEXP
 =default select <all>

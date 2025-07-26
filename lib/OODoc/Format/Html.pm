@@ -360,8 +360,7 @@ sub expandTemplate($$)
     elsif(-d $loc)
     {   find( { no_chdir => 1,
                 wanted   => sub { my $fn = $File::Find::name;
-                                  push @result, $fn, $defaults
-                                     if -f $fn;
+                                  push @result, $fn, $defaults if -f $fn;
                                 }
               }, $loc
             );

@@ -22,7 +22,7 @@ OODoc::Format::Pod2 - Produce POD pages from the doc tree with a template
  my $doc = OODoc->new(...);
  $doc->create
    ( 'pod2'   # or 'OODoc::Format::Pod2'
-   , format_options => [show_examples => 'NO']
+   , show_examples => 'NO',
    );
 
 =chapter DESCRIPTION
@@ -66,27 +66,24 @@ my $default_template;
 
 sub createManual(@)
 {   my ($self, %args) = @_;
-    $self->{O_template} = delete $args{template} || \$default_template;
+    $self->{OFP_template} = delete $args{template} || \$default_template;
     $self->SUPER::createManual(%args) or return;
 }
 
-sub formatManual(@)
+sub _formatManual(@)
 {   my ($self, %args) = @_;
     my $output    = delete $args{output};
 
     my %permitted =
-     ( chapter     => sub {$self->templateChapter(shift, \%args) }
-     , diagnostics => sub {$self->templateDiagnostics(shift, \%args) }
-     , append      => sub {$self->templateAppend(shift, \%args) }
-     , comment     => sub { '' }
-     );
+      ( chapter     => sub {$self->templateChapter(shift, \%args) }
+      , diagnostics => sub {$self->templateDiagnostics(shift, \%args) }
+      , append      => sub {$self->templateAppend(shift, \%args) }
+      , comment     => sub { '' }
+      );
 
-    my $template  = Template::Magic->new
-     ( { -lookups => \%permitted }
-     );
-
-    my $layout  = ${$self->{O_template}};        # Copy needed by template!
-    my $created = $template->output(\$layout);
+    my $template = Template::Magic->new({ -lookups => \%permitted });
+    my $layout   = ${$self->{OFP_template}};        # Copy needed by template!
+    my $created  = $template->output(\$layout);
     $output->print($$created);
 }
 
@@ -108,16 +105,13 @@ sub templateChapter($$)
     my $attrs = $zone->attributes;
     my $name  = $attrs =~ s/^\s*(\w+)\s*\,?// ? $1 : undef;
 
-    unless(defined $name)
-    {   error __x"chapter without name in template.";
-        return '';
-    }
+    defined $name
+        or (error __x"chapter without name in template."), return '';
 
     my @attrs = $self->zoneGetParameters($attrs);
+
     my $out   = '';
-
     $self->showOptionalChapter($name, %$args, output => IO::Scalar->new(\$out), @attrs);
-
     $out;
 }
 

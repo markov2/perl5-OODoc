@@ -119,28 +119,28 @@ sub init($)
 {   my ($self, $args) = @_;
     $self->SUPER::init($args) or return;
 
-    my $name = $self->{OP_package} = delete $args->{package}
+    my $name = $self->{OM_package} = delete $args->{package}
        or error __x"package name is not specified";
 
-    $self->{OP_source}   = delete $args->{source}
+    $self->{OM_source}   = delete $args->{source}
         or error __x"no source is specified for manual {name}", name => $name;
 
-    $self->{OP_version}  = delete $args->{version}
+    $self->{OM_version}  = delete $args->{version}
         or error __x"no version is specified for manual {name}", name => $name;
 
-    $self->{OP_distr}    = delete $args->{distribution}
+    $self->{OM_distr}    = delete $args->{distribution}
         or error __x"no distribution specified for manual {name}", name=> $name;
 
-    $self->{OP_parser}   = delete $args->{parser}    or panic;
-    $self->{OP_stripped} = delete $args->{stripped};
+    $self->{OM_parser}   = delete $args->{parser}    or panic;
+    $self->{OM_stripped} = delete $args->{stripped};
 
-    $self->{OP_pure_pod} = delete $args->{pure_pod} || 0;
-    $self->{OP_chapter_hash} = {};
-    $self->{OP_chapters}     = [];
-    $self->{OP_subclasses}   = [];
-    $self->{OP_realizers}    = [];
-    $self->{OP_extra_code}   = [];
-    $self->{OP_isa}          = [];
+    $self->{OM_pure_pod} = delete $args->{pure_pod} || 0;
+    $self->{OM_chapter_hash} = {};
+    $self->{OM_chapters}     = [];
+    $self->{OM_subclasses}   = [];
+    $self->{OM_realizers}    = [];
+    $self->{OM_extra_code}   = [];
+    $self->{OM_isa}          = [];
     $self;
 }
 
@@ -151,43 +151,43 @@ sub init($)
 Returns the package of the manual.
 =cut
 
-sub package() {shift->{OP_package}}
+sub package() {shift->{OM_package}}
 
 =method parser 
 Returns the parser which has produced this manual object.
 =cut
 
-sub parser() {shift->{OP_parser}}
+sub parser() {shift->{OM_parser}}
 
 =method source 
 Returns the source of this manual information.
 =cut
 
-sub source() {shift->{OP_source}}
+sub source() {shift->{OM_source}}
 
 =method version 
 Returns the version of this manual information.
 =cut
 
-sub version() {shift->{OP_version}}
+sub version() {shift->{OM_version}}
 
 =method distribution 
 Returns the distribution which includes this manual.
 =cut
 
-sub distribution() {shift->{OP_distr}}
+sub distribution() {shift->{OM_distr}}
 
 =method stripped 
 The name of the produced stripped package file.
 =cut
 
-sub stripped() {shift->{OP_stripped}}
+sub stripped() {shift->{OM_stripped}}
 
 =method isPurePod 
 Returns whether this package has real code related to it.
 =cut
 
-sub isPurePod() {shift->{OP_pure_pod}}
+sub isPurePod() {shift->{OM_pure_pod}}
 
 #-------------------------------------------
 =section Collected
@@ -208,21 +208,21 @@ sub chapter($)
     $it or return;
 
     blessed $it
-        or return $self->{OP_chapter_hash}{$it};
+        or return $self->{OM_chapter_hash}{$it};
 
     $it->isa("OODoc::Text::Chapter")
         or panic "$it is not a chapter";
 
     my $name = $it->name;
-    if(my $old = $self->{OP_chapter_hash}{$name})
+    if(my $old = $self->{OM_chapter_hash}{$name})
     {   my ($fn,  $ln2) = $it->where;
         my ($fn2, $ln1) = $old->where;
         error __x"two chapters named {name} in {file} line {line1} and {line2}"
           , name => $name, file => $fn, line1 => $ln2, line2 => $ln1;
     }
 
-    $self->{OP_chapter_hash}{$name} = $it;
-    push @{$self->{OP_chapters}}, $it;
+    $self->{OM_chapter_hash}{$name} = $it;
+    push @{$self->{OM_chapters}}, $it;
     $it;
 }
 
@@ -233,10 +233,10 @@ Returns the ordered list of chapter object for this manual.
 sub chapters(@)
 {   my $self = shift;
     if(@_)
-    {   $self->{OP_chapters}     = [ @_ ];
-        $self->{OP_chapter_hash} = { map +($_->name => $_), @_ };
+    {   $self->{OM_chapters}     = [ @_ ];
+        $self->{OM_chapter_hash} = { map +($_->name => $_), @_ };
     }
-    @{$self->{OP_chapters}};
+    @{$self->{OM_chapters}};
 }
 
 =method name 
@@ -259,7 +259,7 @@ manual's name, one dash ('-'), and then a brief explanation. For instance:
 
 sub name()
 {   my $self    = shift;
-    defined $self->{OP_name} and return $self->{OP_name};
+    defined $self->{OM_name} and return $self->{OM_name};
 
     my $chapter = $self->chapter('NAME')
         or error __x"no chapter NAME in scope of package {pkg} in {file}", pkg => $self->package, file => $self->source;
@@ -268,15 +268,15 @@ sub name()
     $text =~ m/^\s*(\S+)\s*\-\s*(.+?)\s*$/
         or error __x"the NAME chapter does not have the right format in {file}", file => $self->source;
 
-    $self->{OP_title} = $2;
-    $self->{OP_name}  = $1;
+    $self->{OM_title} = $2;
+    $self->{OM_name}  = $1;
 }
 
 =method title
 [2.03] Returns the description (the content of the NAME chapter).
 =cut
 
-sub title() { $_[0]->name; $_[0]->{OP_title} }
+sub title() { $_[0]->name; $_[0]->{OM_title} }
 
 =method subroutines 
 All subroutines of all chapters within this manual together, especially
@@ -365,8 +365,8 @@ of superclasses first.
 
 sub superClasses(;@)
 {   my $self = shift;
-    push @{$self->{OP_isa}}, @_;
-    @{$self->{OP_isa}};
+    push @{$self->{OM_isa}}, @_;
+    @{$self->{OM_isa}};
 }
 
 =method realizes [$package]
@@ -377,7 +377,7 @@ object) will be set first, if specified.
 
 sub realizes(;$)
 {   my $self = shift;
-    @_ ? ($self->{OP_realizes} = shift) : $self->{OP_realizes};
+    @_ ? ($self->{OM_realizes} = shift) : $self->{OM_realizes};
 }
 
 =method subClasses [$packages]
@@ -388,8 +388,8 @@ to the list.
 
 sub subClasses(;@)
 {   my $self = shift;
-    push @{$self->{OP_subclasses}}, @_;
-    @{$self->{OP_subclasses}};
+    push @{$self->{OM_subclasses}}, @_;
+    @{$self->{OM_subclasses}};
 }
 
 =method realizers [$packages]
@@ -400,8 +400,8 @@ are specified, they are added first.
 
 sub realizers(;@)
 {   my $self = shift;
-    push @{$self->{OP_realizers}}, @_;
-    @{$self->{OP_realizers}};
+    push @{$self->{OM_realizers}}, @_;
+    @{$self->{OM_realizers}};
 }
 
 =method extraCode 
@@ -480,7 +480,7 @@ Add the information of lower level manuals into this one.
 
 sub expand()
 {   my $self = shift;
-    $self->{OP_is_expanded} and return $self;
+    $self->{OM_is_expanded} and return $self;
 
     #
     # All super classes must be expanded first.  Manuals for
@@ -581,7 +581,7 @@ sub expand()
     warning __x"section without location in {manual}: {section}", manual => $self, section => $_
         for keys %location;
 
-    $self->{OP_is_expanded} = 1;
+    $self->{OM_is_expanded} = 1;
     $self;
 }
 

@@ -67,7 +67,7 @@ sub init($)
     unshift @rules, @{delete $args->{additional_rules}}
         if exists $args->{additional_rules};
 
-    $self->{OP_rules} = [];
+    $self->{OPM_rules} = [];
     $self->rule(@$_) for @rules;
     $self;
 }
@@ -92,21 +92,20 @@ When a BOOLEAN is specified, the status changes.  It returns the current
 status of the document reader.
 =cut
 
-sub inDoc(;$)
-{   my $self = shift;
-    $self->{OPM_in_pod} = shift if @_;
-    $self->{OPM_in_pod};
-}
+sub inDoc(;$) { my $s = shift; @_ ? $s->{OPM_in_pod} = shift : $s->{OPM_in_pod} }
 
 =method currentManual [$manual]
 Returns the manual object which is currently being filled with data.
 With a new $manual, a new one is set.
 =cut
 
-sub currentManual(;$)
-{   my $self = shift;
-    @_ ? ($self->{OPM_manual} = shift) : $self->{OPM_manual};
-}
+sub currentManual(;$) { my $s = shift; @_ ? ($s->{OPM_manual} = shift) : $s->{OPM_manual} }
+
+=method rules
+Returns the ARRAY of active rules.  You may modify it.
+=cut
+
+sub rules() { $_[0]->{OPM_rules} }
 
 #-------------------------------------------
 =section Parsing a file
@@ -167,7 +166,7 @@ Their arguments are:
 
 sub rule($$)
 {   my ($self, $match, $action) = @_;
-    push @{$self->{OP_rules}}, [$match, $action];
+    push @{$self->rules}, [$match, $action];
     $self;
 }
 
@@ -187,7 +186,7 @@ action.  If the line fails to match anything, an empty list is returned.
 sub findMatchingRule($)
 {   my ($self, $line) = @_;
 
-    foreach ( @{$self->{OP_rules}} )
+    foreach ( @{$self->rules} )
     {   my ($match, $action) = @$_;
         if(ref $match)
         {   return ($&, $action) if $line =~ $match;
@@ -242,10 +241,10 @@ sub parse(@)
     my $version = $args{version}      or panic;
     my $distr   = $args{distribution} or panic;
 
-    open my $in, '<', $input
+    open my $in, '<:encoding(utf8)', $input
         or fault __x"cannot read document from {file}", file => $input;
 
-    open my $out, '>', $output
+    open my $out, '>:encoding(utf8)', $output
         or fault __x"cannot write stripped code to {file}", file => $output;
 
     # pure doc files have no package statement included, so it shall
@@ -256,14 +255,14 @@ sub parse(@)
     my $pure_pod = $input =~ m/\.pod$/;
     if($pure_pod)
     {   $manual = OODoc::Manual->new
-         ( package  => $self->filenameToPackage($input)
-         , pure_pod => 1
-         , source   => $input
-         , parser   => $self
+          ( package  => $self->filenameToPackage($input)
+          , pure_pod => 1
+          , source   => $input
+          , parser   => $self
 
-         , distribution => $distr
-         , version      => $version
-         );
+          , distribution => $distr
+          , version      => $version
+          );
 
         push @manuals, $manual;
         $self->currentManual($manual);
@@ -292,33 +291,33 @@ sub parse(@)
             $out->print($line);
 
             $manual = OODoc::Manual->new
-             ( package  => $package
-             , source   => $input
-             , stripped => $output
-             , parser   => $self
+              ( package  => $package
+              , source   => $input
+              , stripped => $output
+              , parser   => $self
 
-             , distribution => $distr
-             , version      => $version
-             );
+              , distribution => $distr
+              , version      => $version
+              );
             push @manuals, $manual;
             $self->currentManual($manual);
         }
         elsif(!$self->inDoc && $line =~ m/^=package\s*([\w\-\:]+)\s*$/)
         {   my $package = $1;
             $manual = OODoc::Manual->new
-             ( package  => $package
-             , source   => $input
-             , stripped => $output
-             , parser   => $self
-             , distribution => $distr
-             , version      => $version
-             );
+              ( package  => $package
+              , source   => $input
+              , stripped => $output
+              , parser   => $self
+              , distribution => $distr
+              , version      => $version
+              );
             push @manuals, $manual;
             $self->currentManual($manual);
         }
         elsif(my($match, $action) = $self->findMatchingRule($line))
-        {    $self->$action($match, $line, $input, $ln)
-                 or $out->print($line);
+        {   $self->$action($match, $line, $input, $ln)
+                or $out->print($line);
         }
         elsif($line =~ m/^=(over|back|item|for|pod|begin|end|head4|encoding)\b/)
         {   ${$self->{OPM_block}} .= "\n". $line;
@@ -395,11 +394,8 @@ sub docChapter($$$$)
     my $manual = $self->currentManual
         or error __x"chapter {name} before package statement in {file} line {line}", name => $line, file => $fn, line => $ln;
 
-    my $chapter = $self->{OPM_chapter} = OODoc::Text::Chapter->new
-      ( name    => $line
-      , manual  => $manual
-      , linenr  => $ln
-      );
+    my $chapter = $self->{OPM_chapter} =
+        OODoc::Text::Chapter->new(name => $line, manual => $manual, linenr => $ln);
 
     $self->setBlock($chapter->openDescription);
     $manual->chapter($chapter);
@@ -429,11 +425,8 @@ sub docSection($$$$)
     my $chapter = $self->{OPM_chapter}
         or error __x"section '{name}' outside chapter in {file} line {line}", name => $line, file => $fn, line => $ln;
 
-    my $section = $self->{OPM_section} = OODoc::Text::Section->new
-      ( name     => $line
-      , chapter  => $chapter
-      , linenr   => $ln
-      );
+    my $section = $self->{OPM_section} =
+        OODoc::Text::Section->new(name => $line, chapter => $chapter, linenr => $ln);
 
     $chapter->section($section);
     $self->setBlock($section->openDescription);
