@@ -216,7 +216,7 @@ if($run_tests || $make_release || $make_raw)
 	publish_release $distdir
 		if $make_release;
 
-	publish_raw $distdir
+	publish_raw $source
 		if $make_raw;
 }
 
@@ -688,6 +688,8 @@ sub publish_raw($)
 	local $" = ' ';
 	system "tar czf $rawfile @include"
 		and fault __x"cannot produce {file} with tar", file => $rawfile;
+
+	unlink $rawname;
 
 	my $dest = rel2abs +($raw->{publish} // '.'), $source;
 	-d $dest or mkdir $dest

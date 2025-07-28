@@ -24,15 +24,15 @@ objects and convert it into manual pages.
 
 =chapter OVERLOADED
 
-=overload  '==' $and '!='
+=overload  '==' and '!='
 Numeric comparison is used to compare to objects whether they are
 identical.  String comparison is overloaded to compare the names
 of the objects.
 
-=overload  '""' <$stringification>
+=overload  '""' <stringification>
 Returned is the name of the text object.
 
-=overload  'cmp' <$string $comparison>
+=overload  'cmp' <string comparison>
 Names are compared.
 
 =cut

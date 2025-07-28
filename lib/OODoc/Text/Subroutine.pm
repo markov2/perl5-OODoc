@@ -26,7 +26,9 @@ they differ.
 
 =option  parameters STRING
 =default parameters undef
-
+The STRING which is found as description of the parameters which can be
+passed to the subroutine.  Although free format, there is a convertion
+which you can find in the manual page of the selected parser.
 =cut
 
 sub init($)
@@ -103,9 +105,6 @@ result may be C<undef> or empty.
 =cut
 
 sub parameters() {shift->{OTS_param}}
-
-#-------------------------------------------
-=section Location
 
 =method location $manual
 Try to figure-out what the location for the subroutine is within the

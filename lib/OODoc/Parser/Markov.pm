@@ -1123,6 +1123,41 @@ If you have defined an =option, you have to provide a =default for this
 option anywhere.  Use of =default for an option on a higher level will
 overrule the one in a subclass.
 
+=subsection Subroutine parameters
+
+The parser will turn this line
+
+  =c_method new %options
+
+into an M<OODoc::Text::Subroutine>, with C<name> set to C<new>, and
+C<%options> as parameter string.  The formatters and exporters will
+translate this subroutine call into
+
+  $class->new(%options)
+
+A more complex list of parameters, by convension, is a LIST of
+
+=over 4
+=item C<undef>: undef is accepted on this spot;
+=item C<$scalar>: a single value;
+=item C<%options>: a list of key-value pairs;
+=item C<\@array>: a reference to an ARRAY of values;
+=item C<\%hash>: a reference to a HASH;
+=item C<LIST>: a comma-separated sequence of values;
+=item C< [something] >: the parameter is optional; and
+=item C< ($scalar|\@array|undef) >: alternative parameters on that position.
+=back
+
+For instance:
+
+  =method scan $filename|$fh, $max_size, %options
+  =c_method new [$count], %options|\%options
+
+Shown as:
+
+  $obj->scan($filename|$fh, $max_size, %options);
+  $class->new([$count], %options|\%options);
+
 =subsection Include examples
 
 Examples can be added to chapters, sections, subsections, subsubsections,
