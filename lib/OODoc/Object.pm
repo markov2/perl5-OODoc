@@ -41,12 +41,10 @@ The validity of the options for C<new> is checked, in contrary to the
 options when used with many other method defined by OODoc.
 
 =warning Unknown option $name
-
 You have used the option with $name, which is not defined with the
 instantiation (the C<new> method) of this object.
 
 =warning Unknown options @names
-
 You have used more than one option which is not defined to instantiate
 the object.
 
@@ -66,26 +64,12 @@ sub new(@)
 
 sub init($)
 {   my ($self, $args) = @_;
-    $self->{OO_extends} = [];
     $self;
 }
 
 #-------------------------------------------
-=section Inheritance knowledge
-
-=method extends [$object]
-Close to all elements used within OODoc can have an inheritance relation.
-The returned object is extended by the current object.  Multiple inheritance
-is not supported here.
+=section Accessors
 =cut
-
-sub extends(;$)
-{   my $self = shift;
-    my $ext  = $self->{OO_extends};
-    push @$ext, @_;
-
-    wantarray ? @$ext : $ext->[0];
-}
 
 #-------------------------------------------
 =section Manual Repository

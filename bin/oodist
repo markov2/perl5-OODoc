@@ -707,9 +707,9 @@ sub create_export($$)
 {	my ($doc, $gen) = @_;
 
 	my $name   = $gen->{export};
-	my $markup = $gen->{markup}  // 'html';
-	my $dest   = $gen->{publish} // '-';
-	my $serial = $gen->{serializer} // 'json';
+	my $markup = $gen->{markup}     //= 'html';
+	my $dest   = $gen->{publish}    //= '-';
+	my $serial = $gen->{serializer} //= 'json';
 
 	info "** Export data-set $name.";
 
@@ -730,13 +730,14 @@ sub create_export($$)
 	require OODoc::Export;
 	my $exporter = OODoc::Export->new(serializer => $serial, markup => $markup);
 
-	my $tail = oodist_meta $makefile;
-	$tail->{license_year_range} = delete $tail->{year};  # naming improvement
+#	my $tail = oodist_meta $makefile;
+#	$tail->{license_year_range} = delete $tail->{year};  # naming improvement
 
 	my $tree = $doc->export(
 		exporter => $exporter,
 		manuals  => $manuals,
-		meta     => $tail,      # only flat key-value, where value is a string
+		distributions => \%distros,
+#		meta     => $tail,      # only flat key-value, where value is a string
 	);
 
 	-d $dest || mkdir $dest

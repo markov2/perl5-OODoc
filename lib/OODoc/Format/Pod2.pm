@@ -21,8 +21,10 @@ OODoc::Format::Pod2 - Produce POD pages from the doc tree with a template
 
  my $doc = OODoc->new(...);
  $doc->create
-   ( 'pod2'   # or 'OODoc::Format::Pod2'
-   , show_examples => 'NO',
+   ( pod2 =>   # or 'OODoc::Format::Pod2'
+     manual_format => [
+        show_examples => 'NO',
+     ],
    );
 
 =chapter DESCRIPTION

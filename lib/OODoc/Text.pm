@@ -94,6 +94,7 @@ sub init($)
     $self->{OT_descr}    = delete $args->{description} || '';
     $self->{OT_examples} = [];
     $self->{OT_unique}   = $unique++;
+    $self->{OT_extends}  = [];
 
     $self;
 }
@@ -178,6 +179,20 @@ sub manual(;$)
     $self->container->manual;
 }
 
+=method extends [$object]
+Close to all elements used within OODoc can have an inheritance relation.
+The returned object is extended by the current object.  Multiple inheritance
+is not supported here.
+=cut
+
+sub extends(;$)
+{   my $self = shift;
+    my $ext  = $self->{OT_extends};
+    push @$ext, @_;
+
+    wantarray ? @$ext : $ext->[0];
+}
+
 #-------------------------------------------
 =section Collected
 
@@ -232,12 +247,12 @@ sub publish(%)
 {   my ($self, %args) = @_;
     my $exporter = $args{exporter} or panic;
 
-    my %p =
-      ( type => $exporter->plainText($self->type)
-      );
+    my %p = (
+        type => $exporter->markup(lc $self->type)
+    );
 
 	if(my $name = $self->name)
-	{   $p{name} = $exporter->plainText($name);
+	{   $p{name} = $exporter->markup($name);
     }
 
     my $descr = $self->description // '';

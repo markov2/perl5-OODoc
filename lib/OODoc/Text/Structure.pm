@@ -160,7 +160,6 @@ sub publish(%)
 
     my @s = map $_->publish(%args), $self->subroutines;
     $p->{subroutines} = \@s if @s;
-
     $p;
 }
 

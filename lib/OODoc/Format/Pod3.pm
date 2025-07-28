@@ -20,8 +20,10 @@ OODoc::Format::Pod3 - Produce POD pages using OODoc::Template
 
  my $doc = OODoc->new(...);
  $doc->create
-   ( 'pod3'   # or 'OODoc::Format::Pod3'
-   , show_examples => 'NO',
+   ( pod3 =>   # or 'OODoc::Format::Pod3'
+     manual_options => [
+        show_examples => 'NO',
+     ],
    );
 
 =chapter DESCRIPTION

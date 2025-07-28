@@ -150,7 +150,7 @@ sub init($)
 Returns the name of this project.
 =cut
 
-sub project() {shift->{OF_project}}
+sub project() { $_[0]->{OF_project} }
 
 =method version 
 Returns the version string of this project.  This version may

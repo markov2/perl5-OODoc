@@ -13,9 +13,10 @@ use OODoc::Format   ();
 
 use File::Basename        qw/dirname/;
 use File::Copy            qw/copy move/;
-use File::Spec::Functions qw/catfile splitpath/;
+use File::Spec::Functions qw/catfile/;
 use List::Util            qw/first/;
 use Scalar::Util          qw/blessed/;
+use POSIX                 qw/strftime/;
 
 =chapter NAME
 
@@ -365,8 +366,7 @@ sub processFiles(@)
 
         my $dn;
         if($dest)
-        {   my ($volume, $path, $file) = splitpath $fn;
-			$dn = catfile $dest, @$path, $fn;
+        {   $dn = catfile $dest, $fn;
             $self->mkdirhier(dirname $dn);
             $manout->add($dn);
         }
@@ -566,10 +566,15 @@ Include only information for the manuals (specified as names).
 =option  meta HASH
 =default meta C<+{ }>
 Key/string pairs with interesting additional data.
+
+=option  distributions HASH
+=default distributions +{}
+Name to C<MYMETA.json> content mappings of project and used distributions.
+
 =cut
 
 sub export($$%)
-{    my ($self, %args)   = @_;
+{   my ($self, %args)   = @_;
     my $exporter         = $args{exporter} or panic;
 
     my $selected_manuals = $args{manuals};
@@ -589,14 +594,22 @@ sub export($$%)
     }
 
     my $meta = $args{meta} || {};
-    my %meta = map +($_ => $exporter->plainText($meta->{$_}) ), keys %$meta;
+    my %meta = map +($_ => $exporter->markup($meta->{$_}) ), keys %$meta;
 
      +{
-        distribution => $exporter->plainText($self->distribution),
-        version      => $exporter->plainText($self->version),
-        project      => $exporter->plainText($self->project),
-        manuals      => \%man,
-        meta         => \%meta,
+        project        => $exporter->markup($self->project),
+        distribution   => $self->distribution,
+        version        => $self->version,
+        manuals        => \%man,
+        meta           => \%meta,
+        distributions  => $args{distributions} || {},
+
+        generated_by   => {
+			program         => $0,
+			program_version => $main::VERSION // undef,
+            oodoc_version   => $OODoc::VERSION // 'devel',
+            created         => (strftime "%F %T", localtime),
+        },
       };
 }
 

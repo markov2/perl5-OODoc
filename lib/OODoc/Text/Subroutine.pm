@@ -56,8 +56,6 @@ sub publish(%)
     my $manual   = $args{manual};
     my $exporter = $args{exporter};
 
-    $p->{type}   = $exporter->plainText($self->type);
-
     my @d = map $_->publish(%args), $self->diagnostics;
 	$p->{diagnostics} = \@d if @d;
 
@@ -68,11 +66,9 @@ sub publish(%)
 	$p;
 }
 
-#-------------------------------------------
 =method extends [$object]
 
 =warning subroutine $name extended by different type:
-
 Any description of a subroutine classifies it as method, tie, overload or
 whatever.  Apparently, this indicated subroutine is defined being of a
 different type on these both places, and there is an inheritance relation
@@ -80,7 +76,6 @@ between these places.
 
 In very rare cases, this warning can be ignored, but usually these
 situation is errorneous of confusing for the users of the library.
-
 =cut
 
 sub extends($)

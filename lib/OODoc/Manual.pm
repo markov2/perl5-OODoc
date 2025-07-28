@@ -226,8 +226,9 @@ sub chapter($)
     $it;
 }
 
-=method chapters [$chapters]
-Returns the ordered list of chapter object for this manual.
+=method chapters [\@chapters]
+Returns the ordered LIST of chapter object for this manual.  Called with
+an ARRAY will set a new list of chapters first.
 =cut
 
 sub chapters(@)
@@ -814,12 +815,11 @@ sub publish(%)
     }
 
     my %man =
-      +( name         => $exporter->plainText($self->name)
-       , title        => $exporter->plainText($self->title)
-       , package      => $exporter->plainText($self->package)
-       , distribution => $exporter->plainText($self->distribution)
-       , version      => $exporter->plainText($self->version)
-       , source       => $exporter->plainText($self->source)
+      +( name         => $exporter->markup($self->name)
+       , title        => $exporter->markup($self->title)
+       , package      => $self->package
+       , distribution => $self->distribution
+       , version      => $self->version
        , is_pure_pod  => $exporter->boolean($self->isPurePod)
        , chapters     => \@ch
        );
