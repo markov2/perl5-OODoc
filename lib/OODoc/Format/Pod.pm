@@ -21,8 +21,10 @@ OODoc::Format::Pod - Produce POD pages from the doc tree
 
  my $doc = OODoc->new(...);
  $doc->formatter(pod =>
-     show_examples => 'NO',
      append         => "extra text\n",
+     manual_options => [
+         show_examples => 'NO',
+     ],
  );
 
 =chapter DESCRIPTION
@@ -532,7 +534,7 @@ sub showSubroutineDescription(@)
     my $output  = $args{output}                   or panic;
     $output->print("\n", $text);
 
-    my $extends = $self->extends                  or return $self;
+    my $extends = $subroutine->extends            or return $self;
     my $refer   = $extends->findDescriptionObject or return $self;
     $self->showSubroutineDescriptionRefer(%args, subroutine => $refer);
 }

@@ -672,7 +672,7 @@ sub showSubroutineDescription(@)
     my $output     = $args{output}     or panic;
     $output->print($text);
 
-    my $extends    = $self->extends    or return $self;
+    my $extends    = $subroutine->extends    or return $self;
     my $refer      = $extends->findDescriptionObject or return $self;
 
     $output->print("<br>\n");

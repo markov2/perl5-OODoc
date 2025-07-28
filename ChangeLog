@@ -4,7 +4,6 @@ explicitly stated otherwise.
 
 TODO:
 	- add other Log::Report levels to diagnostics
-	- format_options processed correctly?
 	- convert OODoc::Template to v3
 	- check generated HTML
 
@@ -29,6 +28,7 @@ version 3.00:
 	- replace glob() by bsd_glob()
 	- add .gitignore
 	- "use base" -> "use parent"
+	- extends() only works on OODoc::Text objects
 
 version 2.02: Wed  8 Dec 13:41:32 CET 2021
 
