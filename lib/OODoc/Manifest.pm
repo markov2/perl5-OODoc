@@ -1,15 +1,12 @@
-# This code is part of perl distribution OODoc.  It is licensed under the
-# same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
-
 package OODoc::Manifest;
 use parent 'OODoc::Object';
 
 use strict;
 use warnings;
 
-use IO::File;
-use File::Basename 'dirname';
 use Log::Report    'oodoc';
+
+use File::Basename 'dirname';
 
 =chapter NAME
 
@@ -24,10 +21,8 @@ OODoc::Manifest - maintain the information inside a manifest file.
 =chapter OVERLOADED
 
 =overload  @{}
-
 Referencing this object as array will produce all filenames from the
 manifest.
-
 =cut
 
 use overload '@{}' => sub { [ shift->files ] };

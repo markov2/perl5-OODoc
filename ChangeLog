@@ -29,6 +29,7 @@ version 3.00:
 	- add .gitignore
 	- "use base" -> "use parent"
 	- extends() only works on OODoc::Text objects
+	- remove copyright lines from source, added at publish
 
 version 2.02: Wed  8 Dec 13:41:32 CET 2021
 

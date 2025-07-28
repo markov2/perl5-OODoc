@@ -1,14 +1,12 @@
-# This code is part of perl distribution OODoc.  It is licensed under the
-# same terms as Perl itself: https://spdx.org/licenses/Artistic-2.0.html
-
 package OODoc::Format;
 use parent 'OODoc::Object';
 
 use strict;
 use warnings;
 
-use OODoc::Manifest;
 use Log::Report    'oodoc';
+
+use OODoc::Manifest ();
 
 our %formatters =
   ( pod   => 'OODoc::Format::Pod'
