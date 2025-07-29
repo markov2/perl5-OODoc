@@ -481,9 +481,7 @@ sub showSubroutines(@)
 
     for(my $index=0; $index<@subs; $index++)
     {   my $subroutine = $subs[$index];
-        my $show = $manual->inherited($subroutine)
-                 ? $args{show_inherited_subs}
-                 : $args{show_described_subs};
+        my $show = $manual->inherited($subroutine) ? $args{show_inherited_subs} : $args{show_described_subs};
 
         $self->showSubroutine 
         ( %args
@@ -574,18 +572,23 @@ sub showSubroutine(@)
     my $description = $subroutine->findDescriptionObject;
     my $show_descr  = 'showSubroutineDescription';
 
-       if(not $description || $descr eq 'NO') { $show_descr = undef }
+       if($descr eq 'NO') { $show_descr = undef }
     elsif($descr eq 'REFER')
     {   $show_descr = 'showSubroutineDescriptionRefer'
-           if $manual->inherited($description);
+           if $description && $manual->inherited($description);
     }
     elsif($descr eq 'DESCRIBED')
-         { $show_descr = undef if $manual->inherited($description) }
+    {   $show_descr = 'showSubroutineDescriptionRefer'
+           if $description && $manual->inherited($description);
+    }
     elsif($descr eq 'ALL') {;}
     else { error __x"illegal value for show_sub_description: {v}", v => $descr}
 
-    $self->$show_descr(%args, subroutine => $description)
-          if defined $show_descr;
+if($subroutine->name eq 'linenr') {
+warn "HERE $show_descr $description";
+}
+    $self->$show_descr(%args, subroutine => $description // $subroutine)
+        if defined $show_descr; # && $description;
 
     #
     # Options
@@ -600,22 +603,19 @@ sub showSubroutine(@)
 
     my @opttab
      = $opttab eq 'NO'       ? ()
-     : $opttab eq 'DESCRIBED'? (grep {not $manual->inherits($_->[0])} @options)
-     : $opttab eq 'INHERITED'? (grep {$manual->inherits($_->[0])} @options)
+     : $opttab eq 'DESCRIBED'? (grep not $manual->inherits($_->[0]), @options)
+     : $opttab eq 'INHERITED'? (grep $manual->inherits($_->[0]), @options)
      : $opttab eq 'ALL'      ? @options
      : error __x"illegal value for show_option_table: {v}", v => $opttab;
 
-    $self->showOptionTable(%args, options => \@opttab)
-       if @opttab;
+    $self->showOptionTable(%args, options => \@opttab) if @opttab;
 
     # Option expanded
 
     my @optlist;
     foreach (@options)
     {   my ($option, $default) = @$_;
-        my $check
-          = $manual->inherited($option) ? $args{show_inherited_options}
-          :                               $args{show_described_options};
+        my $check = $manual->inherited($option) ? $args{show_inherited_options} : $args{show_described_options};
         push @optlist, $_ if $check eq 'USE' || $check eq 'EXPAND';
     }
 

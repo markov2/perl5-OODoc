@@ -20,6 +20,8 @@ version 3.00:
 	- wrong place for section examples.
 	- warning on finding a second method with the same name.
 	- use block to declare $VERSION.  GitHUB pull #1 [Graham Knop]
+	- methods without description will be followed with a blank
+	  line anyway in the manual page.
 
 	Improvements:
 	- replace File::Slurp by File::Slurper.

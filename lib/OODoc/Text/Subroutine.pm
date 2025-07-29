@@ -66,6 +66,8 @@ sub publish(%)
 }
 
 =method extends [$object]
+Subroutine documentation can overrule the documentation on a lower
+level, but only when that overruled subroutine is of the same type.
 
 =warning subroutine $name extended by different type:
 Any description of a subroutine classifies it as method, tie, overload or

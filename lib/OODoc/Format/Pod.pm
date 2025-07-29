@@ -326,9 +326,8 @@ sub subroutineUse($$)
     my $class      = $manual->package;
     my $use
       = $type eq 'i_method' ? qq[\$obj-E<gt>B<$name>$params]
-      : $type eq 'c_method' ? qq[$class-E<gt>B<$name>$params]
-      : $type eq 'ci_method'? qq[\$obj-E<gt>B<$name>$params\n]
-                            . qq[$class-E<gt>B<$name>$params]
+      : $type eq 'c_method' ? qq[\$class-E<gt>B<$name>$params]
+      : $type eq 'ci_method'? qq[\$any-E<gt>B<$name>$params]
       : $type eq 'function' ? qq[B<$name>$params]
       : $type eq 'overload' ? qq[overload: B<$name>]
       : $type eq 'tie'      ? qq[B<$name>$params]
@@ -522,25 +521,25 @@ sub _removeMarkup($)
 
 sub showSubroutineDescription(@)
 {   my ($self, %args) = @_;
-    my $manual  = $args{manual}                   or panic;
-    my $subroutine = $args{subroutine}            or panic;
+    my $manual  = $args{manual}          or panic;
+    my $output  = $args{output}          or panic;
+    my $subroutine  = $args{subroutine}  or panic;
 
-    my $text    = $self->cleanup($manual, $subroutine->description);
-    return $self unless length $text;
+	# Z<> will cause an empty body when the description is missing, so there
+    # will be a blank line to the next sub description.
+    my $text    = $self->cleanup($manual, $subroutine->description || "Z<>\n");
+    $output->print("\n", $text) if length $text;
 
-    my $output  = $args{output}                   or panic;
-    $output->print("\n", $text);
-
-    my $extends = $subroutine->extends            or return $self;
+    my $extends = $subroutine->extends   or return $self;
     my $refer   = $extends->findDescriptionObject or return $self;
-    $self->showSubroutineDescriptionRefer(%args, subroutine => $refer);
+    $output->print("Improves base, see ",$self->link($manual, $refer),"\n");
 }
 
 sub showSubroutineDescriptionRefer(@)
 {   my ($self, %args) = @_;
-    my $manual  = $args{manual}                   or panic;
-    my $subroutine = $args{subroutine}            or panic;
-    my $output  = $args{output}                   or panic;
+    my $manual  = $args{manual}         or panic;
+    my $output  = $args{output}         or panic;
+    my $subroutine = $args{subroutine}  or panic;
     $output->print("\nInherited, see ",$self->link($manual, $subroutine),"\n");
 }
 

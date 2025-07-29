@@ -892,8 +892,7 @@ sub cleanupPod($$$)
             {   splice @lines, $i-1, 0, "\n";
                 $i++;
             }
-            elsif($i < $#lines && $lines[$i+1] ne "\n"
-                  && substr($lines[$i], 0, 5) ne "=for ")
+            elsif($i < $#lines && $lines[$i+1] ne "\n" && substr($lines[$i], 0, 5) ne "=for ")
             {   splice @lines, $i+1, 0, "\n";
             }
         }
