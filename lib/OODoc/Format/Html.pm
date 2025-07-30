@@ -71,8 +71,7 @@ sub init($)
 
     my $meta  = delete $args->{html_meta_data} || '';
     if(my $ss = delete $args->{html_stylesheet})
-    {   my $base = basename $ss;
-        $meta   .= qq[<link rel="STYLESHEET" href="/$base">];
+    {   $meta   .= qq[<link rel="STYLESHEET" href="$ss">];
     }
     $self->{OFH_meta} = $meta;
     $self;
@@ -398,8 +397,7 @@ sub showStructureExpand(@)
 
     if(defined $super)
     {   my $superman = $super->manual;   #  :-)
-        $output->print( "<p>See ", $self->link($superman, $super),
-            " in " , $self->link(undef, $superman), "</p>\n");
+        $output->print( "<p>See ", $self->link($superman, $super), " in " , $self->link(undef, $superman), "</p>\n");
     }
 
     # Show the subroutines and examples.
@@ -460,7 +458,7 @@ sub showExamples(@)
         my $descr  = $self->cleanup($manual, $example->description);
         my $unique = $example->unique;
         $output->print( <<EXAMPLE );
-<dt>&raquo;&nbsp;<a name="$unique">Example</a>: $name</dt>
+<dt>&raquo;&nbsp;<a name="$unique">example</a>: $name</dt>
 <dd>$descr</dd>
 EXAMPLE
 
@@ -474,7 +472,7 @@ EXAMPLE
 sub showDiagnostics(@)
 {   my ($self, %args) = @_;
     my $diagnostics = $args{diagnostics} or panic;
-    return unless @$diagnostics;
+    @$diagnostics or return undef;
 
     my $manual    = $args{manual}  or panic;
     my $output    = $args{output}  or panic;
@@ -484,7 +482,7 @@ sub showDiagnostics(@)
     foreach my $diag (sort @$diagnostics)
     {   my $name    = $diag->name;
         my $type    = $diag->type;
-        my $text    = $self->cleanup($manual, $diag->description);
+        my $text    = $self->cleanup($manual, $diag->description) || '&nbsp;';
         my $unique  = $diag->unique;
 
         $output->print( <<DIAG );
@@ -662,18 +660,20 @@ sub showSubroutineDescription(@)
 {   my ($self, %args) = @_;
     my $manual     = $args{manual}     or panic;
     my $subroutine = $args{subroutine} or panic;
+    my $output     = $args{output}     or panic;
 
     my $text       = $self->cleanup($manual, $subroutine->description);
-    return $self unless length $text;
+    my $extends    = $subroutine->extends;
+    if(my $refer = $extends ? $extends->findDescriptionObject : undef)
+    {   my $super  = $refer->manual;
+        my $link   = 'Improves base, see ' . $self->link($super, $refer) . ' in ' . $self->link(undef, $super) . "\n";
+        $text      = length $text ? $text =~ s#</p>$#<br />\n$link</p>#r : "<p>$link</p>";
+    }
+    else
+    {   $text     ||= '&nbsp;';
+    }
 
-    my $output     = $args{output}     or panic;
     $output->print($text);
-
-    my $extends    = $subroutine->extends    or return $self;
-    my $refer      = $extends->findDescriptionObject or return $self;
-
-    $output->print("<br>\n");
-    $self->showSubroutineDescriptionRefer(%args, subroutine => $refer);
 }
 
 sub showSubroutineDescriptionRefer(@)
@@ -681,7 +681,7 @@ sub showSubroutineDescriptionRefer(@)
     my $manual     = $args{manual}     or panic;
     my $subroutine = $args{subroutine} or panic;
     my $output     = $args{output}     or panic;
-    $output->print("\nSee ", $self->link($manual, $subroutine), "\n");
+    $output->print("\n<p>See ", $self->link($manual, $subroutine), "</p>\n");
 }
 
 #----------------------
@@ -865,12 +865,7 @@ sub templateInheritance(@)
 
     my $buffer  = '';
     open my $out, '>', \$buffer;
-    $self->showChapter
-      ( %$attrs
-      , manual  => $self->manual
-      , chapter => $chapter
-      , output  => $out
-      );
+    $self->showChapter(%$attrs, manual => $self->manual, chapter => $chapter, output => $out);
     close $out;
 
     for($buffer)
@@ -906,12 +901,7 @@ sub templateChapter($$)
 
     my $buffer  = '';
     open my $out, '>', \$buffer;
-    $self->showChapter
-      ( %$attrs
-      , manual  => $self->manual
-      , chapter => $chapter
-      , output  => $out
-      );
+    $self->showChapter(%$attrs, manual => $self->manual, chapter => $chapter, output => $out);
     close $out;
 
     $buffer;
