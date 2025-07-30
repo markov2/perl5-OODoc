@@ -4,10 +4,7 @@ Makefile.PL
 README-oodist.md
 README.md
 bin/oodist
-examples/mailbox.tar.gz
 examples/markov.pm
-examples/mimetypes.tar.gz
-examples/oodoc.tar.gz
 lib/OODoc.pm
 lib/OODoc/Export.pm
 lib/OODoc/Export/JSON.pm

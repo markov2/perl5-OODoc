@@ -6,7 +6,7 @@
 use warnings;
 use strict;
 
- package My::Name::Space;
+package My::Name::Space;
 use parent 'My::Other::Module';   # will result in INHERITANCE block autom
 
 # I put these next declarations above NAME, but may also be included after
@@ -46,7 +46,7 @@ of them grows large.  The methods and functions will get sorted
 alphabetically, and you do not want the "new" to disappear far down in
 the list.
 
-=method new OPTIONS
+=method new %options
 Create a new object.  Read all about the =option, =default, =example, and
 so on in the manual-page of the OODoc::Parser::Markov.
 =cut
