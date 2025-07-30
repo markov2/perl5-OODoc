@@ -194,13 +194,12 @@ sub chapterDescription(@)
     $self->showRequiredChapter(DESCRIPTION => %args);
 
     my $manual  = $args{manual} or panic;
-    my $details = $manual->chapter('DETAILS')
-	    // return $self;
+    my $details = $manual->chapter('DETAILS') // return $self;
 
     my $output  = $args{output} or panic;
     $output->print("\nSee L</DETAILS> chapter below\n");
     $self->showChapterIndex($output, $details, "   ");
-	$self;
+    $self;
 }
 
 sub chapterDiagnostics(@)
@@ -521,18 +520,19 @@ sub _removeMarkup($)
 
 sub showSubroutineDescription(@)
 {   my ($self, %args) = @_;
-    my $manual  = $args{manual}          or panic;
-    my $output  = $args{output}          or panic;
-    my $subroutine  = $args{subroutine}  or panic;
+    my $manual  = $args{manual}         or panic;
+    my $output  = $args{output}         or panic;
+    my $subroutine = $args{subroutine}  or panic;
 
-	# Z<> will cause an empty body when the description is missing, so there
+    # Z<> will cause an empty body when the description is missing, so there
     # will be a blank line to the next sub description.
-    my $text    = $self->cleanup($manual, $subroutine->description || "Z<>\n");
-    $output->print("\n", $text) if length $text;
+    my $text    = $self->cleanup($manual, $subroutine->description);
+    my $extends = $subroutine->extends;
+    my $refer   = $extends ? $extends->findDescriptionObject : undef;
+    $text     ||= $self->cleanup($manual, "Z<>\n") unless $refer;
 
-    my $extends = $subroutine->extends   or return $self;
-    my $refer   = $extends->findDescriptionObject or return $self;
-    $output->print("Improves base, see ",$self->link($manual, $refer),"\n");
+    $output->print("\n", $text) if length $text;
+    $output->print("Improves base, see ",$self->link($manual, $refer),"\n") if $refer;
 }
 
 sub showSubroutineDescriptionRefer(@)

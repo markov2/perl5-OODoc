@@ -28,7 +28,8 @@ my %oodist = (
 		syntax       => 'markov',              #O  name or class.  'markov' supports plain pod as well
 		skip_links   => [                      #O  list of classes linked to, but not parser for the docs
 		],
-		pmhead       => 'PMHEAD.txt'           #O  lines to add to each stripped pm file
+		pmhead       => 'PMHEAD.txt',          #O  lines to add to each stripped pm file
+		select       => undef,                 #O  filter filenames, default pod's and pm's in lib/
     },
 
 	tests => {                                 #O  Test configuration
@@ -52,7 +53,7 @@ my %oodist = (
 		templates    => './html',              #O  templates to be used
 		docroot      => '/oodoc/html',         #O  the root for each generated website link
 		publish      => "$publish/htmlpkg",    #   where a $dist-$version-html.tar.gz is produced
-		stylesheet   => '/oodoc.css',          #O  use the generic style sheet (under docroot)
+		stylesheet   =>'/oodoc/html/oodoc.css',#O  use the generic style sheet (under docroot)
 	  },
 	  {	export       => 'new-website',         #   Name of export
 		serializer   => 'json',                #O  Serializer to produce export

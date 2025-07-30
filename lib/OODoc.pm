@@ -64,7 +64,7 @@ each package statement and on many places in the documentation. By
 default the current directory is searched for a file named C<version>
 or C<VERSION> which contains a number.
 
-=error the destribution must be specified
+=error the distribution must be specified
 
 =error no version specified for distribution "$name"
 Version information will be added to all packages and all manual

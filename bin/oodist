@@ -283,6 +283,7 @@ sub extract_distro($%)
 	# Every distribution may have different parser rules.
 	my $p_config = $dist_config->{parser} || { };
 	my $pmheadfn = rel2abs delete $p_config->{pmhead} || 'PMHEAD.txt', $dir;
+	my $select   = delete $p_config->{select} || qr[^ lib/ .*? \.(?:pod|pm) $ ]x;
 	my $parser   = OODoc::Parser->new(%$p_config);
 
 	if($is_root)
@@ -292,14 +293,16 @@ sub extract_distro($%)
 			version    => $version,
 			workdir    => $outdir,
 			parser     => $parser,
+			select     => $select,
 			notice     => string_expand_values($pmhead, $dir, $dist_meta),
 		);
 	}
 	else
 	{	$doc->processFiles(
+	        distribution => $dist_name,
 			version    => $version,
 			parser     => $parser,
-			select     => qr[^ lib/ .*? \.(?:pod|pm) $ ]x
+			select     => $select,
 		);
 	}
 }

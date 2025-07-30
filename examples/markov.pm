@@ -6,8 +6,8 @@
 use warnings;
 use strict;
 
-package My::Name::Space;
-use base 'My::Other::Module';   # will result in INHERITANCE block autom
+ package My::Name::Space;
+use parent 'My::Other::Module';   # will result in INHERITANCE block autom
 
 # I put these next declarations above NAME, but may also be included after
 # the SYNOPSIS or DESCRIPTION.  These are the most important things for

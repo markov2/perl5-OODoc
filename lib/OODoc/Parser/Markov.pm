@@ -978,18 +978,19 @@ sub cleanupHtml($$$;$)
     for($string)
     {   unless($is_html)
         {   s#\&#\&amp;#g;
-            s#(?<!\b[LFCIBEM])\<#&lt;#g;
-            s#\-\>#-\&gt;#g;
+            s#(\s|^)\<([^>]+)\>#$1&lt;$2&gt;#g;
+            s#(?<!\b[LFCIBEMX])\<#&lt;#g;
+            s#([=-])\>#$1\&gt;#g;
         }
         s/\bM\<([^>]*)\>/$self->cleanupHtmlM($formatter, $manual, $1)/ge;
         s/\bL\<([^>]*)\>/$self->cleanupHtmlL($formatter, $manual, $1)/ge;
-        s#\bC\<([^>]*)\>#<code>$1</code>#g;
         s#\bI\<([^>]*)\>#<em>$1</em>#g;
         s#\bB\<([^>]*)\>#<b>$1</b>#g;
         s#\bE\<([^>]*)\>#\&$1;#g;
         s#^\=over\s+\d+\s*#\n<ul>\n#gms;
         s#(?:\A|\n)\=item\s*(?:\*\s*)?([^\n]*)#\n<li>$1<br />#gms;
         s#(?:\A|\s*)\=back\b#\n</ul>#gms;
+        s#\bC\<([^>]*)\>#<code>$1</code>#g;  # introduces a '<', hence last
         s#^=pod\b##gm;
 
         # when F<> contains a URL, it will be used. However, when it

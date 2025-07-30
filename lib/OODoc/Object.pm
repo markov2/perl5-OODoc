@@ -52,8 +52,8 @@ sub new(@)
     my $self = (bless {}, $class)->init(\%args);
 
     if(my @missing = keys %args)
-    {   error __xn"Unknown object attribute '{options}'", "Unknown object attributes: {options}",
-            scalar @missing, options => \@missing;
+    {   error __xn"Unknown object attribute '{options}' for {pkg}", "Unknown object attributes for {pkg}: {options}",
+            scalar @missing, options => \@missing, pkg => $class;
     }
 
     $self;
