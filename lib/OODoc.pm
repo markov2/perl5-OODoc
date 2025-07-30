@@ -163,15 +163,15 @@ sub selectFiles($@)
 
 =method processFiles %options
 
-=requires workdir DIRECTORY
+=option  workdir DIRECTORY
+=default workdir C<undef>
 Specify the directory where the stripped pm-files and the pod files
 will be written to.  Probably the whole distribution is collected on
 that spot.
 
-If you do not want to create a distribution, you may
-specify C<undef> (still: you have to specify the option).  In this
-case, only the documentation in the files is consumed, and no files
-created.
+When the processed files are not part of this distribution, then
+then do not specify this option: knowledge is built, but not
+included in the release.
 
 =option  manifest FILENAME
 =default manifest <source/>'MANIFEST'
@@ -255,7 +255,7 @@ as argument to M<OODoc::new()> or M<OODoc::processFiles()>.
 sub processFiles(@)
 {   my ($self, %args) = @_;
 
-    my $dest    = $args{workdir} or panic "requires a directory to write the distribution to";
+    my $dest    = $args{workdir};
     my $source  = $args{source};
     my $distr   = $args{distribution} || $self->distribution;
 

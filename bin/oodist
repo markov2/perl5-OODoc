@@ -284,14 +284,15 @@ sub extract_distro($%)
 	{	my $pmhead   = -f $pmheadfn ? read_text $pmheadfn : $default_pmhead;
 
 		$doc->processFiles(
-			workdir    => $outdir,
 			version    => $version,
+			workdir    => $outdir,
 			parser     => $parser,
 			notice     => string_expand_values($pmhead, $dir, $dist_meta),
 		);
 	}
 	else
 	{	$doc->processFiles(
+			version    => $version,
 			parser     => $parser,
 			select     => qr[^ lib/ .*? \.(?:pod|pm) $ ]x
 		);
@@ -832,20 +833,15 @@ sub config3()
 			! defined $x    ? "undef"
 		  :	$x =~ m!^\d+$!  ? $x                 # int
 		  : $x =~ m/^\["']/ ? $x                 # quoted string
-		  :   ('"' . ($x =~ s/"/\\"/gr) . '"');  # do quote string
+		  :   ('"' . ($x =~ s/(["@])/\\$1/gr) . '"');  # do quote string
 		\$y;
 	};
 
 	my $dist         = $makefile->{DISTDIR};
-	my $publish      = $dist ? (dirname $dist) : '.';
+	my $distro       = $makefile->{NAME} =~ s/\:\:/-/gr;
 
 	my $html_output  = $makefile->{HTML_OUTPUT}  // '';
 	my $html_docroot = $makefile->{HTML_DOCROOT} // '/';
-	my $webpages;
-	if($html_output) {
-		$webpages    = $html_output =~ s/\Q$html_docroot\E$//r;
-	}
-	my $pubshort     = $webpages ? $publish =~ s!^\Q$webpages\E!\$webpages! : $publish;
 	my $email        = $makefile->{EMAIL}
 	  || ($meta->{author} && $meta->{author} =~ m/ \<(.*?)\>/ ? $1 : undef);
 
@@ -853,23 +849,42 @@ sub config3()
 This is an attempt to automatically convert you configuration parameters.
 
 # Use command 'oodist' to produce the documentation before the software release.
-my \$webpages = ${ $p->($webpages) };
-my \$publish  = ${ $p->($pubshort) };
-my \$git      = 'https://github.com/XXX';
-my \$homepage = ${ $p->($makefile->{WEBSITE} // 'https://XXX') };
-
-my \%oodist = (
-	oodoc_version => $ooversion,
-	first_year => ${ $p->($makefile->{FIRST_YEAR} || (strftime "%Y", localtime)) },
-	email      => ${ $p->($email) },
 __HEAD
 
+	if($html_output) {
+		my $webpages = $html_output =~ s/\Q$html_docroot\E$//r;
+		print "my \$webpages = ${ $p->($webpages) }\n";
+	}
+
+	my $git          = qx(git config --get remote.origin.url 2>/dev/null);
+	if(defined $git && length $git)
+	{	chomp $git;
+		$git =~ s/\.git$//;
+		$git =~ s,^.*?:,https://github.com/, if $git =~ m!^git\@github.com!;
+	}
+	else
+	{	$git = 'https://github.com/XXX';
+	}
+
+	my $publish      = $dist ? (dirname $dist) : "../public_html/\L$distro";
+
+	print <<__CONFIG;
+my \$git      = ${ $p->($git) };
+my \$publish  = ${ $p->($publish) };
+my \$homepage = ${ $p->($makefile->{WEBSITE} // 'https://XXX') };
+
+my \%oodist   = (
+	oodoc_version => $ooversion,
+	first_year => ${ $p->($makefile->{FIRST_YEAR} || (strftime "%Y", localtime)) },
+	email    => ${ $p->($email) },
+__CONFIG
+
 	my @include = map "\t\t'$_',\n", sort split /[\: ]+/, $makefile->{EXTENDS} // '';
-	print @include ? <<__INCLUDE : '';
+	print <<__INCLUDE;
 
-	include  => [\n@include], # recursively include
+	include  => [\n@include\t],
 
-	use      => [\n\n],       # only as reference
+	use      => [\n\t],
 __INCLUDE
 
 	my @links   = map "\t\t'$_',\n", sort split /[\: ]+/, $makefile->{SKIP_LINKS} // '';
@@ -878,9 +893,9 @@ __INCLUDE
 	print <<__PARSER;
 
 	parser   => {
-		syntax        => 'markov',
-		skip_links    => [@links],
-		pmhead        => ${ $p->($pmhead) },
+		syntax         => 'markov',
+		skip_links     => [ @links],
+		pmhead         => ${ $p->($pmhead) },
 	},
 __PARSER
 
@@ -890,7 +905,7 @@ __PARSER
 	},
 
 	release  => {
-		publish  => "\$publish/${$dist ? \basename $dist : \'releases' }",
+		publish        => "\$publish/${$dist ? \basename $dist : \'releases' }",
 	},
 __RELEASE
 
@@ -898,7 +913,7 @@ __RELEASE
 	if(my $r = $makefile->{RAWDIR}) { print <<__RAW }
 
 	raw      => {
-		publish  => "\$publish/${ \basename $r }",
+		publish        => "\$publish/${ \basename $r }",
 	},
 __RAW
 
@@ -961,7 +976,8 @@ WriteMakefile
 			},
 			test => {
 				requires => {
-					'Test::More' => 0.47,
+					'Test::More' => 1.00,
+					'Test::Pod'  => 1.00,
 				}
 			},
 		},
