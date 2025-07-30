@@ -584,11 +584,8 @@ sub showSubroutine(@)
     elsif($descr eq 'ALL') {;}
     else { error __x"illegal value for show_sub_description: {v}", v => $descr}
 
-if($subroutine->name eq 'linenr') {
-warn "HERE $show_descr $description";
-}
     $self->$show_descr(%args, subroutine => $description // $subroutine)
-        if defined $show_descr; # && $description;
+        if defined $show_descr;
 
     #
     # Options

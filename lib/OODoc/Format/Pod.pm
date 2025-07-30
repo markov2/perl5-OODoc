@@ -269,7 +269,7 @@ sub showDiagnostics(@)
     {   my $name    = $self->cleanup($manual, $diag->name);
         my $type    = $diag->type;
         $output->print("\n=item $type: $name\n\n");
-        $output->print($self->cleanup($manual, $diag->description));
+        $output->print($self->cleanup($manual, $diag->description || 'Z<>'));
         $output->print("\n");
     }
     $self;

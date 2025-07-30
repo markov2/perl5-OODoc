@@ -39,10 +39,12 @@ Current serialization formats:
 
 =c_method new %options
 
-=requires serializer 'json'
+=requires serializer $name
+At the moment, only serializer 'json' is supported.
 
-=requires markup 'html'
-Specifies the markup style for the output.  See accessor M<markupStyle()>.
+=requires markup $markup
+Specifies the markup style for the output.  At the moment, only markup
+in 'html' is supported.  See accessor M<markupStyle()>.
 
 =error exporter serializer '$name' is unknown.
 =error exporter $name has compilation errors: $err

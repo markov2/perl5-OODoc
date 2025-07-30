@@ -148,43 +148,43 @@ sub init($)
 Returns the package of the manual.
 =cut
 
-sub package() {shift->{OM_package}}
+sub package() {$_[0]->{OM_package}}
 
 =method parser 
 Returns the parser which has produced this manual object.
 =cut
 
-sub parser() {shift->{OM_parser}}
+sub parser() {$_[0]->{OM_parser}}
 
 =method source 
 Returns the source of this manual information.
 =cut
 
-sub source() {shift->{OM_source}}
+sub source() {$_[0]->{OM_source}}
 
 =method version 
 Returns the version of this manual information.
 =cut
 
-sub version() {shift->{OM_version}}
+sub version() {$_[0]->{OM_version}}
 
 =method distribution 
 Returns the distribution which includes this manual.
 =cut
 
-sub distribution() {shift->{OM_distr}}
+sub distribution() {$_[0]->{OM_distr}}
 
 =method stripped 
 The name of the produced stripped package file.
 =cut
 
-sub stripped() {shift->{OM_stripped}}
+sub stripped() {$_[0]->{OM_stripped}}
 
 =method isPurePod 
 Returns whether this package has real code related to it.
 =cut
 
-sub isPurePod() {shift->{OM_pure_pod}}
+sub isPurePod() {$_[0]->{OM_pure_pod}}
 
 #-------------------------------------------
 =section Collected
@@ -285,7 +285,7 @@ useful for counting.
 
 =cut
 
-sub subroutines() { shift->all('subroutines') }
+sub subroutines() { $_[0]->all('subroutines') }
 
 =method subroutine $name
 Returns the subroutine with the specified $name as object reference.  When

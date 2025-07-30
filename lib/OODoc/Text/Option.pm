@@ -37,11 +37,9 @@ sub init($)
     $args->{type}    ||= 'Option';
     $args->{container} = delete $args->{subroutine} or panic;
 
-    $self->SUPER::init($args)
-        or return;
+    $self->SUPER::init($args) or return;
 
     $self->{OTO_parameters} = delete $args->{parameters} or panic;
-
     $self;
 }
 
@@ -52,13 +50,13 @@ sub init($)
 Returns the subroutine object for this option.
 =cut
 
-sub subroutine() { shift->container }
+sub subroutine() { $_[0]->container }
 
 =method parameters 
 Returns the short, informal description of the valid parameters for
 this option.
 =cut
 
-sub parameters() { shift->{OTO_parameters} }
+sub parameters() { $_[0]->{OTO_parameters} }
 
 1;

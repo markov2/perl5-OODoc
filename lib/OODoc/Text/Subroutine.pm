@@ -268,9 +268,9 @@ sub collectedOptions(@)
 {   my ($self, %args) = @_;
     my @extends   = $self->extends;
     my %options;
-    foreach ($self->extends)
-    {   my $options = $_->collectedOptions;
-        @options{ keys %$options } = values %$options;
+    foreach my $base ($self->extends)
+    {   my $options = $base->collectedOptions;
+        @options{keys %$options} = values %$options;
     }
 
     $options{$_->name}[0] = $_ for $self->options;

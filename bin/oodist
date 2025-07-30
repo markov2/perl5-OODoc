@@ -241,6 +241,9 @@ sub extract_distro($%)
 {	my ($dir, %args) = @_;
 	return if $included_dirs{$dir};
 
+	chdir $dir
+		or fault __x"cannot go to {dir} to extract distribution";
+
 	my $lib       = "$dir/lib";
 	push @INC, $lib unless grep $_ eq $lib, @INC;
 
@@ -272,6 +275,8 @@ sub extract_distro($%)
 			extract_distro $absdir, %args, recurse => 0;
 		}
 	}
+
+	chdir $dir;
 
 	info "*  processing files of $dist_name $version from $dir";
 

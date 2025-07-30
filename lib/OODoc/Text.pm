@@ -84,22 +84,20 @@ sub init($)
     $self->{OT_type}     = delete $args->{type} or panic;
 
     exists $args->{container}   # may be explicit undef
-        or panic "no text container specified for the {pkg} object"
-             , pkg => ref $self;
+        or panic "no text container specified for the {pkg} object", pkg => ref $self;
 
     $self->{OT_container}= delete $args->{container};    # may be undef
     $self->{OT_descr}    = delete $args->{description} || '';
     $self->{OT_examples} = [];
     $self->{OT_unique}   = $unique++;
     $self->{OT_extends}  = [];
-
     $self;
 }
 
 #-------------------------------------------
 =section Attributes
 
-=method name 
+=method name
 The name of this text element.  Stringification is overloaded to call
 this name method.
 
@@ -110,13 +108,13 @@ this name method.
 
 sub name() { $_[0]->{OT_name} }
 
-=method type 
+=method type
 Returns the type name of this data object.
 =cut
 
 sub type() { $_[0]->{OT_type} }
 
-=method description 
+=method description
 Returns the description text for this object.  Nearly all objects
 contains some kind of introductory description.
 =cut
@@ -144,7 +142,7 @@ sub container(;$)
 
 sub linenr() { $_[0]->{OT_linenr} }
 
-=method unique 
+=method unique
 Returns a unique id for this text item.  This is the easiest way to
 see whether two references to the same (overloaded) objects point to
 the same thing. The ids are numeric.
@@ -157,7 +155,7 @@ the same thing. The ids are numeric.
 
 sub unique() { $_[0]->{OT_unique} }
 
-=method where 
+=method where
 Returns the source of the text item: the filename name and the line
 number of the start of it.
 =cut
@@ -193,7 +191,7 @@ sub extends(;$)
 #-------------------------------------------
 =section Collected
 
-=method openDescription 
+=method openDescription
 Returns a reference to the scalar which will contain the description for
 this object.
 
@@ -205,7 +203,7 @@ this object.
 
 sub openDescription() { \shift->{OT_descr} }
 
-=method findDescriptionObject 
+=method findDescriptionObject
 From the current object, search in the extends until an object is found
 which has a content for the description field.
 =cut
@@ -230,7 +228,7 @@ sub example($)
     $example;
 }
 
-=method examples 
+=method examples
 Returns a list of all examples contained in this text element.
 =cut
 
