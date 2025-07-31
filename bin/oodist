@@ -233,6 +233,8 @@ sub extract_manuals($$$)
 
 	info "** Extracting manuals from distributions";
 	extract_distro $source, release_dir => $outdir, config => $config, recurse => 1;
+
+	info $doc->stats;
 }
 
 my %included_dirs;

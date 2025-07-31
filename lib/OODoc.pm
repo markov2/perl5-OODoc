@@ -388,9 +388,6 @@ sub processFiles(@)
         }
     }
 
-    # Some general subtotals
-    trace $self->stats;
-
     $self;
 }
 
@@ -630,10 +627,10 @@ sub stats()
     my $examples = map $_->examples,    @manuals;
     my $diags    = map $_->diagnostics, @manuals;
     my $version  = $self->version;
-    my $distribution = $self->distribution;
+    my $project  = $self->project;
 
     <<STATS;
-$distribution version $version
+Project $project contains:
   Number of package manuals: $manuals
   Real number of packages:   $realpkg
   documented subroutines:    $subs
