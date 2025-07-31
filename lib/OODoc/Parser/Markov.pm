@@ -864,11 +864,11 @@ sub decomposeL($$)
     ($man, $dest, undef, $text);
 }
 
-=method cleanupPod $formatter, $manual, STRING
+=method cleanupPod $manual, $text, %options
 =cut
 
 sub cleanupPod($$$)
-{   my ($self, $formatter, $manual, $string) = @_;
+{   my ($self, $manual, $string, %args) = @_;
     defined $string && length $string or return '';
 
     my @lines   = split /^/, $string;
@@ -881,9 +881,9 @@ sub cleanupPod($$$)
         undef $protect if $lines[$i] =~ m/^\s*$/ && $protect && $protect eq 'for';
         next if $protect;
 
-        $lines[$i] =~ s/\bM\<([^>]*)\>/$self->cleanupPodM($formatter,$manual,$1)/ge;
+        $lines[$i] =~ s/\bM\<([^>]*)\>/$self->cleanupPodM($manual, $1, \%args)/ge;
 
-        $lines[$i] =~ s/\bL\<([^>]*)\>/$self->cleanupPodL($formatter,$manual,$1)/ge
+        $lines[$i] =~ s/\bL\<([^>]*)\>/$self->cleanupPodL($manual, $1, \%args)/ge
             if substr($lines[$i], 0, 1) eq ' ';
 
         # permit losing blank lines around pod statements.
@@ -913,16 +913,16 @@ sub cleanupPod($$$)
     @lines ? join('', @lines) : '';
 }
 
-=method cleanupPodM $formatter, $manual, $link
+=method cleanupPodM $manual, $link, $args
 =cut
 
 sub cleanupPodM($$$)
-{   my ($self, $formatter, $manual, $link) = @_;
+{   my ($self, $manual, $link, $args) = @_;
     my ($toman, $to) = $self->decomposeM($manual, $link);
-    ref $to ? $formatter->link($toman, $to, $link) : $to;
+    ref $to ? $args->{create_link}->($toman, $to, $link, $args) : $to;
 }
 
-=method cleanupPodL $formatter, $manual, $link
+=method cleanupPodL $manual, $link, $args
 The C<L> markups for C<OODoc::Parser::Markov> have the same syntax
 as standard POD has, however most standard pod-laters do no accept
 links in verbatim blocks.  Therefore, the links have to be
@@ -931,19 +931,16 @@ is done in by this method.
 =cut
 
 sub cleanupPodL($$$)
-{   my ($self, $formatter, $manual, $link) = @_;
+{   my ($self, $manual, $link, $args) = @_;
     my ($toman, $to, $href, $text) = $self->decomposeL($manual, $link);
     $text;
 }
 
-=method cleanupHtml $formatter, $manual, STRING, [$is_html]
-Some changes will not be made when $is_html is C<true>, for instance,
-a "E<lt>" will stay that way, not being translated in a "E<amp>lt;".
-=cut
-
-sub cleanupHtml($$$;$)
-{   my ($self, $formatter, $manual, $string, $is_html) = @_;
+sub cleanupHtml($$$)
+{   my ($self, $manual, $string, %args) = @_;
     defined $string && length $string or return '';
+
+	my $is_html = $args{is_html};
 
     if($string =~ m/(?:\A|\n)                   # start of line
                     \=begin\s+(:?\w+)\s*        # begin statement
@@ -957,22 +954,14 @@ sub cleanupHtml($$$;$)
                     /xs
       )
     {   my ($before, $type, $capture, $after) = ($`, lc($1), $2, $');
-        if($type =~ m/^\:(text|pod)\b/ )
-        {   $type    = 'text';
-            $capture = $self->cleanupPod($formatter, $manual, $capture);
-        }
-        elsif($type =~ m/^\:?html\b/ )
+        if($type =~ m/^\:?html\b/ )
         {   $type    = 'html';
-            $capture = $self->cleanupHtml($formatter, $manual, $capture, 1);
+            $capture = $self->cleanupHtml($manual, $capture, is_html => 1);
         }
 
-        my $take = $type eq 'text' ? "<pre>\n". $capture . "</pre>\n"
-                 : $type eq 'html' ? $capture
-                 :                   '';   # ignore
-
-        return $self->cleanupHtml($formatter, $manual, $before)
-             . $take
-             . $self->cleanupHtml($formatter, $manual, $after);
+        return $self->cleanupHtml($manual, $before)
+             . $capture
+             . $self->cleanupHtml($manual, $after);
     }
 
     for($string)
@@ -982,8 +971,8 @@ sub cleanupHtml($$$;$)
             s#(?<!\b[LFCIBEMX])\<#&lt;#g;
             s#([=-])\>#$1\&gt;#g;
         }
-        s/\bM\<([^>]*)\>/$self->cleanupHtmlM($formatter, $manual, $1)/ge;
-        s/\bL\<([^>]*)\>/$self->cleanupHtmlL($formatter, $manual, $1)/ge;
+        s/\bM\<([^>]*)\>/$self->cleanupHtmlM($manual, $1, \%args)/ge;
+        s/\bL\<([^>]*)\>/$self->cleanupHtmlL($manual, $1, \%args)/ge;
         s#\bI\<([^>]*)\>#<em>$1</em>#g;
         s#\bB\<([^>]*)\>#<b>$1</b>#g;
         s#\bE\<([^>]*)\>#\&$1;#g;
@@ -1025,25 +1014,25 @@ sub cleanupHtml($$$;$)
     $string;
 }
 
-=method cleanupHtmlM $formatter, $manual, $link
+=method cleanupHtmlM $manual, $link, \%options
 =cut
 
 sub cleanupHtmlM($$$)
-{   my ($self, $formatter, $manual, $link) = @_;
+{   my ($self, $manual, $link, $args) = @_;
     my ($toman, $to) = $self->decomposeM($manual, $link);
-    ref $to ? $formatter->link($toman, $to, $link) : $to;
+    ref $to ? $args->{create_link}->($toman, $to, $link, $args) : $to;
 }
 
-=method cleanupHtmlL $formatter, $manual, $link
+=method cleanupHtmlL $manual, $link, \%options
 =cut
 
 sub cleanupHtmlL($$$)
-{   my ($self, $formatter, $manual, $link) = @_;
+{   my ($self, $manual, $link, $args) = @_;
     my ($toman, $to, $href, $text) = $self->decomposeL($manual, $link);
 
      defined $href ? qq[<a href="$href" target="_blank">$text</a>]
    : !defined $to  ? $text
-   : ref $to       ? $formatter->link($toman, $to, $text)
+   : ref $to       ? $args->{create_link}->($toman, $to, $text, $args)
    :                 qq[<a href="$to">$text</a>]
 }
 

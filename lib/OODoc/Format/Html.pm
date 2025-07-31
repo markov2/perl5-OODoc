@@ -110,26 +110,37 @@ sub filename(;$) { @_==2 ? $_[0]->{OFH_fn}   = $_[1] : $_[0]->{OFH_fn}   }
 
 #-------------------------------------------
 =section Page generation
+=cut
 
-=method cleanupString $manual, $object
-The general M<cleanup()> is over-eager: it turns all pieces of text
+sub cleanup($$%)
+{   my ($self, $manual, $string, %args) = @_;
+    $manual->parser->cleanupHtml($manual, $string, %args,
+        create_link => sub { $self->link(@_) },
+    );
+}
+
+=method cleanupString $manual, $object, %args
+The general M<cleanupHtml()> is over-eager: it turns all pieces of text
 into paragraphs.  So things, like names of chapters, are not paragraphs
 at all: these simple strings are to be cleaned from paragraph information.
 =cut
 
-sub cleanupString($$)
+sub cleanupString($$@)
 {   my $self = shift;
-    $self->cleanup(@_) =~ s!</p>\s*<p>!<br>!grs =~ s!\</?p\>!!gr;
+    $self->cleanup(@_)
+        =~ s!</p>\s*<p>!<br>!grs  # keep line-breaks
+        =~ s!<p\b[^>]*\>!!gr      # remove paragraphing
+        =~ s!\</p\>!!gr;
 }
 
-=method link $manual, $object, [$text]
+=method link $manual, $object, ($text|undef), \%settings
 Create the html for a link which refers to the $object.  The link will be
 shown somewhere in the $manual.  The $text is displayed as link, and defaults
 to the name of the $object.
 =cut
 
 sub link($$;$)
-{   my ($self, $manual, $object, $text) = @_;
+{   my ($self, $manual, $object, $text, $settings) = @_;
     $text //= $object->name;
 
     my $jump;
@@ -367,10 +378,10 @@ sub expandTemplate($$)
     @result;
 }
 
-sub showStructureExpand(@)
+sub showStructureExpanded(@)
 {   my ($self, %args) = @_;
 
-    my $examples = $args{show_chapter_examples} || 'EXPAND';
+    my $examples = $args{show_examples} || 'EXPAND';
     my $text     = $args{structure} or panic;
 
     my $name     = $text->name;
@@ -402,8 +413,8 @@ sub showStructureExpand(@)
 
     # Show the subroutines and examples.
 
-    $self->showSubroutines(%args, subroutines => [$text->subroutines]);
-    $self->showExamples(%args, examples => [$text->examples])
+    $self->showSubroutines(%args, subroutines => [ $text->subroutines ]);
+    $self->showExamples(%args, examples => [ $text->examples] )
          if $examples eq 'EXPAND';
 
     $self;

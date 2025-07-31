@@ -278,46 +278,67 @@ The name of this project, which will appear on many pages.
 
 sub createManual(@) {panic}
 
-=method cleanup $manual, STRING
-Takes the STRING and cleans it up to be in the right format for the
-current formatter.  The cleaning up is parser dependent, and therefore
-the parser of the manual is addressed to do the work.
+=method cleanup $manual, $text, %options
+Takes the $text and cleans it up to be in the right format for the current
+output syntax.  The cleaning up is parser dependent, and therefore the
+parser of the manual is addressed to do the work.
+
+=requires create_link CODE
+This CODE reference is used to create an absolute link to a text
+fragment.  It is called with the manual and the object where is
+linked to (any M<OODoc::Text> object).  As third parameter,
+a string can be provided which should be displayed instead of the
+object name.  Finally, all %options are passed as settings, by
+reference to a HASH.
+
+=option  tag $word|\@words
+=default tag C<undef>
+Tag the produced block with this word, when possible.  The HTML renderer
+will use this to add C<< class="@tags" >> to the resulting block, for
+instance.
 =cut
 
-sub cleanup($$)
-{   my ($self, $manual, $string) = @_;
-    $manual->parser->cleanup($self, $manual, $string);
-}
+sub cleanup($$%) { ... }
 
 =method showChapter %options
 You can pass all %options about formatting to this method.  They will passed
 to the related methods.  So: the list of options you can pass here is much
 longer: the combination of everything possible for all show* methods.
 
+In the %option list, C<$BLOCK> can be C<chapter>, C<section>, C<subsection>,
+and C<subsubsection>.
+
 =requires chapter CHAPTER
 =requires output FILE
 =requires manual MANUAL
 
-=option   show_inherited_chapters 'NO'|'REFER'|'EXPAND'
-=default  show_inherited_chapters 'REFER'
-
-=option   show_inherited_sections 'NO'|'REFER'|'EXPAND'
-=default  show_inherited_sections 'REFER'
-
+=option   show_inherited  'NO'|'REFER'|'EXPAND'
+=default  show_inherited 'REFER'
 REFER means that inherited sections are simply listed as reference
 to the manual page which describes it.
 
-=option   show_inherited_subsections 'NO'|'REFER'|'EXPAND'
-=default  show_inherited_subsections 'REFER'
+=option   show_inherited_$block 'NO'|'REFER'|'EXPAND'
+=default  show_inherited_$block <show_inherited>
+
+=option   show_examples 'NO'|'EXPAND'
+=default  show_examples 'EXPAND'
+
+=option   show_examples_$block 'NO'|'REFER'|'EXPAND'
+=default  show_examples_$block <show_examples>
 =cut
 
 sub showChapter(@)
 {   my ($self, %args) = @_;
     my $chapter  = $args{chapter} or panic;
     my $manual   = $args{manual}  or panic;
-    my $show_ch  = $args{show_inherited_chapter}    || 'REFER';
-    my $show_sec = $args{show_inherited_section}    || 'REFER';
-    my $show_ssec= $args{show_inherited_subsection} || 'REFER';
+
+    my $show_inh = $args{show_inherited};
+    my $show_ch  = $args{show_inherited_chapter}    || $show_inh;
+    my $show_sec = $args{show_inherited_section}    || $show_inh;
+    my $show_ssec  = $args{show_inherited_subsection}    || $show_inh;
+    my $show_sssec = $args{show_inherited_subsubsection} || $show_inh;
+
+    my $show_examples = $args{show_examples} || 'EXPAND';
 
     if($manual->inherited($chapter))
     {    return $self if $show_ch eq 'NO';
@@ -325,36 +346,55 @@ sub showChapter(@)
          return $self;
     }
 
-    $self->showStructureExpand(%args, structure => $chapter);
+    $self->showStructureExpanded(%args, structure => $chapter,
+        show_examples => $args{show_chapter_examples} || $show_examples,
+    );
 
     foreach my $section ($chapter->sections)
     {   if($manual->inherited($section))
         {   next if $show_sec eq 'NO';
-            $self->showStructureRefer(%args, structure => $section), next
-                unless $show_sec eq 'REFER';
+            if($show_sec ne 'REFER')
+            {    $self->showStructureRefer(%args, structure => $section);
+                 next;
+            }
         }
 
-        $self->showStructureExpand(%args, structure => $section);
+        $self->showStructureExpanded(%args, structure => $section,
+            show_examples => $args{show_section_examples} || $show_examples,
+        );
 
         foreach my $subsection ($section->subsections)
         {   if($manual->inherited($subsection))
             {   next if $show_ssec eq 'NO';
-                $self->showStructureRefer(%args, structure=>$subsection), next
-                    unless $show_ssec eq 'REFER';
+                if($show_ssec ne 'REFER')
+                {   $self->showStructureRefer(%args, structure => $subsection);
+                    next;
+                }
             }
 
-            $self->showStructureExpand(%args, structure => $subsection);
+            $self->showStructureExpanded(%args, structure => $subsection,
+                show_examples => $args{show_subsection_examples} || $show_examples,
+            );
+
+            foreach my $subsubsection ($subsection->subsubsections)
+            {   if($manual->inherited($subsubsection))
+                {   next if $show_sssec eq 'NO';
+                    if($show_sssec ne 'REFER')
+                    {   $self->showStructureRefer(%args, structure => $subsubsection);
+                        next;
+                    }
+                }
+    
+                $self->showStructureExpanded(%args, structure => $subsubsection,
+                    show_examples => $args{show_subsubsection_examples} || $show_examples,
+                );
+            }
         }
     }
 }
 
-=method showStructureExpanded %options
-
-=option   show_chapter_examples 'NO'|'EXPAND'
-=default  show_chapter_examples 'EXPAND'
-The I<chapter examples> are all examples which are not subroutine
-related: examples which come at the end of a chapter, section, or
-subsection.
+=option   show_examples 'NO'|'EXPAND'
+=default  show_examples 'EXPAND'
 =cut
 
 sub showStructureExpanded(@) {panic}
@@ -687,9 +727,9 @@ sub showOptionTable(@)
     foreach (@$options)
     {   my ($option, $default) = @$_;
         my $optman = $option->manual;
-        push @rows, [ $self->cleanup($manual, $option->name)
+        push @rows, [ $self->cleanup($manual, $option->name, tag => 'option_name')
                     , ($manual->inherited($option) ? $self->link(undef, $optman) : '') 
-                    , $self->cleanup($manual, $default->value)
+                    , $self->cleanup($manual, $default->value, tag => 'option_default')
                     ];
     }
 

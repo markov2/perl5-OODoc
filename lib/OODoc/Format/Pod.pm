@@ -46,6 +46,14 @@ sub init($)
 
 #------------
 =section Page generation
+=cut
+
+sub cleanup($$%)
+{   my ($self, $manual, $string, %args) = @_;
+    $manual->parser->cleanupPod($manual, $string, %args,
+		create_link => sub { $self->link(@_) },
+	);
+}
 
 =method link $manual, $object, [$text]
 
@@ -114,7 +122,7 @@ sub createManual($@)
 
     $output->close;
 
-    $self->cleanupPOD($tmpfile, $podfile);
+    $self->simplifyPod($tmpfile, $podfile);
     unlink $tmpfile;
 
     $self->manifest->add($podfile);
@@ -153,10 +161,10 @@ sub showAppend(@)
     $self;
 }
 
-sub showStructureExpand(@)
+sub showStructureExpanded(@)
 {   my ($self, %args) = @_;
 
-    my $examples = $args{show_chapter_examples} || 'EXPAND';
+    my $examples = $args{show_examples} || 'EXPAND';
     my $text     = $args{structure} or panic;
 
     my $name     = $text->name;
@@ -167,8 +175,8 @@ sub showStructureExpand(@)
     my $descr   = $self->cleanup($manual, $text->description);
     $output->print("\n=head$level $name\n\n$descr");
 
-    $self->showSubroutines(%args, subroutines => [$text->subroutines]);
-    $self->showExamples(%args, examples => [$text->examples])
+    $self->showSubroutines(%args, subroutines => [ $text->subroutines ]);
+    $self->showExamples(%args, examples => [ $text->examples ])
          if $examples eq 'EXPAND';
 
     $self;
@@ -545,7 +553,7 @@ sub showSubroutineDescriptionRefer(@)
 
 sub showSubsIndex() {;}
 
-=method cleanupPOD $in, $out
+=method simplifyPod $in, $out
 The POD is produced in the specified $in filename, but may contain some
 garbage, especially a lot of superfluous blanks lines.  Because it is
 quite complex to track double blank lines in the production process,
@@ -556,8 +564,9 @@ clean-up activities may be implemented later.
 =error cannot write final pod to $outfn: $!
 =cut
 
-sub cleanupPOD($$)
+sub simplifyPod($$)
 {   my ($self, $infn, $outfn) = @_;
+
     open my $in, "<:encoding(utf8)", $infn
         or fault __x"cannot read prelimary pod from {file}", file => $infn;
 

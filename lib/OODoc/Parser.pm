@@ -116,28 +116,33 @@ sub skipManualLink($)
     (first { $package =~ $_ } @{$self->{skip_links}}) ? 1 : 0;
 }
 
-=method cleanup $formatter, $manual, STRING
+=method cleanupPod $manual, $text, %options
+Translate the $text block, which is written in the parser specific
+syntax (which may resemble native Perl POD) into real Perl POD.
 
-=error The formatter type $class is not known for cleanup
-Text blocks have to get the finishing touch in the final formatting
-phase.  The parser has to fix the text block segments to create a
-formatter dependent output.  Only a few formatters are predefined.
-
+=requires create_link CODE
+See M<OODoc::Format::cleanup(create_link)>.
 =cut
 
-sub cleanup($$$)
-{   my ($self, $formatter, $manual, $string) = @_;
+sub cleanupPod($$%) { ... }
 
-    return $self->cleanupPod($formatter, $manual, $string)
-        if $formatter->isa('OODoc::Format::Pod');
+=method cleanupHtml $manual, $text, %options
+Translate the $text block, which is written in the parser specific
+syntax (which may resemble native Perl POD) into real Perl POD.
 
-    return $self->cleanupHtml($formatter, $manual, $string)
-        if $formatter->isa('OODoc::Format::Html')
-        || $formatter->isa('OODoc::Format::Html2');
+=requires create_link CODE
+See M<OODoc::Format::cleanup(create_link)>.
 
-    error __x"the formatter type {type} is not known for cleanup", type => ref $formatter;
-}
+=option  is_html BOOLEAN
+=default is_html C<false>
+Some changes will not be made when $is_html is C<true>, for instance,
+a "E<lt>" will stay that way, not being translated in a "E<amp>lt;".
+=cut
 
+sub cleanupHtml($$%) { ... }
+
+
+#-------------------------------------------
 =section Commonly used functions
 =cut
 
