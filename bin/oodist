@@ -585,7 +585,7 @@ sub run_tests($)
 	foreach my $testdir (qw/t tests xt/)
 	{	-d $testdir or next;
 
-		info "*  running tests in $testdir";
+		info "*  running tests in $distdir/$testdir";
 
 		system "make test TEST_FILES=$testdir/*.t$silence"
             and fault __x"make test in {dir} failed", dir => $distdir;

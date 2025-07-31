@@ -864,9 +864,6 @@ sub decomposeL($$)
     ($man, $dest, undef, $text);
 }
 
-=method cleanupPod $manual, $text, %options
-=cut
-
 sub cleanupPod($$$)
 {   my ($self, $manual, $string, %args) = @_;
     defined $string && length $string or return '';

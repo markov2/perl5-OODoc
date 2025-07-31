@@ -120,17 +120,18 @@ sub cleanup($$%)
 }
 
 =method cleanupString $manual, $object, %args
-The general M<cleanupHtml()> is over-eager: it turns all pieces of text
-into paragraphs.  So things, like names of chapters, are not paragraphs
-at all: these simple strings are to be cleaned from paragraph information.
+The general M<OODoc::Parser::cleanupHtml()> is over-eager: it turns
+all pieces of text into paragraphs.  So things, like names of chapters,
+are not paragraphs at all: these simple strings are to be cleaned from
+paragraph information.
 =cut
 
 sub cleanupString($$@)
 {   my $self = shift;
     $self->cleanup(@_)
         =~ s!</p>\s*<p>!<br>!grs  # keep line-breaks
-        =~ s!<p\b[^>]*\>!!gr      # remove paragraphing
-        =~ s!\</p\>!!gr;
+        =~ s!<p\b!<div!gr         # remove paragraphing
+        =~ s!\</p\>!</div>!gr;
 }
 
 =method link $manual, $object, ($text|undef), \%settings

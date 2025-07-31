@@ -97,14 +97,16 @@ platform dependend black hole is used (/dev/null on UNIX).
 sub parse(@) {panic}
 
 #-------------------------------------------
-=section Formatting text pieces
+=section Producing manuals
 
 After the manuals have been parsed into objects, the information can
 be formatted in various ways, for instance into POD and HTML.  However,
 the parsing is not yet complete: the structure has been decomposed 
 with M<parse()>, but the text blocks not yet.  This is because the
-transformations which are needed are context dependent.  For each
-text section M<cleanup()> is called for the final touch.
+transformations which are needed are context dependent.
+
+For each text section M<cleanupPod()> or M<cleanupHtml()> is called
+for the final touch for the requested output markup.
 
 =method skipManualLink $package
 Returns true is the $package name matches one of the links to be
@@ -140,7 +142,6 @@ a "E<lt>" will stay that way, not being translated in a "E<amp>lt;".
 =cut
 
 sub cleanupHtml($$%) { ... }
-
 
 #-------------------------------------------
 =section Commonly used functions
