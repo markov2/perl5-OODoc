@@ -54,15 +54,6 @@ sub emptyExtension($)
     $empty;
 }
 
-sub publish(%)
-{   my ($self, %args) = @_;
-    $args{section} = $self;
-    my $p = $self->SUPER::publish(%args);
-    my @s = map $_->publish(%args), $self->subsections;
-    $p->{nest} = \@s if @s;
-    $p;
-}
-
 #-------------------------------------------
 =section Location
 
@@ -102,7 +93,7 @@ sub all($@)
     ($self->SUPER::all(@_), map {$_->all(@_)} $self->subsections);
 }
 
-#-------------------------------------------
+#-------------------
 =section Subsections
 
 =method subsection $name|$object
@@ -136,6 +127,9 @@ sub subsections(;@)
     @{$self->{OTS_subsections}};
 }
 
+*nest = \*subsections;
+
+#------------------
 =section Commonly used functions
 =cut
 

@@ -43,6 +43,15 @@ sub init($)
     $self;
 }
 
+sub publish($)
+{	my ($self, $args) = @_;
+	my $exporter = $args->{exporter};
+
+	my $p = $self->SUPER::publish($args);
+	$p->{params} = $exporter->markupString($self->parameters);
+	$p;
+}
+
 #-------------------------------------------
 =section Attributes
 

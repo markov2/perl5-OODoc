@@ -74,9 +74,13 @@ sub new(@)
     $self;
 }
 
+my $unique = 42;
+
 sub init($)
 {   my ($self, $args) = @_;
-    $self->{OT_unique}   = $unique++;
+
+	# prefix with 'id', otherwise confusion between string and number
+    $self->{OO_unique} = 'id' . $unique++;
     $self;
 }
 
@@ -94,7 +98,7 @@ the same thing. The ids are numeric.
 
 =cut
 
-sub unique() { $_[0]->{OT_unique} }
+sub unique() { $_[0]->{OO_unique} }
 
 #-------------------------------------------
 =section Manual Repository
@@ -167,6 +171,22 @@ Returns the names of all defined packages.
 
 sub packageNames() { keys %packages }
 
+=method publish \%options
+Extract the data of an object for export, and register it in the index.
+A HASH is returned which should get filled with useful data.
+=cut
+
+my %index;
+sub publish($)
+{	my ($self, $args) = @_;
+	$index{$self->unique} = +{ id => $self->unique };
+}
+
+=method publicationIndex
+Returns the collected objects for publication.
+=cut
+
+sub publicationIndex() { \%index }
 #-------------------------------------------
 =section Commonly used functions
 

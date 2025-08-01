@@ -48,6 +48,8 @@ sub findEntry($)
    $self->name eq $name ? $self : ();
 }
 
+sub nest() { }
+
 #--------------
 =section Location
 

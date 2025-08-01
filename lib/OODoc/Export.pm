@@ -7,6 +7,8 @@ use warnings;
 use Log::Report    'oodoc';
 
 use HTML::Entities qw/encode_entities/;
+use POSIX          qw/strftime/;
+
 
 our %exporters =
   ( json   => 'OODoc::Export::JSON'
@@ -87,14 +89,82 @@ The label for this serializer.
 
 =method markupStyle
 =method parser
+=method format
 =cut
 
 sub serializer()  { $_[0]->{OE_serial} }
 sub markupStyle() { $_[0]->{OE_markup} }
 sub parser()      { $_[0]->{OE_parser} }
+sub format()      { $_[0]->{OE_format} }
 
 #------------------
 =section Output
+
+=method publish $doc, %options
+Convert the documentation data in a beautiful tree.
+
+=requires exporter M<OODoc::Export>-object
+Manages the conversion from source markup for text into the requested
+markup (f.i. "markov" into "html").
+
+=option  podtail POD
+=default podtail C<undef>
+The last chapters of any produced manual page, in POD syntax.
+
+=option  manuals ARRAY
+=default manuals C<undef>
+Include only information for the manuals (specified as names).
+
+=option  meta HASH
+=default meta C<+{ }>
+Key/string pairs with interesting additional data.
+
+=option  distributions HASH
+=default distributions +{}
+Name to C<MYMETA.json> content mappings of project and used distributions.
+
+=cut
+
+sub publish($%)
+{   my ($self, $doc, %args)   = @_;
+	$args{exporter}      = $self;
+
+    my $selected_manuals = $args{manuals};
+    my %need_manual      = map +($_ => 1), @{$selected_manuals || []};
+    my @podtail_chapters = $self->podChapters($args{podtail});
+
+    my %man;
+    foreach my $package (sort $doc->packageNames)
+    {
+        foreach my $manual ($doc->manualsForPackage($package))
+        {   !$selected_manuals || $need_manual{$manual} or next;
+            my $man = $manual->publish(\%args) or next;
+
+            push @{$man->{chapters}}, @podtail_chapters;
+            $man{$manual->name} = $man->{id};
+        }
+    }
+
+    my $meta = $args{meta} || {};
+    my %meta = map +($_ => $self->markup($meta->{$_}) ), keys %$meta;
+
+     +{
+        project        => $self->markup($doc->project),
+        distribution   => $doc->distribution,
+        version        => $doc->version,
+        manuals        => \%man,
+        meta           => \%meta,
+        distributions  => $args{distributions} || {},
+		index          => $self->publicationIndex,
+
+        generated_by   => {
+			program         => $0,
+			program_version => $main::VERSION // undef,
+            oodoc_version   => $OODoc::VERSION // 'devel',
+            created         => (strftime "%F %T", localtime),
+        },
+      };
+}
 
 =method processingManual $manual|undef
 Manual pages may be written in different syntaxes.  In the document tree,
@@ -103,9 +173,50 @@ processed at output time.  Calling this method sets the interpretation
 mode for text blocks.
 =cut
 
+sub _formatterHtml($$)
+{	my ($self, $manual, $parser) = @_;
+
+	sub {
+		# called with $html, %settings
+		$parser->cleanupHtml($manual, @_, create_link => sub {
+			# called with ($manual, ...);
+			my (undef, $object, $html, $settings) = @_;
+			$html //= encode_entities $object->name;
+			my $unique = $object->unique;
+			qq{<a class="jump" href="$unique">$html</a>};
+		});
+	};
+}
+
+sub _formatterPod($$)
+{	my ($self, $manual, $parser) = @_;
+
+	sub {
+		# called with $text, %settings
+		$parser->cleanupPod($manual, @_, create_link => sub {
+			# called with ($manual, ...);
+			my (undef, $object, $text, $settings) = @_;
+			OODoc::Format::Pod->link($manual, $object, $text, $settings);
+		});
+	};
+}
+
 sub processingManual($)
-{   my ($self, $manual) = @_;
-    $self->{OE_parser} = defined $manual ? $manual->parser : undef;
+{	my ($self, $manual) = @_;
+	my $parser = $self->{OE_parser} = defined $manual ? $manual->parser : undef;
+
+	if(defined $manual)
+	{	my $style = $self->markupStyle;
+		$self->{OE_format}
+		  = $style eq 'html' ? $self->_formatterHtml($manual, $parser)
+		  : $style eq 'pod'  ? $self->_formatterPod($manual, $parser)
+		  : panic $style;
+	}
+	else
+	{	delete $self->{OE_parser};
+		$self->{OE_format} = sub { panic };
+	}
+	$self;
 }
 
 =method markup STRING
@@ -115,9 +226,7 @@ so no (pseudo-)POD.
 
 sub markup($)
 {	my ($self, $string) = @_;
-	defined $string or return;
-
-    $self->markupStyle eq 'html' ? encode_entities $string : $string;
+	defined $string && $self->markupStyle eq 'html' ? encode_entities $string : $string;
 }
 
 =method boolean BOOL
@@ -125,21 +234,28 @@ sub markup($)
 
 sub boolean($) { !! $_[1] }
 
-=method markupBlock $text
+=method markupBlock $text, %args
 Convert a block of text, which still contains markup.
 =cut
 
-sub markupBlock($)
-{	my ($self, $text) = @_;
-    my $parser = $self->parser
-        or panic "Markup block outside a manual:\n   ", (length $text > 83 ? substr($text, 0, 80, '...') : $text);
+sub markupBlock($%)
+{	my ($self, $text, %args) = @_;
+	$self->format->($text, %args);
+}
 
-	my $style = $self->markupStyle;
+=method markupString $string, %args
+Convert a line of text, which still contains markup.  This sometimes as some
+differences with a M<markupBlock()>.
+=cut
 
-return "<pre>".(encode_entities $text)."</pre>";
-        $style eq 'html' ? $parser->cleanupHtml($text)
-      : $style eq 'pod'  ? $parser->cleanupPod($text)
-      : panic;
+sub markupString($%)
+{	my ($self, $string, %args) = @_;
+	my $up = $self->format->($string, %args);
+	$self->markupStyle eq 'html' or return $up;
+
+	$up =~ s!</p>\s*<p>!<br>!grs  # keep line-breaks
+		=~ s!<p\b.*?>!!gr         # remove paragraphing
+		=~ s!\</p\>!!gr;
 }
 
 =method podChapters $pod
@@ -147,7 +263,7 @@ return "<pre>".(encode_entities $text)."</pre>";
 
 sub podChapters($)
 {	my ($self, $pod) = @_;
-	defined $pod && length $pod or return [];
+	defined $pod && length $pod or return ();
 
     my $parser = OODoc::Parser::Markov->new;  # supports plain POD
     ...
@@ -170,8 +286,6 @@ The data-structure refers to a few capitalized comments:
 =over 4
 =item MARKUP
 The output markup used for text.  Currently only "html" is supported.
-=item REFERENCE
-Refers to a different element in the tree.  See L</Reference>.
 =back
 
 =subsection root
@@ -189,12 +303,16 @@ The root:
        "created": "2025-07-27 16:30"
     },
     "distributions": {
-       "Mail-Box": { ... },
-       "Mail-Message": { ... }
+       "Mail-Box": { ... },                    # META
+       "Mail-Message": { ... }                 # META
     },
     "manuals": {
-       "Mail::Message": { ... },
-       "Mail::Message::Field": { ... }
+       "Mail::Message": "id42",                # REF
+       "Mail::Message::Field": "id1023",       # REF
+    },
+    "index": {
+       "id42": { ... }
+       "id1023": { ... }
     },
   }
 
@@ -216,13 +334,14 @@ with OODoc, for instance OODoc itself at F<https://metacpan.org/XXX>
 
 =subsection Manual
 
-  { "name": "Mail::Box",                       # MARKUP
-  , "version": "3.14",                         # or undef
-  , "title": "Manage a mailbox",               # MARKUP
-  , "package": "lib/Mail/Box.pm",
-  , "distribution": "Mail-Box",
-  , "is_pure_pod": false,                      # BOOLEAN
-  , "chapters": [ { ... }, ... ]
+  { "id": REF,
+    "name": "Mail::Box",                       # MARKUP
+    "version": "3.14",                         # or undef
+    "title": "Manage a mailbox",               # MARKUP
+    "package": "lib/Mail/Box.pm",
+    "distribution": "Mail-Box",
+    "is_pure_pod": false,                      # BOOLEAN
+    "chapters": [ REF, ... ]
   }
 
 The chapters are sorted logically, as they appear in traditional unix manual pages,
@@ -236,14 +355,15 @@ a list of nested blocks.
 
 Each (text) block has same features:
 
-  { "name": "Constructors",                    # MARKUP
+  { "id": REF,
+    "name": "Constructors",                    # MARKUP
     "level": 2,
     "type": "section",
     "extends": REFERENCE,
-    "description": "Intro to this section.",   # MARKUP
-    "examples": [ { ... }, ... ],
-    "subroutines": [ { ... }, ... ],
-    "nest": [ { ... }, ... ],  # sub-blocks
+    "intro": "Intro to this section.",         # MARKUP
+    "examples": [ REF, ... ],
+    "subroutines": [ REF, ... ],
+    "nest": [ REF, ... ],                      # sub-blocks
   }
 
 The examples, subroutines and nested blocks are to be kept in their order.
@@ -266,15 +386,14 @@ There are a few types of subroutines:
 
 Each subroutine looks like this:
 
-  { "name": "producePages",                  # MARKUP
+  { "id": REF,
+    "name": "producePages",                  # MARKUP
     "call": [ "$obj->producePages()", ... ], # MARKUP
-    "options: [ { ... }, ... ],
-    "extends": REFERENCE,
     "type": "i_method",
-    "description": "Create the manual ...",  # MARKUP
-    "examples": [ { ... }, ... ],
-    "diagnostics": [ { ... }, ... ],
-    "block": REFERENCE
+    "intro": "Create the manual ...",        # MARKUP
+    "examples": [ REF, ... ],
+    "options: [ REF, ... ],
+    "diagnostics": [ REF, ... ],
   }
 
 =subsection Options
@@ -282,22 +401,32 @@ Each subroutine looks like this:
 Most subroutine forms can have options.  They are passed as
 list sorted by name.
 
-  { "name": "beautify",                      # MARKUP
+  { "id": REF,
+    "name": "beautify",                      # MARKUP
     "type": "option",
-    "extends": REFERENCE,
-    "default": "true|false",                 # MARKUP
-    "is_required": true,
-    "description": "Make the output better"  # MARKUP
+    "params": "true|false",                  # MARKUP
+    "intro": "Make the output better"        # MARKUP
   }
+
+The defaults look like this:
+
+  { "id": REF,
+    "name": "beautify",                      # MARKUP
+    "type": "default",
+    "value": "<true>",                       # MARKUP
+  }
+
+The option is required when the default value is C<< <required> >>.
 
 =subsection Examples
 
 Every block of text, and every subroutine can have a number of
 examples.  Examples do not always have a name.
 
-  { "name": "how to produce pages",          # MARKUP
+  { "id": REF,
+    "name": "how to produce pages",          # MARKUP
     "type": "example",
-    "description": "Like this"               # MARKUP
+    "intro": "Like this"                     # MARKUP
   }
 
 =subsection Diagnostics
@@ -307,25 +436,11 @@ sorted errors first, then by description text.  Other types of
 diagnostics will be added soon, to match the levels offered by
 M<Log::Report>.
 
-  { "type": "error" or "warning",
-    "description": "Missing ...",            # MARKUP
-    "subroutine": REFERENCE
-  }
-
-=subsection Reference
-
-Only field C<manual> will always be present.  Most fields require a C<chapter>.
-The C<sub*section> require a C<*section>.
-Field C<option> requires C<subroutine>.
-
-  { "manual": "Mail::Box",
-    "chapter": "METHODS",                    # MARKUP
-    "section": "Constructors",               # MARKUP
-    "subsection": undef,                     # MARKUP
-    "subsubsection": undef,                  # MARKUP
-    "subroutine": "new",                     # MARKUP
-    "option": "beautify",                    # MARKUP
-    "example": undef,                        # MARKUP
+  { "id": REF,
+    "type": "error" or "warning",
+    "name": "Missing ...",                  # MARKUP
+    "intro: "This error is shown when...",  # MARKUP
+    "subroutine": REF,
   }
 
 =cut

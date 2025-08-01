@@ -85,15 +85,6 @@ sub all($@)
       );
 }
 
-sub publish(%)
-{   my ($self, %args) = @_;
-	$args{chapter} = $self;
-    my $p = $self->SUPER::publish(%args);
-    my @s = map $_->publish(%args), $self->sections;
-	$p->{nest} = \@s if @s;
-    $p;
-}
-
 #-------------------
 =section Sections
 
@@ -128,5 +119,7 @@ sub sections()
    }
    @{$self->{OTC_sections}};
 }
+
+*nest = \*sections;
 
 1;

@@ -58,15 +58,6 @@ sub findEntry($)
    $self->name eq $name ? $self : ();
 }
 
-sub publish(%)
-{   my ($self, %args) = @_;
-    $args{subsection} = $self;
-    my $p = $self->SUPER::publish(%args);
-    my @s = map $_->publish(%args), $self->subsubsections;
-    $p->{nest} = \@s if @s;
-    $p;
-}
-
 #-------------------------------------------
 =section Location
 
@@ -122,6 +113,9 @@ sub subsubsections(;@)
     @{$self->{OTS_subsubsections}};
 }
 
+*nest = \*subsubsections;
+
+#--------------------
 =section Commonly used functions
 =cut
 

@@ -55,7 +55,7 @@ my %oodist = (
 		publish      => "$publish/htmlpkg",    #   where a $dist-$version-html.tar.gz is produced
 		stylesheet   =>'/oodoc/html/oodoc.css',#O  use the generic style sheet (under docroot)
 	  },
-	  {	export       => 'new-website',         #   Name of export
+	  {	export       => 'website',             #   Name of export
 		serializer   => 'json',                #O  Serializer to produce export
 		markup       => 'html',                #O  markup to be used for the output texts
 		publish      => "$publish/doctree",    #   where the $dist-$version-$name.json will be produced
@@ -99,7 +99,7 @@ WriteMakefile
 				web  => $git,
 			},
 			homepage => $homepage,
-			license  => [ 'https://dev.perl.org/licenses/' ],
+			licenses => [ 'http://dev.perl.org/licenses/' ],
 		},
 		prereqs => {
 			develop => {

@@ -26,7 +26,7 @@ version 3.00:
 
 	Improvements:
 	- replace File::Slurp by File::Slurper.
-	- export to JSON
+	- export documentation tree to JSON
 	- ::Parser::Markov errors and warnings use Log::Report
 	- replace glob() by bsd_glob()
 	- add .gitignore

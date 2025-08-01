@@ -572,6 +572,9 @@ sub expand()
         {   $section->setSubroutines(delete $location{$section->path});
             foreach my $subsect ($section->subsections)
             {   $subsect->setSubroutines(delete $location{$subsect->path});
+                foreach my $subsubsect ($subsect->subsubsections)
+                {   $subsubsect->setSubroutines(delete $location{$subsubsect->path});
+                }
             }
         }
     }
@@ -791,38 +794,38 @@ sub createSuperSupers($)
     $output;
 }
 
-=method publish %options
+=method publish $config
 Extract the useful data from the manual, to be exported.
 
 =example get texts to publish
-   my $tree = $manual->publish(%config);
+   my $tree = $manual->publish($config);
 =cut
 
-sub publish(%)
-{	my ($self, %args) = @_;
-	my $manual   = $args{manual} = $self;
+sub publish($%)
+{	my ($self, $config, %args) = @_;
+	my $manual   = $config->{manual} = $self;
 
-	my $exporter = $args{exporter};
+	my $exporter = $config->{exporter};
     $exporter->processingManual($manual);
+
+	my $p = $self->SUPER::publish($config);
 
 	my @ch;
     foreach my $name (@chapter_names)
     {   my $chapter  = $self->chapter(uc $name) or next;
-        push @ch, $chapter->publish(%args);
+        push @ch, $chapter->publish($config)->{id};
     }
 
-    my %man =
-      +( name         => $exporter->markup($self->name)
-       , title        => $exporter->markup($self->title)
-       , package      => $self->package
-       , distribution => $self->distribution
-       , version      => $self->version
-       , is_pure_pod  => $exporter->boolean($self->isPurePod)
-       , chapters     => \@ch
-       );
+    $p->{name}         = $exporter->markupString($self->name);
+    $p->{title}        = $exporter->markupString($self->title);
+    $p->{package}      = $exporter->markup($self->package);
+    $p->{distribution} = $exporter->markup($self->distribution);
+    $p->{version}      = $exporter->markup($self->version);
+    $p->{is_pure_pod}  = $exporter->boolean($self->isPurePod);
+    $p->{chapters}     = \@ch;
 
     $exporter->processingManual(undef);
-    \%man;
+    $p;
 }
 
 #-------------------------------------------

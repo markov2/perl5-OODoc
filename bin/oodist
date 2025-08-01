@@ -100,7 +100,7 @@ GetOptions
 my $any_requested = $make_release || $make_exports || $make_export || $make_html || $make_pod || $make_raw || $run_tests;
 if($make_all || ! $any_requested)
 {	# explicit all, but not -no-*
-	$_ //= 1 for $make_release, $make_export, $make_html, $make_pod, $make_raw, $run_tests;
+	$_ //= 1 for $make_release, $make_exports, $make_html, $make_pod, $make_raw, $run_tests;
 }
 
 dispatcher mode => $verbose, 'ALL';
@@ -167,10 +167,10 @@ info "*  producing $project release $version";
 ### Start OODoc
 ###
 
-my $doc  = OODoc->new
-  ( distribution => $project
-  , version      => $version  # version of whole
-  );
+my $doc  = OODoc->new(
+	distribution => $project,
+	version      => $version,  # version of whole
+);
 
 # Reading all the manual pages
 my $source  = realpath '.';
@@ -271,7 +271,7 @@ sub extract_distro($%)
 		{	my $absdir = realpath (rel2abs $include, $dir);
 			extract_distro $absdir, %args, recurse => 1;
 		}
-	
+
 		foreach my $use (@{$dist_config->{use} || []})
 		{	my $absdir = realpath (rel2abs $use, $dir);
 			extract_distro $absdir, %args, recurse => 0;
@@ -514,7 +514,7 @@ There are various ways to install this module:
  (1) if you have a command-line, you can do:
        cpan -i <any package from this distribution>'
 
- (2) if you use Windows, have a look at http://ppm.activestate.com/
+ (2) if you use Windows, have a look at https://strawberryperl.com
 
  (3) if you have downloaded this module manually (as root/administrator)
        tar -xzf $project-$version.tar.gz
@@ -526,7 +526,7 @@ There are various ways to install this module:
 
 References:
 
-  * For usage, see the included manual-pages or http://metacpan.org/dist/$project
+  * For usage, see the included manual-pages or https://metacpan.org/dist/$project
 __README
 
 	my $resources = $meta->{resources} || { repository => {} };
@@ -590,7 +590,7 @@ sub run_tests($)
 		info "*  running tests in $distdir/$testdir";
 
 		system "make test TEST_FILES=$testdir/*.t$silence"
-            and fault __x"make test in {dir} failed", dir => $distdir;
+			and fault __x"make test in {dir} failed", dir => $distdir;
 	}
 }
 
@@ -746,9 +746,8 @@ sub create_export($$)
 #	my $tail = oodist_meta $makefile;
 #	$tail->{license_year_range} = delete $tail->{year};  # naming improvement
 
-	my $tree = $doc->export(
-		exporter => $exporter,
-		manuals  => $manuals,
+	my $tree = $exporter->publish($doc,
+		manuals       => $manuals,
 		distributions => \%distros,
 #		meta     => $tail,      # only flat key-value, where value is a string
 	);
@@ -758,7 +757,7 @@ sub create_export($$)
 
 	my $exportfn = catfile $dest, "$distvname-$name.$serial";
 
-	info "** Publish export into $exportfn." ;
+	info "** Publish export into $exportfn" ;
 	$exporter->write($exportfn, $tree, pretty_print => 1);
 
 	1;
@@ -976,7 +975,7 @@ WriteMakefile
 				web  => \$git,
 			},
 			homepage => \$homepage,
-			license  => [ 'https://dev.perl.org/licenses/' ],
+			license  => [ 'http//dev.perl.org/licenses/' ],
 		},
 		prereqs => {
 			develop => {

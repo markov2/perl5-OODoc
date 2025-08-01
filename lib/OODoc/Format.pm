@@ -108,10 +108,10 @@ The formatter which is specified does not compile, so can not be used.
 sub new($%)
 {	my ($class, %args) = @_;
 
-	$class eq __PACKAGE__
+    $class eq __PACKAGE__
         or return $class->SUPER::new(%args);
 
-	my $format = $args{format}
+    my $format = $args{format}
         or error __x"No formatter specified.";
 
     my $pkg = $formatters{$format} || $format;
@@ -126,7 +126,7 @@ sub init($)
 {   my ($self, $args) = @_;
 
     $self->SUPER::init($args) or return;
-	$self->{OF_format}   = delete $args->{format};
+    $self->{OF_format}   = delete $args->{format};
 
     my $name = $self->{OF_project} = delete $args->{project}
         or error __x"formatter knows no project name";
@@ -220,7 +220,7 @@ sub createPages(%)
     my $sel = $args{select} || sub { 1 };
     my $select = ref $sel eq 'CODE' ? $sel : sub { $_[0]->name =~ $sel };
 
-	# Manual knowledge is global
+    # Manual knowledge is global
 
     my $options = $args{manual_format} || [];
     foreach my $package (sort $self->packageNames)
@@ -727,26 +727,21 @@ sub showOptionTable(@)
     foreach (@$options)
     {   my ($option, $default) = @$_;
         my $optman = $option->manual;
-        push @rows, [ $self->cleanup($manual, $option->name, tag => 'option_name')
-                    , ($manual->inherited($option) ? $self->link(undef, $optman) : '') 
-                    , $self->cleanup($manual, $default->value, tag => 'option_default')
-                    ];
+        push @rows,
+          [ $self->cleanup($manual, $option->name, tag => 'option_name')
+          , ($manual->inherited($option) ? $self->link(undef, $optman) : '')
+          , $self->cleanup($manual, $default->value, tag => 'option_default')
+          ];
     }
 
-    my @header = ('Option', 'Defined in', 'Default');
+    my @header  = ('Option', 'Defined in', 'Default');
     unless(grep length $_->[1], @rows)
     {   # removed empty "defined in" column
         splice @$_, 1, 1 for @rows, \@header;
     }
 
     $output->print("\n");
-    $self->writeTable
-      ( output => $output
-      , header => \@header
-      , rows   => \@rows
-      , widths => [undef, 15, undef]
-      );
-
+    $self->writeTable(output => $output, header => \@header, rows => \@rows, widths => [undef, 15, undef]);
     $self;
 }
 

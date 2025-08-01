@@ -13,6 +13,7 @@ use File::Basename  qw/basename dirname/;
 use File::Copy      qw/copy/;
 use POSIX           qw/strftime/;
 use List::Util      qw/first/;
+use HTML::Entities  qw/encode_entities/;
 
 =chapter NAME
 
@@ -130,19 +131,19 @@ sub cleanupString($$@)
 {   my $self = shift;
     $self->cleanup(@_)
         =~ s!</p>\s*<p>!<br>!grs  # keep line-breaks
-        =~ s!<p\b!<div!gr         # remove paragraphing
-        =~ s!\</p\>!</div>!gr;
+        =~ s!<p\b.*?>!!gr         # remove paragraphing
+        =~ s!\</p\>!!gr;
 }
 
-=method link $manual, $object, ($text|undef), \%settings
+=method link $manual, $object, [ ($html|undef), \%settings ]
 Create the html for a link which refers to the $object.  The link will be
 shown somewhere in the $manual.  The $text is displayed as link, and defaults
 to the name of the $object.
 =cut
 
 sub link($$;$)
-{   my ($self, $manual, $object, $text, $settings) = @_;
-    $text //= $object->name;
+{   my ($self, $manual, $object, $html, $settings) = @_;
+    $html //= encode_entities $object->name;
 
     my $jump;
     if($object->isa('OODoc::Manual'))
@@ -154,7 +155,7 @@ sub link($$;$)
         $jump = $self->jumpScript . "?$manname&". $object->unique;
     }
 
-    qq[<a href="$jump" target="_top">$text</a>];
+    qq[<a href="$jump" target="_top">$html</a>];
 }
 
 =method mark $manual, $id
@@ -390,9 +391,7 @@ sub showStructureExpanded(@)
     my $output   = $args{output} or panic;
     my $manual   = $args{manual} or panic;
 
-    # Produce own chapter description
-
-    my $descr   = $self->cleanup($manual, $text->description);
+    my $descr   = $self->cleanup($manual, $text->description, tag => 'block_intro');
     my $unique  = $text->unique;
     my $id      = $name =~ s/\W+/_/gr;
 
@@ -463,7 +462,7 @@ sub showExamples(@)
     my $manual    = $args{manual}  or panic;
     my $output    = $args{output}  or panic;
 
-    $output->print( qq[<dl class="example">\n] );
+    $output->print( qq[<dl class="examples">\n] );
 
     foreach my $example (@$examples)
     {   my $name   = $example->name;
@@ -498,7 +497,7 @@ sub showDiagnostics(@)
         my $unique  = $diag->unique;
 
         $output->print( <<DIAG );
-<dt class="type">&raquo;&nbsp;$type: <a name="$unique">$name</a></dt>
+<dt>&raquo;&nbsp;$type: <a name="$unique">$name</a></dt>
 <dd>$text</dd>
 DIAG
 
@@ -551,10 +550,10 @@ sub showSubroutineUse(@)
              , type => $type, name => $name, manual => $manual);
 
     $output->print( <<SUBROUTINE );
-<div class="$type" id="$name">
+<div class="sub $type" id="$name">
 <dl>
-<dt class="sub_use">$use</dt>
-<dd class="sub_body">
+<dt>$use</dt>
+<dd>
 SUBROUTINE
 
     if($manual->inherited($subroutine))
@@ -583,10 +582,7 @@ sub showSubroutineName(@)
      ? "M<".$subroutine->manual."::$name>"
      : "M<$name>";
 
-    $output->print
-     ( $self->cleanupString($manual, $url)
-     , ($args{last} ? ".\n" : ",\n")
-     );
+    $output->print($self->cleanupString($manual, $url), ($args{last} ? ".\n" : ",\n"));
 }
 
 sub showOptions(@)
@@ -772,7 +768,7 @@ sub templateManual($$)
     my $manual = $self->manual
         or error __x"not a manual, so no manual name for {fn}", fn => scalar $templ->valueFor('template_fn');
 
-    $self->cleanupString($manual, $manual->name);
+    $self->cleanupString($manual, $manual->name, tag => 'manual_name');
 }
 
 =method templateDistribution $templ, $attrs, $if, $else

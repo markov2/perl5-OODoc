@@ -65,8 +65,6 @@ define the elements relative location.
 
 =cut
 
-my $unique = 1;
-
 sub init($)
 {   my ($self, $args) = @_;
     $self->SUPER::init($args) or return;
@@ -213,31 +211,26 @@ Returns a list of all examples contained in this text element.
 
 sub examples() { @{shift->{OT_examples}} }
 
-=method publish %options
-=requires exporter M<OODoc::Export>-object
-=cut
+sub publish($%)
+{   my ($self, $args) = @_;
+    my $exporter = $args->{exporter} or panic;
+	my $manual   = $args->{manual}   or panic;
 
-sub publish(%)
-{   my ($self, %args) = @_;
-    my $exporter = $args{exporter} or panic;
+	my $p = $self->SUPER::publish($args);
+    $p->{type}      = $exporter->markup(lc $self->type);
+	$p->{inherited} = $exporter->boolean($manual->inherited($self));
 
-    my %p = (
-        type => $exporter->markup(lc $self->type)
-    );
-
-    if(my $name = $self->name)
-    {   $p{name} = $exporter->markup($name);
+    if(my $name  = $self->name)
+    {   $p->{name} = $exporter->markupString($name);
     }
 
-    my $descr = $self->description // '';
-    if(length $descr)
-    {   $p{description} = $exporter->markupBlock($descr);
-    }
+    my $descr    = $self->description // '';
+    $p->{intro}  = $exporter->markupBlock($descr)
+        if length $descr;
 
-    my @e = map $_->publish(%args), $self->examples;
-    $p{examples} = \@e if @e;
-
-    \%p;
+    my @e        = map $_->publish($args)->{id}, $self->examples;
+    $p->{examples} = \@e if @e;
+	$p;
 }
 
 #-------------------------------------------

@@ -47,22 +47,23 @@ sub init($)
     $self;
 }
 
-sub publish(%)
-{   my ($self, %args) = @_;
-	$args{subroutine} = $self;
-    my $p = $self->SUPER::publish(%args);
+sub publish($)
+{   my ($self, $args) = @_;
+    $args->{subroutine} = $self;
+    my $p = $self->SUPER::publish($args);
 
-    my $manual   = $args{manual};
-    my $exporter = $args{exporter};
+    my $opts     = $self->collectedOptions; # = [ [ $option, $default ], ... ]
+	if(keys %$opts)
+	{   my @options = map +[ map $_->publish($args)->{id}, @$_ ],
+            sort { $a->[0]->name cmp $b->[0]->name }
+                values %$opts;
 
-    my @d = map $_->publish(%args), $self->diagnostics;
-	$p->{diagnostics} = \@d if @d;
+        $p->{options}= \@options;
+    }
 
-#        use       => $use,
-#        options   => $self->_options($self->options, %args),
-    $p->{inherited} = $exporter->boolean($manual->inherited($self));
-
-	$p;
+    my @d = map $_->publish($args)->{id}, $self->diagnostics;
+    $p->{diagnostics} = \@d if @d;
+    $p;
 }
 
 =method extends [$object]
@@ -141,21 +142,25 @@ sub location($)
             if substr($mypath, 0, length($superpath)+1) eq "$superpath/";
     }
     elsif(substr($superpath, 0, length($mypath)+1) eq "$mypath/")
-    {   if($superloc->isa("OODoc::Text::Chapter"))
-        {   return $self->manual
-                        ->chapter($superloc->name);
-        }
-        elsif($superloc->isa("OODoc::Text::Section"))
-        {   return $self->manual
-                        ->chapter($superloc->chapter->name)
-                        ->section($superloc->name);
-        }
-        else
-        {   return $self->manual
-                        ->chapter($superloc->chapter->name)
-                        ->section($superloc->section->name)
-                        ->subsection($superloc->name);
-        }
+    {   return $self->manual->chapter($superloc->name)
+            if $superloc->isa("OODoc::Text::Chapter");
+
+        my $chapter = $self->manual->chapter($superloc->chapter->name);
+
+        return $chapter->section($superloc->name)
+            if $superloc->isa("OODoc::Text::Section");
+
+        my $section = $chapter->section($superloc->section->name);
+
+        return $section->subsection($superloc->name)
+            if $superloc->isa("OODoc::Text::SubSection");
+
+        my $subsection = $section->subsection($superloc->subsection->name);
+
+        return $subsection->subsubsection($superloc->name)
+            if $superloc->isa("OODoc::Text::SubSubSection");
+
+        panic $superloc;
    }
 
    unless($manual->inherited($self))

@@ -149,13 +149,16 @@ sub isEmpty()
     not first { !$_->isEmpty } @nested;
 }
 
-sub publish(%)
-{   my ($self, %args) = @_;
-	my $p = $self->SUPER::publish(%args);
+sub publish($$)
+{   my ($self, $args) = @_;
+	my $p = $self->SUPER::publish($args);
     $p->{level} = $self->level;
     $p->{path}  = $self->path;
 
-    my @s = map $_->publish(%args), $self->subroutines;
+	my @n = map $_->publish($args)->{id}, $self->nest;
+	$p->{nest} = \@n if @n;
+
+    my @s = map $_->publish($args)->{id}, $self->subroutines;
     $p->{subroutines} = \@s if @s;
     $p;
 }

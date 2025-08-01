@@ -55,7 +55,7 @@ sub cleanup($$%)
 	);
 }
 
-=method link $manual, $object, [$text]
+=ci_method link $manual, $object, [$text, \%settings]
 
 Create the text for a link which refers to the $object.  The link will be
 shown somewhere in the $manual.  The $text will be displayed is stead
@@ -63,8 +63,8 @@ of the link path, when specified.
 
 =cut
 
-sub link($$;$)
-{   my ($self, $manual, $object, $text) = @_;
+sub link($$;$$)
+{   my ($any, $manual, $object, $text) = @_;
 
     $object = $object->subroutine if $object->isa('OODoc::Text::Option');
     $object = $object->subroutine if $object->isa('OODoc::Text::Default');

@@ -41,6 +41,15 @@ sub init($)
     $self;
 }
 
+sub publish($)
+{   my ($self, $args) = @_;
+    my $exporter = $args->{exporter};
+
+    my $p = $self->SUPER::publish($args);
+    $p->{subroutine} = $self->subroutine->unique;
+    $p;
+}
+
 #-------------------------------------------
 =section Attributes
 

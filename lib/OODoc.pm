@@ -16,7 +16,6 @@ use File::Copy            qw/copy move/;
 use File::Spec::Functions qw/catfile/;
 use List::Util            qw/first/;
 use Scalar::Util          qw/blessed/;
-use POSIX                 qw/strftime/;
 
 =chapter NAME
 
@@ -342,10 +341,11 @@ sub processFiles(@)
     #
 
     my $parser = $args{parser} || 'OODoc::Parser::Markov';
-    $parser    = 'OODoc::Parser::Markov' if $parser eq 'markov';
 
     unless(blessed $parser)
-    {   eval "require $parser";
+    {   $parser = 'OODoc::Parser::Markov' if $parser eq 'markov';
+
+        eval "require $parser";
         $@ and error __x"cannot compile {pkg} class: {err}", pkg => $parser, err => $@;
 
         $parser = $parser->new(skip_links => delete $args{skip_links})
@@ -544,71 +544,6 @@ sub formatter($@)
 }
 
 sub create() { panic 'Interface change in 2.03: use $oodoc->formatter->createPages' }
-
-=method export %options
-Convert the documentation data in a beautiful tree.
-
-=requires exporter M<OODoc::Export>-object
-Manages the conversion from source markup for text into the requested
-markup (f.i. "markov" into "html").
-
-=option  podtail POD
-=default podtail C<undef>
-The last chapters of any produced manual page, in POD syntax.
-
-=option  manuals ARRAY
-=default manuals C<undef>
-Include only information for the manuals (specified as names).
-
-=option  meta HASH
-=default meta C<+{ }>
-Key/string pairs with interesting additional data.
-
-=option  distributions HASH
-=default distributions +{}
-Name to C<MYMETA.json> content mappings of project and used distributions.
-
-=cut
-
-sub export($$%)
-{   my ($self, %args)   = @_;
-    my $exporter         = $args{exporter} or panic;
-
-    my $selected_manuals = $args{manuals};
-    my %need_manual      = map +($_ => 1), @{$selected_manuals || []};
-    my @podtail_chapters = $exporter->podChapters($args{podtail});
-
-    my %man;
-    foreach my $package (sort $self->packageNames)
-    {
-        foreach my $manual ($self->manualsForPackage($package))
-        {   !$selected_manuals || $need_manual{$manual} or next;
-            my $man = $manual->publish(%args) or next;
-
-            push @{$man->{chapters}}, @podtail_chapters;
-            $man{$manual->name} = $man;
-        }
-    }
-
-    my $meta = $args{meta} || {};
-    my %meta = map +($_ => $exporter->markup($meta->{$_}) ), keys %$meta;
-
-     +{
-        project        => $exporter->markup($self->project),
-        distribution   => $self->distribution,
-        version        => $self->version,
-        manuals        => \%man,
-        meta           => \%meta,
-        distributions  => $args{distributions} || {},
-
-        generated_by   => {
-			program         => $0,
-			program_version => $main::VERSION // undef,
-            oodoc_version   => $OODoc::VERSION // 'devel',
-            created         => (strftime "%F %T", localtime),
-        },
-      };
-}
 
 =method stats 
 Returns a string which contains some statistics about the whole parsed
