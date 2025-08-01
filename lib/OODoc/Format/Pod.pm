@@ -338,10 +338,7 @@ sub subroutineUse($$)
       : $type eq 'function' ? qq[B<$name>$params]
       : $type eq 'overload' ? qq[overload: B<$name>]
       : $type eq 'tie'      ? qq[B<$name>$params]
-      :                       '';
-
-    length $use
-        or warn "WARNING: unknown subroutine type $type for $name in $manual";
+      :    panic $type;
 
     $use;
 }

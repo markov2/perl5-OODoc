@@ -47,14 +47,58 @@ sub init($)
     $self;
 }
 
+sub _call($)
+{	my ($self, $exporter) = @_;
+    my $type       = $self->type;
+    my $unique     = $self->unique;
+    my $style      = $exporter->markupStyle;
+
+    my $name       = $exporter->markupString($self->name);
+    my $paramlist  = $exporter->markupString($self->parameters);
+
+	if($style eq 'html')
+    {   my $call       = qq[<b><a name="$unique">$name</a></b>];
+        $call         .= "(&nbsp;$paramlist&nbsp;)" if length $paramlist;
+
+        return
+            $type eq 'i_method' ? qq[\$obj-&gt;$call]
+          : $type eq 'c_method' ? qq[\$class-&gt;$call]
+          : $type eq 'ci_method'? qq[\$any-&gt;$call]
+          : $type eq 'overload' ? qq[overload: $call]
+          : $type eq 'function' ? qq[$call]
+          : $type eq 'tie'      ? $call
+          : panic "Type $type? for $call";
+    }
+
+    if($style eq 'pod')
+    {   my $params
+          = !length $paramlist ? '()'
+          : $paramlist =~ m/^[\[<]|[\]>]$/ ? "( $paramlist )"
+          :                      "($paramlist)";
+
+        return
+            $type eq 'i_method' ? qq[\$obj-E<gt>B<$name>$params]
+          : $type eq 'c_method' ? qq[\$class-E<gt>B<$name>$params]
+          : $type eq 'ci_method'? qq[\$any-E<gt>B<$name>$params]
+          : $type eq 'function' ? qq[B<$name>$params]
+          : $type eq 'overload' ? qq[overload: B<$name>]
+          : $type eq 'tie'      ? qq[B<$name>$params]
+          :    panic $type;
+	}
+
+    panic $style;
+}
+
 sub publish($)
 {   my ($self, $args) = @_;
-    $args->{subroutine} = $self;
-    my $p = $self->SUPER::publish($args);
+    my $exporter = $args->{exporter} or panic;
 
-    my $opts     = $self->collectedOptions; # = [ [ $option, $default ], ... ]
-	if(keys %$opts)
-	{   my @options = map +[ map $_->publish($args)->{id}, @$_ ],
+    my $p      = $self->SUPER::publish($args);
+    $p->{call} = $self->_call($exporter);
+
+    my $opts   = $self->collectedOptions; # = [ [ $option, $default ], ... ]
+    if(keys %$opts)
+    {   my @options = map +[ map $_->publish($args)->{id}, @$_ ],
             sort { $a->[0]->name cmp $b->[0]->name }
                 values %$opts;
 

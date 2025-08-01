@@ -794,13 +794,6 @@ sub createSuperSupers($)
     $output;
 }
 
-=method publish $config
-Extract the useful data from the manual, to be exported.
-
-=example get texts to publish
-   my $tree = $manual->publish($config);
-=cut
-
 sub publish($%)
 {	my ($self, $config, %args) = @_;
 	my $manual   = $config->{manual} = $self;

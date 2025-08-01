@@ -100,7 +100,7 @@ sub format()      { $_[0]->{OE_format} }
 #------------------
 =section Output
 
-=method publish $doc, %options
+=method tree $doc, %options
 Convert the documentation data in a beautiful tree.
 
 =requires exporter M<OODoc::Export>-object
@@ -125,7 +125,7 @@ Name to C<MYMETA.json> content mappings of project and used distributions.
 
 =cut
 
-sub publish($%)
+sub tree($%)
 {   my ($self, $doc, %args)   = @_;
 	$args{exporter}      = $self;
 
@@ -166,6 +166,8 @@ sub publish($%)
       };
 }
 
+sub publish { panic }
+
 =method processingManual $manual|undef
 Manual pages may be written in different syntaxes.  In the document tree,
 the main structure is parsed, but the text blocks are not: they are only
@@ -205,17 +207,18 @@ sub processingManual($)
 {	my ($self, $manual) = @_;
 	my $parser = $self->{OE_parser} = defined $manual ? $manual->parser : undef;
 
-	if(defined $manual)
-	{	my $style = $self->markupStyle;
-		$self->{OE_format}
-		  = $style eq 'html' ? $self->_formatterHtml($manual, $parser)
-		  : $style eq 'pod'  ? $self->_formatterPod($manual, $parser)
-		  : panic $style;
-	}
-	else
+	if(!defined $manual)
 	{	delete $self->{OE_parser};
 		$self->{OE_format} = sub { panic };
+		return;
 	}
+
+	my $style  = $self->markupStyle;
+	$self->{OE_format}
+	  = $style eq 'html' ? $self->_formatterHtml($manual, $parser)
+	  : $style eq 'pod'  ? $self->_formatterPod($manual, $parser)
+	  : panic $style;
+
 	$self;
 }
 
@@ -388,7 +391,7 @@ Each subroutine looks like this:
 
   { "id": REF,
     "name": "producePages",                  # MARKUP
-    "call": [ "$obj->producePages()", ... ], # MARKUP
+    "call": "$obj->producePages()" ],        # MARKUP
     "type": "i_method",
     "intro": "Create the manual ...",        # MARKUP
     "examples": [ REF, ... ],

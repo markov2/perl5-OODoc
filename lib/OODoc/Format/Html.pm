@@ -528,26 +528,23 @@ sub showSubroutineUse(@)
     my $manual     = $args{manual}     or panic;
     my $output     = $args{output}     or panic;
 
-    my $type       = $subroutine->type;
-    my $name       = $self->cleanupString($manual, $subroutine->name);
-    my $paramlist  = $self->cleanupString($manual, $subroutine->parameters);
     my $unique     = $subroutine->unique;
-
-    my $class      = $manual->package;
-
-    my $call       = qq[<b><a name="$unique">$name</a></b>];
-    $call         .= "(&nbsp;$paramlist&nbsp;)" if length $paramlist;
     $self->mark($manual, $unique);
 
+    my $name       = $self->cleanupString($manual, $subroutine->name);
+    my $paramlist  = $self->cleanupString($manual, $subroutine->parameters);
+    my $call       = qq[<b><a name="$unique">$name</a></b>];
+    $call         .= "(&nbsp;$paramlist&nbsp;)" if length $paramlist;
+
+    my $type       = $subroutine->type;
     my $use
       = $type eq 'i_method' ? qq[\$obj-&gt;$call]
       : $type eq 'c_method' ? qq[\$class-&gt;$call]
-      : $type eq 'ci_method'? qq[\$obj-&gt;$call<br>\$class-&gt;$call]
+      : $type eq 'ci_method'? qq[\$any-&gt;$call]
       : $type eq 'overload' ? qq[overload: $call]
       : $type eq 'function' ? qq[$call]
       : $type eq 'tie'      ? $call
-      : warning("unknown subroutine type {type} for {name} in {manual}"
-             , type => $type, name => $name, manual => $manual);
+      : panic "Type $type? for $call";
 
     $output->print( <<SUBROUTINE );
 <div class="sub $type" id="$name">

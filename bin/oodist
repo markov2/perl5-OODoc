@@ -746,7 +746,7 @@ sub create_export($$)
 #	my $tail = oodist_meta $makefile;
 #	$tail->{license_year_range} = delete $tail->{year};  # naming improvement
 
-	my $tree = $exporter->publish($doc,
+	my $tree = $exporter->tree($doc,
 		manuals       => $manuals,
 		distributions => \%distros,
 #		meta     => $tail,      # only flat key-value, where value is a string
