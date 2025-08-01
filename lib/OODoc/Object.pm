@@ -23,6 +23,21 @@ for all of the other classes.
 
 =chapter OVERLOADED
 
+=overload  '==' and '!=' (numeric comparison)
+Numeric comparison is used to compare to objects whether they are
+identical.  String comparison is overloaded to compare the names
+of the objects.
+
+=overload 'bool'
+Always returns true: "exists".
+=cut
+
+use overload
+    '=='   => sub {$_[0]->unique == $_[1]->unique},
+    '!='   => sub {$_[0]->unique != $_[1]->unique},
+    'bool' => sub {1};
+
+#-------------
 =chapter METHODS
 
 =section Constructors
@@ -61,12 +76,25 @@ sub new(@)
 
 sub init($)
 {   my ($self, $args) = @_;
+    $self->{OT_unique}   = $unique++;
     $self;
 }
 
 #-------------------------------------------
 =section Attributes
+
+=method unique
+Returns a unique id for this text item.  This is the easiest way to
+see whether two references to the same (overloaded) objects point to
+the same thing. The ids are numeric.
+
+=example
+ if($obj1->unique == $obj2->unique) {...}
+ if($obj1 == $obj2) {...}   # same via overload
+
 =cut
+
+sub unique() { $_[0]->{OT_unique} }
 
 #-------------------------------------------
 =section Manual Repository

@@ -24,24 +24,17 @@ objects and convert it into manual pages.
 
 =chapter OVERLOADED
 
-=overload  '==' and '!='
-Numeric comparison is used to compare to objects whether they are
-identical.  String comparison is overloaded to compare the names
-of the objects.
-
-=overload  '""' <stringification>
+=overload  '""' (stringification)
 Returned is the name of the text object.
 
-=overload  'cmp' <string comparison>
-Names are compared.
-
+=overload 'cmp' (string comparison)
+True when both object have same name.  Numeric comparison operators
+check whether it is the same object: subtilly different.
 =cut
 
-use overload '=='   => sub {$_[0]->unique == $_[1]->unique}
-           , '!='   => sub {$_[0]->unique != $_[1]->unique}
-           , '""'   => sub {$_[0]->name}
-           , 'cmp'  => sub {$_[0]->name cmp "$_[1]"}
-           , 'bool' => sub {1};
+use overload
+    '""'   => sub {$_[0]->name},
+    'cmp'  => sub {$_[0]->name cmp "$_[1]"};
 
 #-------------------------------------------
 =chapter METHODS
@@ -59,7 +52,7 @@ All text objects except chapters are contained in some other object.
 The type of this text element.  This is used for debugging only.
 
 =option  description STRING
-=default description ''
+=default description <empty string>
 The text which is contained in the body of this text item.  Often, this
 is filled in later by M<openDescription()>.
 
@@ -86,10 +79,9 @@ sub init($)
     exists $args->{container}   # may be explicit undef
         or panic "no text container specified for the {pkg} object", pkg => ref $self;
 
-    $self->{OT_container}= delete $args->{container};    # may be undef
+    $self->{OT_container}= delete $args->{container};    # may be undef initially
     $self->{OT_descr}    = delete $args->{description} || '';
     $self->{OT_examples} = [];
-    $self->{OT_unique}   = $unique++;
     $self->{OT_extends}  = [];
     $self;
 }
@@ -141,19 +133,6 @@ sub container(;$)
 =cut
 
 sub linenr() { $_[0]->{OT_linenr} }
-
-=method unique
-Returns a unique id for this text item.  This is the easiest way to
-see whether two references to the same (overloaded) objects point to
-the same thing. The ids are numeric.
-
-=example
- if($obj1->unique == $obj2->unique) {...}
- if($obj1 == $obj2) {...}   # same via overload
-
-=cut
-
-sub unique() { $_[0]->{OT_unique} }
 
 =method where
 Returns the source of the text item: the filename name and the line
@@ -246,8 +225,8 @@ sub publish(%)
         type => $exporter->markup(lc $self->type)
     );
 
-	if(my $name = $self->name)
-	{   $p{name} = $exporter->markup($name);
+    if(my $name = $self->name)
+    {   $p{name} = $exporter->markup($name);
     }
 
     my $descr = $self->description // '';
@@ -255,10 +234,10 @@ sub publish(%)
     {   $p{description} = $exporter->markupBlock($descr);
     }
 
-	my @e = map $_->publish(%args), $self->examples;
-	$p{examples} = \@e if @e;
+    my @e = map $_->publish(%args), $self->examples;
+    $p{examples} = \@e if @e;
 
-	\%p;
+    \%p;
 }
 
 #-------------------------------------------
