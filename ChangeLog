@@ -15,6 +15,7 @@ version 3.00:
 	- $doc->manual($name) --> $doc->findManual($name)
 	- default licenses in PM and POD-tail via Software::License
 	- hide ::Pod*::formatManual()
+	- some changes to jump.cgi for html
 
 	Fixes:
 	- wrong place for section examples.
