@@ -103,6 +103,8 @@ sub init($)
     $self;
 }
 
+sub publish { panic }
+
 #-------------------------------------------
 =section Attributes
 

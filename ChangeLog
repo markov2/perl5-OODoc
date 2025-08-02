@@ -4,10 +4,10 @@ explicitly stated otherwise.
 
 TODO:
 	- add other Log::Report levels to diagnostics
-	- convert OODoc::Template to v3
-	- check generated HTML
+	- export inheritance as structure
+	- auto-markup sub parameters in text/oorestyle
 
-version 3.00:
+version 3.00: Sat  2 Aug 14:59:32 CEST 2025
 
 	Changes:
 	- $oodoc->create()  -->  $oodoc->formatter->createPages
