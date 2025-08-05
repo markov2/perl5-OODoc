@@ -1,0 +1,484 @@
+#!/usr/bin/env perl
+# Used to translated my own old documentation style into a new style
+use warnings;
+use strict;
+use Log::Report;
+
+use Getopt::Long  qw/GetOptions/;
+use File::Find    qw/find/;
+use File::Slurper qw/read_text write_text/;
+
+sub expand_names(@);
+sub clean_syntax($);
+sub install_cleaned(@);
+sub simplify_file($);
+sub simplify_code($);
+sub simplify_pod($);
+sub rewrite_kw($);
+sub call_rewrite($$);
+
+use constant {
+	TABSTOP          => 4,
+	DOC_CODE_INDENT  => 2,
+};
+
+my %core = map +($_ => $_), qw/
+	SCALAR ARRAY HASH LIST CODE GLOB REF
+	undef PAIR PAIRS BOOLEAN STRING/;
+
+my %rewrite_kw = qw/
+  OPTIONS     %options
+  FILEHANDLE  $fh
+  FILENAME    $file
+  NAMESPACE   $ns
+  BOOL        BOOLEAN
+  REGEX       Regexp
+  REGEXS      Regexps
+  REGEXP      Regexp
+  REGEXPS     Regexps
+/;
+
+my %deprecated_modules = (
+	'File::Slurp' => 'use File:Slurper',
+	'IO::File'    => 'use open(my)',
+	'IO::Scalar'  => 'use open(my)',
+	'Carp'        => 'use Log::Report',
+);
+
+my @subroutine_types = qw/function method i_method c_method ci_method overload tie/;
+my @text_blocks      = qw/chapter section subsection subsubsection/;
+
+my $warn_oodist = <<__OODIST;
+#oodist: **DO NOT USE THIS VERION** FOR PRODUCTION
+#oodist: This file contains OODoc-style documentation which will get stripped
+#oodist: during the release of the distribution which contains this file.  You
+#oodist: can use this file for testing, however the code of this development
+#oodist: version is probably broken!
+__OODIST
+
+my @notes;   # dirty global: add to the header of this file
+
+GetOptions
+	'recursive|r!' => \(my $recursive  = 1),
+	'accept|a!'    => \(my $accept     = 0),
+	'verbose|v+'   => \(my $verbose    = 0),
+    or exit 1;
+
+$accept || $verbose or $verbose = 'DEBUG';
+dispatcher mode => $verbose, 'ALL' if $verbose;
+
+my @elements = @ARGV ? @ARGV : 'lib';
+my @files    = expand_names @elements;
+
+clean_syntax $_ for @files;
+install_cleaned @files if $accept;
+
+exit 0;
+
+###
+### HELPERS
+###
+
+sub expand_names(@)
+{
+    unless($recursive)
+    {   error "$_ is a directory, but not -r" for grep -d, @elements;
+        return @_;
+    }
+
+    my @files;
+    find { no_chdir => 1
+         , wanted   => sub { push @files, $_ if /\.pm$/ }
+         }, @_;
+    @files;
+}
+
+###
+### Accept
+###
+
+sub install_cleaned(@)
+{   foreach my $fn (@_)
+    {   rename "$fn.clean", $fn
+            or fault "cannot install cleaned $fn";
+    }
+}
+
+sub rewrite_kw($)
+{   my $kw = shift;
+    $rewrite_kw{$kw} // $core{$kw} // '$'.lc $kw;
+}
+
+sub call_rewrite($$)
+{   my ($line, $vars) = @_; 
+    my @tokens;
+    for($line)
+    {   while(s/^('[^']*'|"[^"]*"|[\@\$\%]?[a-zA-Z_][\w:]*|.)//)
+        {   my $token = $1;
+            $token    = $vars->{$token} = rewrite_kw $token
+                if $token =~ m/^[a-zA-Z_]/ && $token !~ /\:/;
+            push @tokens, $token;
+        }
+    }
+    my $new = join '', @tokens;
+    1 while $new =~ s/\(([^)]+)\)/<$1>/g;
+    $new;
+}
+
+sub clean_syntax($)
+{   my ($fn) = @_;
+
+	my $in     = read_text $fn;
+    my $outfn  = "$fn.clean";
+
+    info "* Generating $outfn";
+
+    my $in_podfile = $fn =~ m/\.pod/;
+    my %vars;
+
+	@notes     = ();   # ugly global
+
+	# $text = code, pod, code, pod, code
+	my @blocks = split /^ (\= .*? ^ =cut\s*\n)/xms, simplify_file($in);
+	unshift @blocks, "" if $in_podfile;
+	my $has_pod = $in_podfile || @blocks > 1;
+
+	my @out;
+	while(@blocks >= 2)
+	{	push @out, simplify_code(shift @blocks), simplify_pod(shift @blocks),
+	}
+    push @out, simplify_code(shift @blocks) if @blocks;
+
+#	write_text $outfn, join '',
+	print join '',
+		(!$in_podfile && $has_pod ? $warn_oodist : ''),
+		(map "#oorestyle: $_\n", @notes),
+		(@notes ? "\n" : ''),
+		@out;
+}
+
+###
+### SIMPLIFY_FILE
+###
+
+sub remove_trailing_blanks($)
+{	my $text = shift;
+	$text =~ s/[ \t\r]+\n/\n/gmr;   # also CRLF -> LF
+}
+
+sub file_tail($)
+{	my $text = shift;
+	$text =~ s/\n*\z/\n/r;          # no blank trailing lines, aways end in LF
+}
+
+sub warn_depr_modules($)            # also in the documentation
+{	my $text = shift;
+	foreach my $depr (sort keys %deprecated_modules)
+	{	push @notes, "use of deprecated $depr: $deprecated_modules{$depr}\n"
+			if $text =~ m!\b\Q$depr\E\b! or next;
+	}
+	$text;
+}
+
+sub warn_use_strict($)
+{	my $text = shift;
+	push @notes, 'no "use strict"'   if $text !~ m!^use strict\b!m;
+	push @notes, 'no "use warnings"' if $text !~ m!^use warnings\b!m;
+	push @notes, 'upgrade to 5.016?' if $text =~ m!^use (5\.\d+)!m && $1 < 5.016;
+	$text;
+}
+
+sub oodoc_upgrade($)                # old Makefile.PL
+{	my $text = shift;
+	push @notes, 'upgrade to OODoc-3 needed: use oodist --config3 && --merge3'
+		if $text =~ m/__POSTAMBLE/;
+	$text;
+}
+
+sub warn_old_disclaimer($)
+{	my $text = shift;
+	push @notes, 'old style disclaimer to be removed.'
+		if $text =~ m!^# This code is part of !;
+	$text;
+}
+
+sub expect_log_report($)        # all my code should use Log::Report
+{	my $code = shift;           # a bit sloppy: scan contains pod
+	$code =~ m!^use\+Log::Report\b!
+		or push @notes, 'not using Log::Report yet.';
+	$code;
+}
+
+sub core_errorhandling($)       # avoid core error handling functions, like die, warn, confess, ...
+{	my $code = shift;           # when Log::Report is loaded.  A bit sloppy: scan contains pod
+	$code =~ m!^use\+Log::Report\b! or return $code;
+
+	foreach my $function (qw/die warn carp confess cluck croak/)
+	{	push @notes, "L::R but still using $function."
+			if $code =~ m!\b\Q$function\E\b!;
+	}
+}
+
+sub fix_f_url($)               # F<link> should have been L<link>
+{	my $text = shift;
+	$text =~ s/\bF\<https?\:/L<https:/gr;
+}
+
+sub simplify_file($)
+{	my $text = shift;
+
+	# ran from last to first
+	fix_f_url
+	expect_log_report
+	oodoc_upgrade
+	warn_old_disclaimer
+	warn_depr_modules
+	warn_use_strict
+	file_tail
+	remove_trailing_blanks
+		$text;
+}
+
+###
+### SIMPLIFY_CODE
+###
+
+sub opening_parens($)
+{	my $code = shift;
+
+	$code =~ s,
+		(?<![\)])               # ignore { as block
+		(\s+\#.*?\n|\n)         # optional comment
+		(\s+)                   # leading blanks
+		([\(\{\[] | \+ [\{\[] | sub\s+\{ )  # bracket
+		(\s+)
+	, $3$1$2 $4,grx;
+}
+
+sub commas($)
+{	my $code = shift;
+
+	$code =~ s!
+		(\s+\#.*?\n|\n)         # optional comment
+		(\n*)                   # optional blank lines
+		((?:[ ][ ][ ][ ]|\t)*)  # indent
+		[ ]+\,\s+               # the comma
+	!,$1$2$3    !grxm
+
+	      =~ s#
+		(?<![,;]) (\n[ \t]+ [\)\}\]])
+	#,$1#grx;                   # eod of list, missing comma
+}
+
+sub _tabstop($)
+{	my @blanks = split //, shift;
+	my $count  = 0;
+	while(@blanks)
+	{	my $char = shift @blanks;
+		if($char eq ' ') { $count++ }
+		else { $count = ($count - $count % TABSTOP) + TABSTOP }   # next tabstop
+	}
+	"\t" x int(($count+1) / TABSTOP);
+}
+
+sub create_tabbing($)
+{	my $code = shift;
+	$code =~ s!
+		^ ([ \t]+)              # leaning blanks
+	!_tabstop($1)!grxme;
+}
+
+sub quote_bareword_class($)     # not permitted anymore under 'warnings'
+{	my $code = shift;           # often seen in Makefile.PL
+
+	$code =~ s!
+		\b(\w+\:\:[\w:]+|Encode|JSON) # pacakge name
+		(\s+\=\>)               # fat comma
+	!'$1'$2!grx;
+}
+
+sub remove_separators($)        # in old code on weird places
+{	my $code = shift;           # pod blocks will add them again when useful.
+
+	$code =~ s!
+		\#[-]{3,}               # the separator line
+		\n*                     # skip trailing blank lines
+	!!grxm;
+}
+
+sub standard_use_quoting($)     # standardize on  "use $pkg qw/@words/;"
+{	my $code = shift;
+	$code =~ s!
+		^ (use\s+[\w:]+\s+)     # use $pkg
+		qw (?: \((.*?)\) | \{(.*?)\} | \[(.*)\] )
+	!$1qw/$+/!grxm;
+}
+
+sub simplify_code($)
+{	my $code = shift;
+
+	# First action is last in chain
+	standard_use_quoting
+	quote_bareword_class
+	remove_separators
+	create_tabbing
+	commas
+	opening_parens
+		$code;
+}
+
+###
+### SIMPLIFY_POD
+###
+
+sub add_separator($)
+{	my $pod = shift;
+	my $begintags = join '|', @text_blocks;
+	( $pod =~ m!\A\=(?:$begintags)! ? "#--------------------\n" : '') . $pod;
+}
+
+sub doc_code_indent($)
+{	my $lines = shift;
+	my $has_indent = $lines->[0] =~ m!^([ ]+)! ? $1 : panic $lines->[0];
+
+	if(length $has_indent != DOC_CODE_INDENT)
+	{	my $indent = ' ' x DOC_CODE_INDENT;
+		s/^\Q$has_indent\E/$indent/ for @$lines;
+	}
+
+	$lines;
+}
+
+sub doc_code($)
+{	my $lines = shift;
+
+	doc_code_indent
+		$lines;
+
+	# first line is indication for indent of whole block
+	@$lines;
+}
+
+sub improve_doc_code($)
+{	my $pod   = shift;
+
+	my @lines = split /^/, $pod;
+	my (@out, @code);
+
+  TEXT:
+	while(@lines)
+	{	my $line = shift @lines;
+		(push @out, $line), next if $line !~ m/^ /;
+
+		push @code, $line;
+		while(@lines)
+		{	my $line = shift @lines;
+			if($line ne "\n" && $line =~ m!^[^ ]!)
+			{	push @out, (doc_code \@code), $line;
+				@code = ();
+				next TEXT;
+			}
+			push @code, $line;
+		}
+    }
+	push @out, doc_code \@code if @code;
+	join '', @out;
+}
+
+sub link_to_metacpan($)         # some old links
+{ 	my $pod = shift;
+	$pod =~ s!https?://search\.cpan\.org/\~\w+!https://metacpan.org/dist!gr;
+}
+
+sub warn_http_link($)
+{ 	my $pod = shift;
+	push @notes, map "Link http -> https for '$_'",
+		$pod =~ m!(http://.*?)[?#\s]!g;
+	$pod;
+}
+
+sub param_markings($)
+{	my $sub     = shift;
+	my $ref     = $sub =~ s/\n/ /gr =~ s/[ ]{2,}/ /gr;
+	substr($ref, 60, -1) = '...';
+	my ($type, $name, $params) = $sub =~ m!^\=(\w+) \s+ (\w+) ([^\n]*)!xm or die $ref;
+
+	my @params = $params =~ m! ([\$\%\@]?\w+) !gmx;
+	my @options = $sub =~ m!^\=(?:option|default|requires) \s+ (\w+)!gmx;
+#warn "PARAM($type $name) @params; @options";
+	my %params  = map +($_ => 1), @params, @options;
+
+	# Get's simpler per line...
+	my @out;
+	foreach my $line (split /^/, $sub)
+	{	if($line =~ m!^[\= ]!)
+		{	push @out, $line;
+			next;
+		}
+		# Parameter marking is automatic now
+		$line =~ s/([BCI]\<([^>]+)\>)/$params{$2} ? $2 : $1/ge;  # old style
+		$line =~ s/([\$\%\@][a-zA-Z_]+)/$params{$1} or push @notes, "not found $type $name($1)"; $1/ge;  # auto param
+		push @out, $line;
+	}
+
+	join '', @out;
+}
+
+sub simplify_subroutine($)
+{	my $sub = shift;
+
+	param_markings
+		$sub;
+}
+
+sub simplify_subroutines($)
+{	my $pod       = shift;
+	my $begintags = join '|', @subroutine_types;
+	my $endtags   = join '|', @subroutine_types, @text_blocks, 'cut';
+
+	$pod =~ s! (
+		^ \=(?:$begintags)
+		.*?
+		^ (?= \=(?:$endtags) )
+	) !simplify_subroutine($1)!grxmes;
+}
+
+sub simplify_pod($)
+{	my $pod = shift;
+
+	improve_doc_code
+	simplify_subroutines
+	warn_http_link
+	link_to_metacpan
+	add_separator               # last change!
+		$pod;
+}
+
+__END__
+
+    while(my $line = $in->getline)
+    {   chomp $line;
+        if($line =~ m/^\=(\w+)(?:\s+(\w*)\s*(.*))?/)
+        {   my ($action, $name, $params) = ($1, $2, $3);
+            $in_podfile = $action ne 'cut';
+            if($action =~ m/method$|^function$|^overload$/)
+            {   %vars = ();
+                trace "From: $line";
+                
+                $params = call_rewrite $params, \%vars;
+                $line   = "=$action $name $params";
+                trace "  to: $line";
+            }
+            elsif($action =~ m/^head|^chapter|^(?:sub(?:sub)?)?section/)
+            {   %vars = ();
+            }
+        }
+        elsif($in_podfile && $line !~ m/^\s/)
+        {
+            my $old = $line;
+            $line =~ s!\b([A-Za-z][\w:]*)\b!$vars{$1} // $1!ge;
+            do { trace " < $old"; trace " > $line"} if $old ne $line;
+        }
+        $out->print($line, "\n");
+    }
+}
