@@ -557,7 +557,7 @@ SUBROUTINE
     {   my $defd    = $subroutine->manual;
         my $sublink = $self->link($defd, $subroutine, $name);
         my $manlink = $self->link($manual, $defd);
-        $output->print( qq[See $sublink in $manlink.<br>\n] );
+        $output->print( qq[Inherited from $sublink in $manlink.<br>\n] );
     }
     $self;
 }
@@ -686,7 +686,11 @@ sub showSubroutineDescriptionRefer(@)
     my $manual     = $args{manual}     or panic;
     my $subroutine = $args{subroutine} or panic;
     my $output     = $args{output}     or panic;
-    $output->print("\n<p>See ", $self->link($manual, $subroutine), "</p>\n");
+
+    my $defd       = $subroutine->manual;
+	my $sublink    = $self->link($defd, $subroutine);
+	my $manlink    = $self->link($manual, $defd);
+    $output->print("\n<p>See $sublink in $manlink</p>\n");
 }
 
 #----------------------

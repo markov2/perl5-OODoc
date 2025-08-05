@@ -19,7 +19,7 @@ use OODoc::Manual              ();
 
 use File::Spec;
 
-my $url_modsearch = "http://search.cpan.org/perldoc?";
+my $url_modsearch = "https://metacpan.org/dist/";
 my $url_coderoot  = 'CODE';
 my @default_rules;
 
@@ -114,6 +114,7 @@ sub rules() { $_[0]->{OPM_rules} }
   , [ '=section'    => 'docSection'    ]
   , [ '=subsection' => 'docSubSection' ]
   , [ '=subsubsection' => 'docSubSubSection' ]
+
   , [ '=method'     => 'docSubroutine' ]
   , [ '=i_method'   => 'docSubroutine' ]
   , [ '=c_method'   => 'docSubroutine' ]
@@ -121,14 +122,18 @@ sub rules() { $_[0]->{OPM_rules} }
   , [ '=function'   => 'docSubroutine' ]
   , [ '=tie'        => 'docSubroutine' ]
   , [ '=overload'   => 'docSubroutine' ]
+
   , [ '=option'     => 'docOption'     ]
   , [ '=default'    => 'docDefault'    ]
   , [ '=requires'   => 'docRequires'   ]
   , [ '=example'    => 'docExample'    ]
   , [ '=examples'   => 'docExample'    ]
+
   , [ '=error'      => 'docDiagnostic' ]
   , [ '=warning'    => 'docDiagnostic' ]
   , [ '=notice'     => 'docDiagnostic' ]
+  , [ '=info'       => 'docDiagnostic' ]
+  , [ '=alert'      => 'docDiagnostic' ]
   , [ '=debug'      => 'docDiagnostic' ]
  
   # deprecated
@@ -402,7 +407,7 @@ sub docChapter($$$$)
 sub closeChapter()
 {   my $self = shift;
     my $chapter = delete $self->{OPM_chapter} or return;
-    $self->closeSection()->closeSubroutine();
+    $self->closeSection->closeSubroutine;
 }
 
 #-------------------------------------------
@@ -433,7 +438,7 @@ sub docSection($$$$)
 sub closeSection()
 {   my $self    = shift;
     my $section = delete $self->{OPM_section} or return $self;
-    $self->closeSubSection();
+    $self->closeSubSection;
 }
 
 #-------------------------------------------
@@ -516,21 +521,21 @@ sub docSubroutine($$$$)
     $line    =~ s/^\=(\w+)\s+//;
     my $type = $1;
 
-    my ($name, $params)
-     = $type eq 'overload' ? ($line, '')
-     :                       $line =~ m/^(\w*)\s*(.*?)\s*$/;
+    my ($name, $params) = $type eq 'overload' ? ($line, '') : $line =~ m/^(\w*)\s*(.*?)\s*$/;
 
     my $container = $self->{OPM_subsection} || $self->{OPM_section} || $self->{OPM_chapter}
         or error __x"subroutine {name} outside chapter in {file} line {line}", name => $name, file => $fn, line => $ln;
 
     $type    = 'i_method' if $type eq 'method';
-    my $sub  = $self->{OPM_subroutine} =
-       OODoc::Text::Subroutine->new(type => $type, name => $name, parameters => $params, linenr => $ln, container => $container);
+    my $sub  = $self->{OPM_subroutine} = OODoc::Text::Subroutine->new(type => $type, name => $name,
+		parameters => $params, linenr => $ln, container => $container);
 
     $self->setBlock($sub->openDescription);
     $container->addSubroutine($sub);
     $sub;
 }
+
+sub activeSubroutine() { $_[0]->{OPM_subroutine} }
 
 sub closeSubroutine()
 {   my $self = shift;
@@ -560,7 +565,7 @@ sub docOption($$$$)
     }
     my ($name, $parameters) = ($1, $2);
 
-    my $sub  = $self->{OPM_subroutine}
+    my $sub  = $self->activeSubroutine
         or error __x"option {name} outside subroutine in {file} line {line}", name => $name, file => $fn, line => $ln;
 
     my $option  = OODoc::Text::Option->new
@@ -599,7 +604,7 @@ sub docDefault($$$$)
 
     my ($name, $value) = ($1, $2);
 
-    my $sub = $self->{OPM_subroutine}
+    my $sub = $self->activeSubroutine
        or error __x"default for option {name} outside subroutine in {file} line {line}", name => $name, file => $fn, line => $ln;
 
     my $default = OODoc::Text::Default->new(name => $name, value => $value, linenr => $ln, subroutine => $sub);
@@ -645,7 +650,7 @@ sub docDiagnostic($$$$)
         return;
     }
 
-    my $sub  = $self->{OPM_subroutine}
+    my $sub  = $self->activeSubroutine
         or error __x"diagnostic {type} outside subroutine in {file} line {line}", type => $type, file => $fn, line => $ln;
 
     my $diag  = OODoc::Text::Diagnostic->new(type => ucfirst($type), name => $line, linenr => $ln, subroutine => $sub);
@@ -671,7 +676,7 @@ sub docExample($$$$)
     $line =~ s/^=examples?\s*//;
     $line =~ s/^\#.*//;
 
-    my $container = $self->{OPM_subroutine}
+    my $container = $self->activeSubroutine
                  || $self->{OPM_subsubsection}
                  || $self->{OPM_subsection}
                  || $self->{OPM_section}
@@ -842,7 +847,7 @@ sub decomposeL($$)
         }
 
         if($man !~ m/\(\d.*\)\s*$/)
-        {   (my $escaped = $man) =~ s/\W+/_/g;
+        {   my $escaped = $man =~ s/\W+/_/gr;
             $dest = "$url_modsearch$escaped";
         }
     }
@@ -878,6 +883,7 @@ sub cleanupPod($$$)
         undef $protect if $lines[$i] =~ m/^\s*$/ && $protect && $protect eq 'for';
         next if $protect;
 
+		$lines[$i] =~ s/\bP\<([^>]*)\>/C<$1>/g;
         $lines[$i] =~ s/\bM\<([^>]*)\>/$self->cleanupPodM($manual, $1, \%args)/ge;
 
         $lines[$i] =~ s/\bL\<([^>]*)\>/$self->cleanupPodL($manual, $1, \%args)/ge
@@ -894,7 +900,7 @@ sub cleanupPod($$$)
             }
         }
         else
-        {   $lines[$i] =~ s/^\\\=/\=/;
+        {   $lines[$i] =~ s/^\\\=/=/;
         }
 
         # Remove superfluous blanks
@@ -933,6 +939,22 @@ sub cleanupPodL($$$)
     $text;
 }
 
+sub _htmlReformat($$$$)
+{	my ($self, $manual, $key, $body, $args) = @_;
+	    $key eq 'B' ? "<b>$body</b>"
+	  : $key eq 'C' ? "<code>$body</code>"
+	  : $key eq 'E' ? "&$body;"
+      : $key eq 'F' ? qq{<i class="filename">$body</i>}
+	  : $key eq 'I' ? "<i>$body</i>"
+	  : $key eq 'L' ? $self->cleanupHtmlL($manual, $body, $args)
+	  : $key eq 'M' ? $self->cleanupHtmlM($manual, $body, $args)
+	  : $key eq 'P' ? qq{<tt class="parameter">$body</tt>}
+	  : $key eq 'S' ? $body =~ s/[ ]/&nbsp;/gr
+	  : $key eq 'X' ? ''
+	  : $key eq 'Z' ? '&ZeroWidthSpace;'
+	  : error __x"Unknown format key '{key}' in manual {manual}", key => $key, manual => $manual->name;
+}
+
 sub cleanupHtml($$$)
 {   my ($self, $manual, $string, %args) = @_;
     defined $string && length $string or return '';
@@ -965,31 +987,22 @@ sub cleanupHtml($$$)
     {   unless($is_html)
         {   s#\&#\&amp;#g;
             s#(\s|^)\<([^>]+)\>#$1&lt;$2&gt;#g;
-            s#(?<!\b[LFCIBEMX])\<#&lt;#g;
+            s#(?<!\b[BCEFILSXMP])\<#&lt;#g;
             s#([=-])\>#$1\&gt;#g;
         }
-        s/\bM\<([^>]*)\>/$self->cleanupHtmlM($manual, $1, \%args)/ge;
-        s/\bL\<([^>]*)\>/$self->cleanupHtmlL($manual, $1, \%args)/ge;
-        s#\bI\<([^>]*)\>#<em>$1</em>#g;
-        s#\bB\<([^>]*)\>#<b>$1</b>#g;
-        s#\bE\<([^>]*)\>#\&$1;#g;
-        s#^\=over\s+\d+\s*#\n<ul>\n#gms;
-        s#(?:\A|\n)\=item\s*(?:\*\s*)?([^\n]*)#\n<li>$1<br />#gms;
-        s#(?:\A|\s*)\=back\b#\n</ul>#gms;
-        s#\bC\<([^>]*)\>#<code>$1</code>#g;  # introduces a '<', hence last
-        s#^=pod\b##gm;
+		s# \b ([A-Z]) (?: \<\<\s*(.*?)\s*\>\> | \<(.*?)\> ) #
+			$self->_htmlReformat($manual, $1, $+, \%args) #gxe;
 
-        # when F<> contains a URL, it will be used. However, when it
-        # contains a file, we cannot do anything with it yet.
-        s#\bF\<(\w+\://[^>]*)\>#<a href="$1">$1</a>#g;
-        s#\bF\<([^>]*)\>#<tt>$1</tt>#g;
+        s#^\=over(?:\s+\d+)?\s*$#\n<ul>\n#gms;
+        s#^\=item\s*(?:\*\s*)?([^\n]*)#\n<li>$1<br />#gms;
+        s#^\=back\b#\n</ul>#gms;
+        s#^\=pod\b##gm;
 
         my ($label, $level, $title);
         s#^\=head([1-6])\s*([^\n]*)#
-          ($title, $level) = ($1, $2);
-          $label = $title;
-          $label =~ s/\W+/_/g;
-          qq[<h$level class="$title"><a name="$label">$title</a></h$level>];
+			($title, $level) = ($1, $2);
+			$label = $title =~ s/\W+/_/gr;
+			qq[<h$level class="$title"><a name="$label">$title</a></h$level>];
          #ge;
 
         next if $is_html;
@@ -1126,12 +1139,12 @@ A more complex list of parameters, by convension, is a LIST of
 =over 4
 =item C<undef>: undef is accepted on this spot;
 =item C<$scalar>: a single value;
-=item C<%options>: a list of key-value pairs;
+=item C<@list>: a LIST of values;
+=item C<%options>: a LIST of key-value PAIRS;
 =item C<\@array>: a reference to an ARRAY of values;
 =item C<\%hash>: a reference to a HASH;
-=item C<LIST>: a comma-separated sequence of values;
-=item C< [something] >: the parameter is optional; and
-=item C< ($scalar|\@array|undef) >: alternative parameters on that position.
+=item C<[something]>: the parameter is optional; and
+=item C<($scalar|\@array|undef)>: alternative parameters on that position.
 =back
 
 For instance:
@@ -1186,14 +1199,51 @@ For comfort, all POD markups are supported as well
 
 =section Text markup
 
-Next to the structural markup, there is textual markup.  This markup
-is the same as POD defines in the perlpod manual page. For instance,
-E<lt>some codeE<gt> can be used to create visual markup as a code
-fragment.
+Besides above structural markup, there is text markup. The parser supports
+the standard formatting codes, explained in the C<perlpod> manual:
 
-One kind is added to the standard list: the C<M>.
+=over 4
+=item C<< BZ<><text> >>; bold text
+=item C<< CZ<><code> >>; code text, fixed font
+=item C<< EZ<><escape> >>; html entities
+=item C<< FZ<><filename> >>; filenames
+=item C<< IZ<><text> >>; italic text
+=item C<< LZ<><link> >>; link to text block or url
+=item C<< SZ<><text> >>; non-breaking spaces
+=item C<< XZ<><topic name> >>; link destination
+=item C<< ZZ<><> >>; null format code
+=back
 
-=subsection The M-link
+This parser adds two more:
+
+=over 4
+=item C<< MZ<><link> >>; link to subroutine and options
+=item C<< PZ<><name> >>; marks the parameter of the sub
+=back
+
+These two are defined in the next sections.
+
+=subsection The parameter marker C<P>
+
+Within the description of a function or method, you often refer to
+parameter or options of that element.  When you pick good names for
+these, then the description text can smoothly refer to them. Example:
+
+  =method changeTitle $manual, $title
+  Change the $title of this $manual without saving.
+
+The element description must contain C<%options> or C<\%options> when
+it has (inherited) options.
+
+In this example, the variables will get highlighted by the formatters
+automatically, unless they already have a style (like C<< CZ<><$title> >>).
+They will get marked-up with a C<< PZ<><$title> >>.  You may also do this
+explicitly:
+
+  =method changeTitle $manual, $title
+  Change the P<$title> of this P<$manual> without saving.
+
+=subsection The method link C<M>
 
 The C<M>-link can not be nested inside other text markup items.  It is used
 to refer to manuals, subroutines, and options.  You can use an C<L>-link
@@ -1202,11 +1252,11 @@ manual page while converting it to other manual formats.
 
 Syntax of the C<M>-link:
 
- M < OODoc::Object >
- M < OODoc::Object::new() >
- M < OODoc::Object::new(verbose) >
- M < new() >
- M < new(verbose) >
+ MZ<><OODoc::Object>
+ MZ<><OODoc::Object::new()>
+ MZ<><OODoc::Object::new(verbose)>
+ MZ<><new()>
+ MZ<><new(verbose)>
 
 These links refer to a manual page, a subroutine within a manual page, and
 an option of a subroutine respectively.  And then two abbreviations are
@@ -1218,37 +1268,33 @@ you may refer to inherited documentation as well.
 The standard POD defines a C<L> markup tag.  This can also be used with
 this Markov parser.
 
-The following syntaxes are supported:
+The following syntaxes are supported.  Below, C<block> can be any of a chapter,
+section, subsection, or subsubsection name.  Here, C<manual> refers to a (unix)
+manual page, might be a Perl module.
 
- L < manual >
- L < manual/section >
- L < manual/"section" >
- L < manual/subsection >
- L < manual/"subsection" >
- L < /section >
- L < /"section" >
- L < /subsection >
- L < /"subsection" >
- L < "section" >
- L < "subsection" >
- L < "subsubsection" >
- L < unix-manual >
- L < url >
+ LZ<><manual>
+ LZ<><manual/block>
+ LZ<><manual/"block">
+ LZ<></block>
+ LZ<></"block">
+ LZ<><"block">
+ LZ<><url>
 
-In the above, I<manual> is the name of a manual, I<section> the name of
-any section (in that manual, by default the current manual), and
-I<subsection> a subsection (in that manual, by default the current manual).
+All above can also carry an alternative text to be displayed with the link. For
+instance:
+
+ LZ<><text|manual/"block">
 
 The I<unix-manual> MUST be formatted with its chapter number, for instance
-C<cat(1)>, otherwise a link will be created.  See the following examples
+C<< MZ<><cat(1)> >>, otherwise a link will be created.  See the following examples
 in the html version of these manual pages:
 
- M < perldoc >              illegal: not in distribution
- L < perldoc >              L<perldoc>
- L < perldoc(1perl) >       L<perldoc(1perl)>
- M < OODoc::Object >        M<OODoc::Object>
- L < OODoc::Object >        L<OODoc::Object>
- L < OODoc::Object(3pm) >   L<OODoc::Object(3pm)>
+ MZ<><perldoc>              illegal: not in distribution
+ LZ<><perldoc>              L<perldoc>
+ LZ<><perldoc(1perl)>       L<perldoc(1perl)>
+ MZ<><OODoc::Object>        M<OODoc::Object>
+ LZ<><OODoc::Object>        L<OODoc::Object>
+ LZ<><OODoc::Object(3pm)>   L<OODoc::Object(3pm)>
 
 =section Grouping subroutines
 

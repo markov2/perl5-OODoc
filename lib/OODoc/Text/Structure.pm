@@ -91,9 +91,9 @@ sub niceName()
 Represent the location of this chapter, section, or subsection as
 one string, separated by slashes.
 
-=example
+=example path expression
  print $subsect->path; 
-    # may print:  METHODS/Container/Search
+ # may print:  METHODS/Container/Search
 =cut
 
 sub path() { panic "Not implemented" }
@@ -108,12 +108,13 @@ sub findEntry($) { panic "Not implemented" }
 #-------------------------------------------
 =section Collected
 
-=method all $method, $parameters
+=method all $method, \%parameters
 Call the $method recursively on this object and all its sub-structures.
-For instance, when C<all> is called on a chapter, it first will call
-the $method on that chapter, than on all its sections and subsections.
-The $parameters are passed with each call.  The results of all calls is
-returned as list.
+For instance, when called on a chapter, it first will call the $method on
+that chapter, than on all its sections, subsections, and subsubsections.
+The %parameters are passed with each call.  The results of all calls is
+returned as LIST.
+
 =cut
 
 sub all($@)
@@ -122,11 +123,11 @@ sub all($@)
 }
 
 =method isEmpty 
-Return true if this text structure is only a place holder for something
-found in a super class.  Structured elements are created with
+Returns C<true> if this text structure is only a place holder for
+something found in a super class.  Structured elements are created with
 M<emptyExtension()> on each sub-class pass the idea of order and to
-collect subroutines to be listed.  However, in some cases, nothing
-is to be listed after all, and in that case, this method returns C<true>.
+collect subroutines to be listed.  However, in some cases, nothing is
+to be listed after all, and in that case, this method returns C<true>.
 
 =example
  unless($chapter->isEmpty) ...
@@ -166,8 +167,8 @@ sub publish($$)
 #-------------------
 =section Subroutines
 
-Each manual page structure element (chapter, section, and subsection)
-can contain a list of subroutine descriptions.
+Each manual page structure element (chapter, section, subsection, and
+subsubsection) can contain a list of subroutine descriptions.
 
 =method addSubroutine $objects
 A subroutine (M<OODoc::Text::Subroutine> object) is added to the
@@ -207,7 +208,7 @@ sub subroutine($)
     first {$_->name eq $name} $self->subroutines;
 }
 
-=method setSubroutines ARRAY
+=method setSubroutines \@subs
 Sets the subroutines which are related to this text structure, replacing
 the preivous set.  This is used when the manual pages are expanded into
 each-other to simplify working with the inheritance relations.
@@ -220,7 +221,6 @@ sub setSubroutines($)
 
 #-------------------------------------------
 =section Commonly used functions
-
 =cut
 
 

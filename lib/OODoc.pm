@@ -40,7 +40,7 @@ of the Perl tool-chain.
 
 Do not forget to B<read> the L</DETAILS> section further down on this
 manual-page to get started.  Please contribute ideas.  Have a look at
-the main website of this project at L<http://perl.overmeer.net/oodoc/>.
+the main website of this project at L<https://perl.overmeer.net/oodoc/>.
 That is also an example of the produced html output.
 
 =chapter METHODS

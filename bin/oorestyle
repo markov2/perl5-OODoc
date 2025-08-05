@@ -1,5 +1,9 @@
 #!/usr/bin/env perl
 # Used to translated my own old documentation style into a new style
+
+# TODO: code-in-pod cleanup commas and parens
+# TODO: auto-add warnings/errors/info
+
 use warnings;
 use strict;
 use Log::Report;
@@ -400,7 +404,7 @@ sub warn_http_link($)
 sub param_markings($)
 {	my $sub     = shift;
 	my $ref     = $sub =~ s/\n/ /gr =~ s/[ ]{2,}/ /gr;
-	substr($ref, 60, -1) = '...';
+	substr($ref, 60, -1) = '...' if length $ref > 63;
 	my ($type, $name, $params) = $sub =~ m!^\=(\w+) \s+ (\w+) ([^\n]*)!xm or die $ref;
 
 	my @params = $params =~ m! ([\$\%\@]?\w+) !gmx;
