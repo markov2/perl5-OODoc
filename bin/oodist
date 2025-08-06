@@ -962,7 +962,7 @@ __TAIL
 
 sub merge3()
 {
-	print <<__MERGE
+	print <<__MERGE;
 
 WriteMakefile
 	...
@@ -980,7 +980,7 @@ WriteMakefile
 		prereqs => {
 			develop => {
 				requires => {
-					'OODoc' => '3.00',
+					'OODoc' => $OODoc::VERSION,
 				}
 			},
 			test => {

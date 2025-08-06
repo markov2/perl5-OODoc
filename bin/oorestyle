@@ -1,8 +1,8 @@
 #!/usr/bin/env perl
-# Used to translated my own old documentation style into a new style
+# Used by markov to translate his own old documentation style into a new style,
+# with his 2025 opinions.
 
 # TODO: code-in-pod cleanup commas and parens
-# TODO: auto-add warnings/errors/info
 
 use warnings;
 use strict;
@@ -18,7 +18,6 @@ sub install_cleaned(@);
 sub simplify_file($);
 sub simplify_code($);
 sub simplify_pod($);
-sub rewrite_kw($);
 sub call_rewrite($$);
 
 use constant {
@@ -26,21 +25,7 @@ use constant {
 	DOC_CODE_INDENT  => 2,
 };
 
-my %core = map +($_ => $_), qw/
-	SCALAR ARRAY HASH LIST CODE GLOB REF
-	undef PAIR PAIRS BOOLEAN STRING/;
-
-my %rewrite_kw = qw/
-  OPTIONS     %options
-  FILEHANDLE  $fh
-  FILENAME    $file
-  NAMESPACE   $ns
-  BOOL        BOOLEAN
-  REGEX       Regexp
-  REGEXS      Regexps
-  REGEXP      Regexp
-  REGEXPS     Regexps
-/;
+my @capture_diags = qw/alert error warning fault notice info/;
 
 my %deprecated_modules = (
 	'File::Slurp' => 'use File:Slurper',
@@ -53,11 +38,11 @@ my @subroutine_types = qw/function method i_method c_method ci_method overload t
 my @text_blocks      = qw/chapter section subsection subsubsection/;
 
 my $warn_oodist = <<__OODIST;
-#oodist: **DO NOT USE THIS VERION** FOR PRODUCTION
+
+#oodist: *** DO NOT USE THIS VERSION FOR PRODUCTION ***
 #oodist: This file contains OODoc-style documentation which will get stripped
-#oodist: during the release of the distribution which contains this file.  You
-#oodist: can use this file for testing, however the code of this development
-#oodist: version is probably broken!
+#oodist: during its release in the distribution.  You can use this file for
+#oodist: testing, however the code of this development version may be broken!
 __OODIST
 
 my @notes;   # dirty global: add to the header of this file
@@ -66,7 +51,7 @@ GetOptions
 	'recursive|r!' => \(my $recursive  = 1),
 	'accept|a!'    => \(my $accept     = 0),
 	'verbose|v+'   => \(my $verbose    = 0),
-    or exit 1;
+		or exit 1;
 
 $accept || $verbose or $verbose = 'DEBUG';
 dispatcher mode => $verbose, 'ALL' if $verbose;
@@ -85,16 +70,16 @@ exit 0;
 
 sub expand_names(@)
 {
-    unless($recursive)
-    {   error "$_ is a directory, but not -r" for grep -d, @elements;
-        return @_;
-    }
+	unless($recursive)
+	{	error "$_ is a directory, but not -r" for grep -d, @elements;
+		return @_;
+	}
 
-    my @files;
-    find { no_chdir => 1
-         , wanted   => sub { push @files, $_ if /\.pm$/ }
-         }, @_;
-    @files;
+	my @files;
+	find { no_chdir => 1
+		 , wanted   => sub { push @files, $_ if /\.pm$/ }
+		 }, @_;
+	@files;
 }
 
 ###
@@ -102,43 +87,43 @@ sub expand_names(@)
 ###
 
 sub install_cleaned(@)
-{   foreach my $fn (@_)
-    {   rename "$fn.clean", $fn
-            or fault "cannot install cleaned $fn";
-    }
+{	foreach my $fn (@_)
+	{	rename "$fn.clean", $fn
+			or fault __x"cannot install cleaned {file}", file => $fn;
+	}
 }
 
 sub rewrite_kw($)
-{   my $kw = shift;
-    $rewrite_kw{$kw} // $core{$kw} // '$'.lc $kw;
+{	my $kw = shift;
+	$rewrite_kw{$kw} // $core{$kw} // '$'.lc $kw;
 }
 
 sub call_rewrite($$)
-{   my ($line, $vars) = @_; 
-    my @tokens;
-    for($line)
-    {   while(s/^('[^']*'|"[^"]*"|[\@\$\%]?[a-zA-Z_][\w:]*|.)//)
-        {   my $token = $1;
-            $token    = $vars->{$token} = rewrite_kw $token
-                if $token =~ m/^[a-zA-Z_]/ && $token !~ /\:/;
-            push @tokens, $token;
-        }
-    }
-    my $new = join '', @tokens;
-    1 while $new =~ s/\(([^)]+)\)/<$1>/g;
-    $new;
+{	my ($line, $vars) = @_;
+	my @tokens;
+	for($line)
+	{	while(s/^('[^']*'|"[^"]*"|[\@\$\%]?[a-zA-Z_][\w:]*|.)//)
+		{	my $token = $1;
+			$token    = $vars->{$token} = rewrite_kw $token
+				if $token =~ m/^[a-zA-Z_]/ && $token !~ /\:/;
+			push @tokens, $token;
+		}
+	}
+	my $new = join '', @tokens;
+	1 while $new =~ s/\(([^)]+)\)/<$1>/g;
+	$new;
 }
 
 sub clean_syntax($)
-{   my ($fn) = @_;
+{	my ($fn) = @_;
 
 	my $in     = read_text $fn;
-    my $outfn  = "$fn.clean";
+	my $outfn  = "$fn.clean";
 
-    info "* Generating $outfn";
+	info "* Generating $outfn";
 
-    my $in_podfile = $fn =~ m/\.pod/;
-    my %vars;
+	my $in_podfile = $fn =~ m/\.pod/;
+	my %vars;
 
 	@notes     = ();   # ugly global
 
@@ -151,7 +136,7 @@ sub clean_syntax($)
 	while(@blocks >= 2)
 	{	push @out, simplify_code(shift @blocks), simplify_pod(shift @blocks),
 	}
-    push @out, simplify_code(shift @blocks) if @blocks;
+	push @out, simplify_code(shift @blocks) if @blocks;
 
 #	write_text $outfn, join '',
 	print join '',
@@ -249,12 +234,22 @@ sub simplify_file($)
 
 sub opening_parens($)
 {	my $code = shift;
-
-	$code =~ s,
-		(?<![\)])               # ignore { as block
-		(\s+\#.*?\n|\n)         # optional comment
+	$code =~ s!
+		(?<=\w)                 # end of word
+		(\s+\#.*?\n|\s*\n)      # followed by optional comment
 		(\s+)                   # leading blanks
-		([\(\{\[] | \+ [\{\[] | sub\s+\{ )  # bracket
+		[(] \s+                 # parens
+        ( .* [,)])              # require list comma, to avoid regex match
+	!($1\t$2$3!grx;
+}
+
+sub opening_bracket($)
+{	my $code = shift;
+	$code =~ s,
+		([\(=])                 # only after ( and =
+		(\s+\#.*?\n|\n)         # followed by optional comment
+		(\s+)                   # leading blanks
+		( \+?[\{\[] | sub\s+\{ ) # bracket or sub
 		(\s+)
 	, $3$1$2 $4,grx;
 }
@@ -318,17 +313,71 @@ sub standard_use_quoting($)     # standardize on  "use $pkg qw/@words/;"
 	!$1qw/$+/!grxm;
 }
 
-sub simplify_code($)
+sub add_diagnostics($)          # collect all diagnostics, even the documented
 {	my $code = shift;
 
+	my $capture_diags = join '|', @capture_diags;
+	my @pairs = $code =~ m!($capture_diags).*?\"((?:\\"|[^"])+)\"!g;
+	@pairs or return $code;
+
+	my @diags;
+	while(@pairs)
+	{	my ($reason, $text) = (shift @pairs, shift @pairs);
+		$text =~ s/\{(.*?)\}/C<\$$1>/g;
+		$text .= ': $!' if $reason eq 'fault' || $reason eq 'alert' || $reason eq 'failure';
+		push @diags, "=$reason $text\n";
+	}
+
+	local $" = '';
+	"@diags=cut\n\n$code";
+}
+
+sub shift_to_0($)              # sub { shift } => sub { $_[0] }
+{	my $code = shift;
+
+	my $replace = sub {
+		my ($whole, $lead, $content) = @_;
+		$content =~ m/ \@\_ | \bshift\b /x ? $whole : "$lead \$_[0]$content \}";
+	};
+
+	$code =~ s# ^ (( sub.*? \{ ) \s* shift (.*?) \s* \} )$ # $replace->($1, $2, $3) #grxme;
+}
+
+sub simplify_code($)
+{	my $code  = shift;
+
+	# Extract HERE documents; to avoid corrupting them
+	my %heres;
+	$code =~ s!
+		^ ( .*                  # last HERE of the line
+		\<\< (["']?) (\w+) \2   # HERE tag
+		    .* $ )              # remainder of the line
+		  ( (?s) .*? )          # the content
+		  \3                    # closing tag
+			  ! my $label = "HERE".(scalar keys %heres);
+				$heres{$label} = $4;
+				"$1\n$label\n$3";
+		      !gxme;
+		  
 	# First action is last in chain
-	standard_use_quoting
-	quote_bareword_class
-	remove_separators
-	create_tabbing
-	commas
-	opening_parens
-		$code;
+	my $simplified =
+		opening_parens
+		shift_to_0
+		add_diagnostics
+		standard_use_quoting
+		quote_bareword_class
+		remove_separators
+		create_tabbing
+		commas
+		opening_bracket
+			$code;
+
+	# Restore HERE blocks
+	foreach my $label (keys %heres)
+	{	$simplified =~ s/\n$label\n/$heres{$label}/g;
+	}
+
+	$simplified;
 }
 
 ###
@@ -343,6 +392,8 @@ sub add_separator($)
 
 sub doc_code_indent($)
 {	my $lines = shift;
+
+	# first line is indication for indent of whole block
 	my $has_indent = $lines->[0] =~ m!^([ ]+)! ? $1 : panic $lines->[0];
 
 	if(length $has_indent != DOC_CODE_INDENT)
@@ -356,11 +407,13 @@ sub doc_code_indent($)
 sub doc_code($)
 {	my $lines = shift;
 
-	doc_code_indent
-		$lines;
+	my $l =
+		doc_code_indent
+			$lines;
 
-	# first line is indication for indent of whole block
-	@$lines;
+	opening_bracket
+	commas
+		join '', @$l;
 }
 
 sub improve_doc_code($)
@@ -384,7 +437,7 @@ sub improve_doc_code($)
 			}
 			push @code, $line;
 		}
-    }
+	}
 	push @out, doc_code \@code if @code;
 	join '', @out;
 }
@@ -409,8 +462,8 @@ sub param_markings($)
 
 	my @params = $params =~ m! ([\$\%\@]?\w+) !gmx;
 	my @options = $sub =~ m!^\=(?:option|default|requires) \s+ (\w+)!gmx;
-#warn "PARAM($type $name) @params; @options";
 	my %params  = map +($_ => 1), @params, @options;
+	delete $params{undef};   # confusing
 
 	# Get's simpler per line...
 	my @out;
@@ -419,9 +472,20 @@ sub param_markings($)
 		{	push @out, $line;
 			next;
 		}
-		# Parameter marking is automatic now
-		$line =~ s/([BCI]\<([^>]+)\>)/$params{$2} ? $2 : $1/ge;  # old style
-		$line =~ s/([\$\%\@][a-zA-Z_]+)/$params{$1} or push @notes, "not found $type $name($1)"; $1/ge;  # auto param
+
+		# Parameter marking is automatic now, when leading sigil.  Otherwise
+		# the P<> marking is still required.
+		$line =~ s/ ( [BCI] \<\< \s* ([^>]+) \s* \>\> | [BCI] \< ([^>]+) \> ) /  # old style
+			my ($whole, $token) = ($1, $+);
+			my $is_var = $token =~ m!^[\$\@%*]!;
+			   exists $params{$token}
+			 ? ($is_var ? $token : "P<$token>")
+			 : ($is_var ? (push(@notes, "not found P $type $name($token)"), $whole) : $whole);
+		/gxe;
+
+		$line =~ s/ ( [\$\%\@] [a-zA-Z_]+ ) /
+			$params{$1} or push @notes, "not found P $type $name($1)"; $1
+		/gxe;  # auto param
 		push @out, $line;
 	}
 
@@ -450,39 +514,11 @@ sub simplify_subroutines($)
 sub simplify_pod($)
 {	my $pod = shift;
 
+	opening_parens
 	improve_doc_code
 	simplify_subroutines
 	warn_http_link
 	link_to_metacpan
 	add_separator               # last change!
 		$pod;
-}
-
-__END__
-
-    while(my $line = $in->getline)
-    {   chomp $line;
-        if($line =~ m/^\=(\w+)(?:\s+(\w*)\s*(.*))?/)
-        {   my ($action, $name, $params) = ($1, $2, $3);
-            $in_podfile = $action ne 'cut';
-            if($action =~ m/method$|^function$|^overload$/)
-            {   %vars = ();
-                trace "From: $line";
-                
-                $params = call_rewrite $params, \%vars;
-                $line   = "=$action $name $params";
-                trace "  to: $line";
-            }
-            elsif($action =~ m/^head|^chapter|^(?:sub(?:sub)?)?section/)
-            {   %vars = ();
-            }
-        }
-        elsif($in_podfile && $line !~ m/^\s/)
-        {
-            my $old = $line;
-            $line =~ s!\b([A-Za-z][\w:]*)\b!$vars{$1} // $1!ge;
-            do { trace " < $old"; trace " > $line"} if $old ne $line;
-        }
-        $out->print($line, "\n");
-    }
 }

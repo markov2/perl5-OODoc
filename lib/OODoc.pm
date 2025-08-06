@@ -60,15 +60,15 @@ The name of the package, as released on CPAN.
 =default version <from version or VERSION file>
 The version number as automatically included in all packages after
 each package statement and on many places in the documentation. By
-default the current directory is searched for a file named C<version>
-or C<VERSION> which contains a number.
+default the current directory is searched for a file named F<version>
+or F<VERSION> which contains a number.
 
 =error the distribution must be specified
 
 =error no version specified for distribution "$name"
 Version information will be added to all packages and all manual
 pages.  You need to specify a version and be sure that it changes
-with each release, or create a file named C<version> or C<VERSION>
+with each release, or create a file named F<version> or F<VERSION>
 which contains that data.
 
 =error Cannot read version from file $fn: $!
@@ -98,7 +98,7 @@ sub init($)
     }
 
     $self->{O_version} = $version
-        or error __x"no version specified for distribution '{dist}'", dist  => $distribution;
+        or error __x"no version specified for distribution {dist}", dist  => $distribution;
 
     $self;
 }
@@ -566,7 +566,7 @@ sub stats()
     my $version  = $self->version;
     my $project  = $self->project;
 
-    <<STATS;
+    <<__STATS;
 Project $project contains:
   Number of package manuals: $manuals
   Real number of packages:   $realpkg
@@ -574,7 +574,7 @@ Project $project contains:
   documented options:        $options
   documented diagnostics:    $diags
   shown examples:            $examples
-STATS
+__STATS
 }
 
 #-------------------------------------------
@@ -717,13 +717,13 @@ to add options to the calls to adapt the result more to your own taste.
 =subsection use oodist
 
 This distribution comes with a script named C<oodist>, which automates
-a most steps of your release process.  To start using OODoc with your
-existing distribution, simply run this:
+most steps of your release process (to CPAN).  To start using OODoc with
+your existing distribution, simply run this:
 
 =over 4
-=item 1. go to the root of your module
+=item 1. go to the root directory of your module
 =item 2. run 'oodist'
-=item 3. follow the instructions to configure OODoc
+=item 3. follow the instructions to configure oodist
 =item 4. run 'oodist -v'
 =back
 

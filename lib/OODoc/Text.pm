@@ -193,20 +193,20 @@ sub findDescriptionObject()
     wantarray ? @descr : $descr[0];
 }
 
-=method example $object
-Add a new example (a OODoc::Text::Example object) to the list already in
-this object.  You can not look for a specific because they have no real
-name (only a sequence number).
+=method addExample $object
+Add a new example (an M<OODoc::Text::Example> object) to the list already
+in this object.  You can not search for a specific example, because they
+have no real name (only a sequence number).
 =cut
 
-sub example($)
+sub addExample($)
 {   my ($self, $example) = @_;
     push @{$self->{OT_examples}}, $example;
     $example;
 }
 
 =method examples
-Returns a list of all examples contained in this text element.
+Returns a LIST of all examples contained in this text element.
 =cut
 
 sub examples() { @{shift->{OT_examples}} }

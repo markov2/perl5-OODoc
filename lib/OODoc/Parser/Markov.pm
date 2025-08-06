@@ -688,7 +688,7 @@ sub docExample($$$$)
     my $example  = OODoc::Text::Example->new(name => ($line || ''), linenr => $ln, container => $container);
 
     $self->setBlock($example->openDescription);
-    $container->example($example);
+    $container->addExample($example);
     $example;
 }
 
