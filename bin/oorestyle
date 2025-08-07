@@ -2,8 +2,6 @@
 # Used by markov to translate his own old documentation style into a new style,
 # with his 2025 opinions.
 
-# TODO: code-in-pod cleanup commas and parens
-
 use warnings;
 use strict;
 use Log::Report;
@@ -358,7 +356,7 @@ sub simplify_code($)
 				$heres{$label} = $4;
 				"$1\n$label\n$3";
 		      !gxme;
-		  
+
 	# First action is last in chain
 	my $simplified =
 		opening_parens

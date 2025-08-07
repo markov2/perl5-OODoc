@@ -19,7 +19,7 @@ use OODoc::Manual              ();
 
 use File::Spec;
 
-my $url_modsearch = "https://metacpan.org/dist/";
+my $url_modsearch = 'https://metacpan.org/dist/';
 my $url_coderoot  = 'CODE';
 my @default_rules;
 
@@ -42,7 +42,6 @@ into manual pages.
 
 =chapter METHODS
 
-#--------------------------
 =section Constructors
 
 =c_method new %options
@@ -89,7 +88,7 @@ When a BOOLEAN is specified, the status changes.  It returns the current
 status of the document reader.
 =cut
 
-sub inDoc(;$) { my $s = shift; @_ ? $s->{OPM_in_pod} = shift : $s->{OPM_in_pod} }
+sub inDoc(;$) { my $s = shift; @_ ? ($s->{OPM_in_pod} = shift) : $s->{OPM_in_pod} }
 
 =method currentManual [$manual]
 Returns the manual object which is currently being filled with data.
@@ -140,6 +139,7 @@ sub rules() { $_[0]->{OPM_rules} }
   , [ '=head1'      => 'docChapter'    ]
   , [ '=head2'      => 'docSection'    ]
   , [ '=head3'      => 'docSubSection' ]
+  , [ '=head4'      => 'docSubSubSection' ]
  
   # problem spotter
   , [ qr/^(warn|die|carp|confess|croak)\s/ => 'debugRemains' ]
@@ -168,7 +168,7 @@ Their arguments are:
 
 sub rule($$)
 {   my ($self, $match, $action) = @_;
-    push @{$self->rules}, [$match, $action];
+    push @{$self->rules}, +[ $match, $action ];
     $self;
 }
 
@@ -257,11 +257,10 @@ sub parse(@)
     my $pure_pod = $input =~ m/\.pod$/;
     if($pure_pod)
     {   $manual = OODoc::Manual->new
-          ( package  => $self->filenameToPackage($input)
-          , pure_pod => 1
-          , source   => $input
-          , parser   => $self
-
+          ( package      => $self->filenameToPackage($input)
+          , pure_pod     => 1
+          , source       => $input
+          , parser       => $self
           , distribution => $distr
           , version      => $version
           );
@@ -321,7 +320,7 @@ sub parse(@)
         {   $self->$action($match, $line, $input, $ln)
                 or $out->print($line);
         }
-        elsif($line =~ m/^=(over|back|item|for|pod|begin|end|head4|encoding)\b/)
+        elsif($line =~ m/^=(over|back|item|for|pod|begin|end|encoding)\b/)
         {   ${$self->{OPM_block}} .= "\n". $line;
             $self->inDoc(1);
         }
@@ -1044,6 +1043,31 @@ sub cleanupHtmlL($$$)
    : !defined $to  ? $text
    : ref $to       ? $args->{create_link}->($toman, $to, $text, $args)
    :                 qq[<a href="$to">$text</a>]
+}
+
+=method autoP $manual, %options
+Automatically add some C<P> markup to the subroutines in this $manual.
+
+The C<P> markups are placed around things which look like a variable
+name, and are not within markup itself already.  Also, no C<P>'s will
+be added to example code blocks.
+=cut
+
+sub autoP($%)
+{	my ($self, %args) = @_;
+}
+
+=method finalizeManual $manual, %options
+In the last completion step of the manual, the parser will add some
+C<P> markings: the "this is a parameter" marking.  (But in the future
+it might do more)
+=cut
+
+sub finalizeManual($%)
+{	my ($self, $manual, %args) = @_;
+	$self->SUPER::finalizeManual($manual, %args);
+	$self->autoP($manual);
+	$self;
 }
 
 #-------------------------------------------

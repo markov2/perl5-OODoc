@@ -178,7 +178,7 @@ my %distros = ($project => $meta);
 extract_manuals $source, $distdir, $config;  # produces $distdir
 
 info "** Merge the manuals into one documentation set";
-$doc->prepare;
+$doc->finalize;
 
 # Generate various products
 foreach my $gen (@{$config->{generate} || []})

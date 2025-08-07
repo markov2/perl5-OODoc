@@ -4,9 +4,12 @@ explicitly stated otherwise.
 
 TODO:
 	- export inheritance as structure
-	- auto-markup sub parameters in text/oorestyle with P<>
+	- auto-markup sub parameters in text
 
 version 3.01:
+
+	Changes:
+	- $doc->prepare() becomes $doc->finalize()
 
 	Fixes:
 	- parser html accept C<<...>> syntax

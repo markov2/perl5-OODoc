@@ -480,6 +480,8 @@ sub expand()
 {   my $self = shift;
     $self->{OM_is_expanded} and return $self;
 
+    trace "expand manual $self";
+
     #
     # All super classes must be expanded first.  Manuals for
     # extra code are considered super classes as well.  Super
@@ -491,7 +493,8 @@ sub expand()
     $_->expand for @supers;
 
     #
-    # Expand chapters, sections and subsections.
+    # Expand chapters, sections and subsections
+	# Subsubsections are not merged, IMO the better choice.
     #
 
     my @chapters = $self->chapters;
@@ -724,6 +727,10 @@ still has to be cleaned-up before inclusion.
 
 sub createInheritance()
 {   my $self = shift;
+	my $has = $self->chapter('INHERITANCE');
+    return $has if defined $has;
+
+    trace "create inheritance for $self";
 
     if($self->name ne $self->package)
     {   # This is extra code....
@@ -819,6 +826,21 @@ sub publish($%)
 
     $exporter->processingManual(undef);
     $p;
+}
+
+=method finalize %options
+[3.01] The manual processor gets a last chance to work on the document.
+=cut
+
+sub finalize(%)
+{	my ($self, %args) = @_;
+
+    trace "finalize manual $self";
+
+	# Maybe the parser has still things to do
+	$self->parser->finalizeManual($self);
+
+	$self;
 }
 
 #-------------------------------------------

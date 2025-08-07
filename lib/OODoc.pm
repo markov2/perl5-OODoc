@@ -26,7 +26,7 @@ OODoc - object oriented production of software documentation
  use OODoc;
  my $doc = OODoc->new(distribution => 'My Name', version => '0.02');
  $doc->processFiles(workdir => $dest);
- $doc->prepare;
+ $doc->finalize;
  $doc->formatter('pod', workdir => $dest)->createPages;
  $doc->formatter('html', workdir => '/tmp/html')->createPages;
 
@@ -210,7 +210,9 @@ content is used as version value.  If these do not exist, then the
 main OODoc object needs to provide the version.
 
 To make C<Makefile.PL> option C<VERSION_FROM> to work with this
-seperate version file, that line should contain C<$VERSION = >.
+seperate version file, that line should contain something like
+
+   our $VERSION = 3.14;
 
 =option  notice STRING
 =default notice ''
@@ -221,21 +223,21 @@ pm files.  This notice usually contains the copyright message.
 =default skip_links []
 Passed to M<OODoc::Parser::new(skip_links)>.
 
-=error Cannot compile $parser class
-The $parser class does not exist or produces compiler errors.
+=error Cannot compile parser class
+The P<parser> class does not exist or produces compiler errors.
 
 =error Parser $parser could not be instantiated
 Something went wrong while starting the parser object.  Probably there is
 an other error message which will tell you the exact cause.
 
 =error requires a directory to write the distribution to
-You have to give a value to C<workdir>, which may be C<undef>.  This
+You have to give a value to P<workdir>, which may be C<undef>.  This
 option is enforced to avoid the accidental omission of the parameter.
 
 When processing the manifest file, some files must be copied directly
 to a temporary directory.  The packages are first stripped from
 their pseudo doc, and then written to the same directory.  That
-directory will be the place where C<make dist> is run later.
+directory will be the place where C<< make dist >> is run later.
 
 =error cannot copy distribution file $fn to $dest: $!
 For some reason, a plain file from can not be copied from your source
@@ -396,34 +398,31 @@ sub processFiles(@)
 #-------------------------------------------
 =section Preparation
 
-=method prepare %options
-Add information to the documentation tree about inheritance relationships
-of the packages.  This C<prepare> must be called after the last
-M<processFiles()> call, before the formatters are called.
+=method finalize %options
+[3.01] After all documentation fragments have been read via M<processFiles()>,
+the pages need to be composed together.  For instance, inheritance and final
+cleanups are due here.
 =cut
 
-sub prepare(@)
+sub finalize(@)
 {   my ($self, %args) = @_;
 
-    info "collect package relations";
+    info "* collect package relations";
     $self->getPackageRelations;
 
-    info "expand manual contents";
-    foreach my $manual ($self->manuals)
-    {   trace "  expand manual $manual";
-        $manual->expand;
-    }
+    info "* expand manual contents";
+    $_->expand for $self->manuals;
 
-    info "Create inheritance chapters";
-    foreach my $manual ($self->manuals)
-    {    next if $manual->chapter('INHERITANCE');
+    info "* create inheritance chapters";
+    $_->createInheritance for $self->manuals;
 
-         trace "  create inheritance for $manual";
-         $manual->createInheritance;
-    }
+	info "* finalize each manual";
+	$_->finalize for $self->manuals;
 
     $self;
 }
+
+sub prepare() { panic "OODoc 3.01 renamed prepare() into finalize." }
 
 =method getPackageRelations 
 Compile all files which contain packages, and then try to find-out

@@ -143,6 +143,16 @@ a "E<lt>" will stay that way, not being translated in a "E<amp>lt;".
 
 sub cleanupHtml($$%) { ... }
 
+=method finalizeManual $manual, %options
+[3.01] The parser gets a last chance to work on $manual documentation,
+after all documents have been collected and intergrated.
+=cut
+
+sub finalizeManual($)
+{	my ($self, $manual, %args) = @_;
+	$self;
+}
+
 #-------------------------------------------
 =section Commonly used functions
 =cut
