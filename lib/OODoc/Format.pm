@@ -319,14 +319,14 @@ and C<subsubsection>.
 REFER means that inherited sections are simply listed as reference
 to the manual page which describes it.
 
-=option   show_inherited_$block 'NO'|'REFER'|'EXPAND'
-=default  show_inherited_$block <show_inherited>
+=option   show_inherited_$BLOCK 'NO'|'REFER'|'EXPAND'
+=default  show_inherited_$BLOCK <show_inherited>
 
 =option   show_examples 'NO'|'EXPAND'
 =default  show_examples 'EXPAND'
 
-=option   show_examples_$block 'NO'|'REFER'|'EXPAND'
-=default  show_examples_$block <show_examples>
+=option   show_examples_$BLOCK 'NO'|'REFER'|'EXPAND'
+=default  show_examples_$BLOCK <show_examples>
 =cut
 
 sub showChapter(@)

@@ -1045,22 +1045,21 @@ sub cleanupHtmlL($$$)
    :                 qq[<a href="$to">$text</a>]
 }
 
-=method autoP $manual, $subroutine, %options
-Automatically add some C<P>-markup to the subroutines in this $manual.
-
-The C<P>-markups are placed around things which look like a variable
-name, and are not within markup itself already.  Also, no C<P>'s will
-be added to example code blocks.
+=method autoMarkup $manual, $chapter, \%options
+Used via M<finalizeManual()> to apply automatic C<M>, C<P>, and C<C> markup
+tags.
 =cut
 
 sub _collectParamsAllCaps($$$)
 {	my ($self, $params, $group, $string) = @_;
-	$params->{$_} ||= $group for $string =~ m! \b ([A-Z][A-Z\d]*) \b !gx;
+	my @found = map +( $_ => $group ), $string =~ m! \b ([A-Z][A-Z\d]*) \b !gx;
+	+{ %$params, @found };
 }
 
 sub _collectParams($$$)
 {	my ($self, $params, $group, $string) = @_;
-	$params->{$_} ||= $group for $string =~ m!( [\$\@\%]\w+ )!gx;
+	my @found = map +( $_ => $group ), $string =~ m!( [\$\@\%]\w+ )!gx;
+	+{ %$params, @found };
 }
 
 sub _markupSplit($)
@@ -1074,8 +1073,8 @@ sub _markupSplit($)
 	/xms, $text;
 }
 
-sub _autoPtext($$$)
-{	my ($self, $params, $text, $where) = @_;
+sub _markupText($$%)
+{	my ($self, $text, $where, %args) = @_;
 
 	my @frags = $self->_markupSplit($text);
 	my @rewritten;
@@ -1083,103 +1082,34 @@ sub _autoPtext($$$)
 	while(@frags)
 	{	my ($text, $markup) = (shift @frags, shift @frags);
 
-		# auto-P variable
+		if($args{make_m})
+		{	$text =~ s/ \b ( [A-Z]\w+ (?: \:\: [A-Z]\w+ )+ ) \b /M<$1>/gx;
+		}
 
-		$text =~ s! ( [\$\@\%]\w+ ) !
-			my $p = $1;
-			   $params->{$p}
-			 ? "P<$p>"
-			 : ((warning __x"In {where}, text uses unknown '{label}'", label => $p, where => $where), $p);
-		!gxe;
+		if(my $c = $args{make_c})
+		{	foreach my $w (@$c)
+			{	$text =~ s/ \b (\Q$w\E) \b /C<$1>/gx;
+			}
+		}
 
-		# auto-P capitals, like HASH
+		if($args{make_p})
+		{	my $params = $args{params} || {};
 
-		$text =~ s! ( \b[A-Z][A-Z\d]*\b ) !
-			my $p = $1;
-			$params->{$p} ? "P<$p>" : $p;
-		!gxe;
+			# auto-P variable
+			$text =~ s! ( [\$\@\%]\w+ ) !
+				my $p = $1;
+			   	$params->{$p}
+			 	? "P<$p>"
+			 	: ((warning __x"In {where}, text uses unknown '{label}'", label => $p, where => $where), $p);
+			!gxe;
 
-		push @rewritten, $text;
-		push @rewritten, $markup if defined $markup;
-	}
+			# auto-P capitals, like HASH
 
-	join '', @rewritten;
-}
-
-sub autoP($$%)
-{	my ($self, $manual, $subroutine, %args) = @_;
-	return if $manual->inherited($subroutine);   #XXX new options and warnings still processed?
-
-	my $name     = $subroutine->name;
-	my $where    = $manual->name . "::$name";
-
-	my $params   = +{};
-	if($subroutine->type =~ m!(_method$|^function$)!)
-	{	my $accept = $subroutine->parameters;
-		$self->_collectParams($params, call => $accept);
-	 	$self->_collectParamsAllCaps($params, call => $accept);
-	}
-
-	my @options = $subroutine->options;
-	!@options || $params->{'%options'}
-		or warning __x"In {where}, options but no call parameter %options", where => "$where()";
-
-	# Specifying possible %options without defining one is not a
-	# problem: maybe the extension uses them.
-	$params->{$_->name} = 'option' for @options;
-
-	# We only handle text blocks without markup, so split the block into
-	# text, other, text, other, text, ... and handle the odd elements.
-
-	my $textref = $subroutine->openDescription;
-	$$textref   = $self->_autoPtext($params, $$textref, "$where()");
-
-	foreach my $option (@options)
-	{	next if $manual->inherited($option);
-		my %p = %$params;
-		$self->_collectParams(\%p, option => $option->parameters);
-		my $text = $option->openDescription;
-		$$text   = $self->_autoPtext(\%p, $$text, "$where(".$option->name.")");
-	}
-
-	foreach my $diag ($subroutine->diagnostics)
-	{	next if $manual->inherited($diag);
-	 	my %p = %$params;
-		$self->_collectParams(\%p, diag => $diag->name);
-		my $text = $diag->openDescription;
-		$$text   = $self->_autoPtext(\%p, $$text, "$where(".$diag->type.")");
-	}
-
-	foreach my $example ($subroutine->examples)
-	{	next if $manual->inherited($example);
-		my %p = %$params;
-		$self->_collectParams(\%p, example => $example->name);
-		my $text = $example->openDescription;
-		$$text   = $self->_autoPtext(\%p, $$text, "$where(example)");
-	}
-}
-
-=method autoM $manual, $struct, %options
-Create C<M>-markups around bare package names which are not within markup
-already and not in code fragments.
-
-This method also adds a C<< C >>-markups around undef, true, and false.
-=cut
-
-sub _autoMtext($$$)
-{	my ($self, $text, $where) = @_;
-
-	my @frags = $self->_markupSplit($text);
-	my @rewritten;
-
-	while(@frags)
-	{	my ($text, $markup) = (shift @frags, shift @frags);
-
-		# auto-M
-		$text =~ s/ \b ( [A-Z]\w+ (?: \:\: [A-Z]\w+ )+ ) \b /M<$1>/gx;
-
-		# undef => C<undef>
-		$text =~ s/ \b (false|true|undef) \b /C<$1>/gix;
+			$text =~ s! ( \b[A-Z][A-Z\d]*\b ) !
+				my $p = $1;
+				$params->{$p} ? "P<$p>" : $p;
+			!gxe;
+		}
 
 		push @rewritten, $text;
 		push @rewritten, $markup if defined $markup;
@@ -1191,47 +1121,65 @@ warn "$where\n$text\n==>\n$r\n" if $text ne $r;
 $r;
 }
 
-sub autoM($$%)
+sub autoMarkup($$%)
 {	my ($self, $manual, $struct, %args) = @_;
 	return if $manual->inherited($struct);
 
-	return if $struct->type eq 'Chapter' && $struct->name eq 'NAME';
-
 	my $where = $manual->name . '/' . $struct->name;
+
 	my $text  = $struct->openDescription;
-	$$text    = $self->_autoMtext($$text, $where);
+	$$text    = $self->_markupText($$text, $where, %args,
+		make_m => $args{make_m} && ! ( $struct->type eq 'Chapter' && $struct->name eq 'NAME' ),
+	);
 
 	foreach my $example ($struct->examples)
 	{	my $ex  = $example->openDescription;
-		$$ex    = $self->_autoMtext($$ex, "an example in $where");
+		$$ex    = $self->_markupText($$ex, "an example in $where", %args);
 	}
 
 	foreach my $sub ($struct->subroutines)
 	{	next if $manual->inherited($sub);
 		my $w   = $manual->name . '::' . $sub->name;
 
-		my $st  = $sub->openDescription;
-		$$st    = $self->_autoMtext($$st, "$w()");
+		my $params = +{};
+		if($sub->type =~ m!(_method$|^function$)!)
+		{	$params    = $self->_collectParams($params, call => $sub->parameters);
+	 		$params    = $self->_collectParamsAllCaps($params, call => $sub->parameters);
+		}
 
-		foreach my $option ($sub->options)
+		my @options = $sub->options;
+		!@options || $params->{'%options'}
+			or warning __x"In {where}, options but no call parameter %options", where => "$where()";
+
+		# Specifying possible %options without defining one is not a
+		# problem: maybe the extension uses them.
+		$params->{$_->name} = 'option' for @options;
+
+		my $st  = $sub->openDescription;
+		$$st    = $self->_markupText($$st, "$w()", %args, params => $params);
+
+		foreach my $option (@options)
 		{	next if $manual->inherited($option);
+			my $p   = $self->_collectParams($params, option => $option->parameters);
 			my $opt = $option->openDescription;
-			$$opt   = $self->_autoMtext($$opt, "$w(" . $option->name . ")");
+			$$opt   = $self->_markupText($$opt, "$w(" . $option->name . ")", %args, params => $p);
 		}
 
 		foreach my $diag ($sub->diagnostics)
 		{	next if $manual->inherited($diag);
+			my $p   = $self->_collectParams($params, diag => $diag->name);
 			my $dt  = $diag->openDescription;
-			$$dt    = $self->_autoMtext($$dt, "$w(" . $diag->type . ")");
+			$$dt    = $self->_markupText($$dt, "$w(" . $diag->type . ")", %args, params => $p);
 		}
 
 		foreach my $example ($sub->examples)
-		{	my $ex  = $example->openDescription;
-			$$ex    = $self->_autoMtext($$ex, "$w(example)");
+		{	my $p   = $self->_collectParams($params, example => $example->name);
+			my $ex  = $example->openDescription;
+			$$ex    = $self->_markupText($$ex, "$w(example)", %args, params => $p);
 		}
 	}
 
-	$self->autoM($manual, $_, %args) for $struct->nest;
+	$self->autoMarkup($manual, $_, %args) for $struct->nest;
 }
 
 =method finalizeManual $manual, %options
@@ -1247,21 +1195,22 @@ Do not add C<< P<> >> tags around variables automatically.
 =default skip_auto_m <false>
 Skip the automatic generation of C<< M<> >> tags around packages
 names.
+
+=option  wrap_c ARRAY-of-WORDS
+=default wrap_c C<< [ qw/undef true false/ ] >>
 =cut
 
 sub finalizeManual($%)
 {	my ($self, $manual, %args) = @_;
 	$self->SUPER::finalizeManual($manual, %args);
 
-	unless($args{skip_auto_p})
-	{	$self->autoP($manual, $_) for $manual->subroutines;
-	}
+	my %actions = (
+		make_p => exists $args{skip_auto_p} ? $args{skip_auto_p} : 1,
+		make_m => exists $args{skip_auto_m} ? $args{skip_auto_m} : 1,
+		make_c => $args{wrap_c} || [ qw/undef true false/ ],
+	);
 
-	unless($args{skip_auto_m})
-	{	$self->autoM($manual, $_) for $manual->chapters;
-	}
-
-	$self;
+	$self->autoMarkup($manual, $_, %actions) for $manual->chapters;
 }
 
 #-------------------------------------------
@@ -1312,6 +1261,16 @@ These text structures are used to group descriptive text and subroutines.
 You can use any name for a chapter, but the formatter expects certain
 names to be used: if you use a name which is not expected by the formatter,
 that documentation will be ignored.
+
+=subsection auto-markup
+
+Do not use the words undef, true, and false in other sense then undefined,
+and boolean, because they will get automaticly wrapped in C<< C< > >> markup.
+
+Package names will automatically be wrapped in C<< M< > >> markup.
+
+Variables mentioned in subroutine parameter lists, diagnostics and as
+option parameter will automatically be wrapped in C<< P< > >> markup.
 
 =subsection Subroutines
 
