@@ -33,10 +33,9 @@ use overload bool  => sub {1};
 
 =c_method new %options
 
-=option  filename FILENAME
+=option  filename $filename
 =default filename undef
-
-The filename where the manifest is in.  When the name is not defined,
+The $filename where the manifest is in.  When the name is not defined,
 the data will not be written.
 
 =cut

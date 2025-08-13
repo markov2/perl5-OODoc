@@ -137,7 +137,7 @@ See M<OODoc::Format::cleanup(create_link)>.
 
 =option  is_html BOOLEAN
 =default is_html C<false>
-Some changes will not be made when $is_html is C<true>, for instance,
+Some changes will not be made when P<is_html> is C<true>, for instance,
 a "E<lt>" will stay that way, not being translated in a "E<amp>lt;".
 =cut
 

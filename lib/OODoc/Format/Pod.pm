@@ -395,7 +395,7 @@ sub showOptionExpand(@)
     $self;
 }
 
-=method writeTable 
+=method writeTable %options
 
 =requires output FILE
 =requires header ARRAY

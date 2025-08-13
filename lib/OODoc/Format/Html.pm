@@ -137,7 +137,7 @@ sub cleanupString($$@)
 
 =method link $manual, $object, [ ($html|undef), \%settings ]
 Create the html for a link which refers to the $object.  The link will be
-shown somewhere in the $manual.  The $text is displayed as link, and defaults
+shown somewhere in the $manual.  The $html is displayed as link, and defaults
 to the name of the $object.
 =cut
 
@@ -628,7 +628,7 @@ sub showOptionExpand(@)
     $self;
 }
 
-=method writeTable 
+=method writeTable %options
 
 =requires output FILE
 =requires header ARRAY
@@ -916,7 +916,7 @@ sub templateChapter($$)
     $buffer;
 }
 
-=method templateIndex $templ, $attrs, $if, $else
+=method templateIndex $templ, \%options, $if, $else
 
 The I<index> template is called with one keyword, which tells the
 kind of index to be built.  Valid values are C<MANUALS>,
@@ -1062,7 +1062,7 @@ DIAG
     $output;
 }
 
-=method templateList $templ, $attrs, $if, $else
+=method templateList $templ, \%options, $if, $else
 
 =requires manual MANUAL
 

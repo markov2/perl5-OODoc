@@ -55,7 +55,7 @@ You have to install L<Bundle::Template::Magic> to use this feature.
 
 =item * M<OODoc::Format::Pod3>
 
-The whole formatter, implemented as template in M<OODoc::Template>, a
+The whole formatter, implemented as template in OODoc::Template, a
 very light weighted template system.
 
 You have to install L<OODoc::Template> to use this feature.
@@ -288,7 +288,7 @@ parser of the manual is addressed to do the work.
 =requires create_link CODE
 This CODE reference is used to create an absolute link to a text
 fragment.  It is called with the manual and the object where is
-linked to (any M<OODoc::Text> object).  As third parameter,
+linked to (any OODoc::Text object).  As third parameter,
 a string can be provided which should be displayed instead of the
 object name.  Finally, all %options are passed as settings, by
 reference to a HASH.
@@ -307,7 +307,7 @@ You can pass all %options about formatting to this method.  They will passed
 to the related methods.  So: the list of options you can pass here is much
 longer: the combination of everything possible for all show* methods.
 
-In the %option list, C<$BLOCK> can be C<chapter>, C<section>, C<subsection>,
+In the %options, C<$BLOCK> can be C<chapter>, C<section>, C<subsection>,
 and C<subsubsection>.
 
 =requires chapter CHAPTER

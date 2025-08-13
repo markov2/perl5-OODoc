@@ -161,8 +161,8 @@ The second argument is the action which will be taken when the line
 is selected.  Either the named $method or the CODE reference will be called.
 Their arguments are:
 
- $parser->METHOD($match, $line, $file, $linenumber);
- CODE->($parser, $match, $line, $file, $linenumber);
+  $parser->METHOD($match, $line, $file, $linenumber);
+  CODE->($parser, $match, $line, $file, $linenumber);
 
 =cut
 
@@ -1045,7 +1045,7 @@ sub cleanupHtmlL($$$)
    :                 qq[<a href="$to">$text</a>]
 }
 
-=method autoP $manual, %options
+=method autoP $manual, $subroutine, %options
 Automatically add some C<P> markup to the subroutines in this $manual.
 
 The C<P> markups are placed around things which look like a variable
@@ -1053,20 +1053,129 @@ name, and are not within markup itself already.  Also, no C<P>'s will
 be added to example code blocks.
 =cut
 
-sub autoP($%)
-{	my ($self, %args) = @_;
+sub _collectParamsAllCaps($$$)
+{	my ($self, $params, $group, $string) = @_;
+	$params->{$_} ||= $group for $string =~ m! \b ([A-Z][A-Z\d]*) \b !gx;
+}
+
+sub _collectParams($$$)
+{	my ($self, $params, $group, $string) = @_;
+	$params->{$_} ||= $group for $string =~ m!( [\$\@\%]\w+ )!gx;
+}
+
+sub _autoText($$$)
+{	my ($self, $params, $text, $where) = @_;
+
+	my @frags = split /
+		( \b[A-Z]\<\< .*? \>\>   # double angled markup
+		| \b[A-Z]\< .*? \>       # single angled markup
+		| ^ [ \t] [^\n]+         # document code blocks
+		)
+	/xms, $text;
+
+	my @rewritten;
+
+	while(@frags)
+	{	my ($text, $markup) = (shift @frags, shift @frags);
+
+		# auto-P variable
+
+		$text =~ s! ( [\$\@\%]\w+ ) !
+			my $p = $1;
+			   $params->{$p}
+			 ? "P<$p>"
+			 : ((warning __x"In {where}, text uses unknown '{label}'", label => $p, where => $where), $p);
+		!gxe;
+
+		# auto-P capitals, like HASH
+
+		$text =~ s! ( \b[A-Z][A-Z\d]*\b ) !
+			my $p = $1;
+			$params->{$p} ? "P<$p>" : $p;
+		!gxe;
+
+		# Auto-M packages
+
+		$text =~ s! \b ([A-Z]\w+ (?: \:\: [A-Z]\w+ )+ ) \b !M<$1>!gx;
+
+		push @rewritten, $text;
+		push @rewritten, $markup if defined $markup;
+	}
+
+	join '', @rewritten;
+}
+
+
+sub autoP($$%)
+{	my ($self, $manual, $subroutine, %args) = @_;
+	return if $manual->inherited($subroutine);   #XXX new options and warnings still processed?
+
+	my $name     = $subroutine->name;
+	my $where    = $manual->name . "::$name";
+
+	my $params   = +{};
+	if($subroutine->type =~ m!(_method$|^function$)!)
+	{	my $accept = $subroutine->parameters;
+		$self->_collectParams($params, call => $accept);
+	 	$self->_collectParamsAllCaps($params, call => $accept);
+	}
+
+	my @options = $subroutine->options;
+	!@options || $params->{'%options'}
+		or warning __x"In {where}, options but no call parameter %options", where => "$where()";
+
+	# Specifying possible %options without defining one is not a
+	# problem: maybe the extension uses them.
+	$params->{$_->name} = 'option' for @options;
+
+	# We only handle text blocks without markup, so split the block into
+	# text, other, text, other, text, ... and handle the odd elements.
+
+	my $textref = $subroutine->openDescription;
+	$$textref   = $self->_autoText($params, $$textref, "$where()");
+
+	foreach my $option (@options)
+	{	next if $manual->inherited($option);
+		my %p = %$params;
+		$self->_collectParams(\%p, option => $option->parameters);
+		my $text = $option->openDescription;
+		$$text   = $self->_autoText(\%p, $$text, "$where(".$option->name.")");
+	}
+
+	foreach my $diag ($subroutine->diagnostics)
+	{	next if $manual->inherited($diag);
+	 	my %p = %$params;
+		$self->_collectParams(\%p, diag => $diag->name);
+		my $text = $diag->openDescription;
+		$$text   = $self->_autoText(\%p, $$text, "$where(".$diag->type.")");
+	}
+
+	foreach my $example ($subroutine->examples)
+	{	next if $manual->inherited($example);
+		my %p = %$params;
+		$self->_collectParams(\%p, example => $example->name);
+		my $text = $example->openDescription;
+		$$text   = $self->_autoText(\%p, $$text, "$where(example)");
+	}
 }
 
 =method finalizeManual $manual, %options
 In the last completion step of the manual, the parser will add some
 C<P> markings: the "this is a parameter" marking.  (But in the future
 it might do more)
+
+=option  skip_auto_p BOOLEAN
+=default skip_auto_p <false>
 =cut
 
 sub finalizeManual($%)
 {	my ($self, $manual, %args) = @_;
 	$self->SUPER::finalizeManual($manual, %args);
-	$self->autoP($manual);
+
+	unless($args{skip_auto_p})
+	{	$self->autoP($manual, $_) for $manual->subroutines;
+	}
+
 	$self;
 }
 
@@ -1152,7 +1261,7 @@ The parser will turn this line
 
   =c_method new %options
 
-into an M<OODoc::Text::Subroutine>, with C<name> set to C<new>, and
+into an OODoc::Text::Subroutine, with C<name> set to C<new>, and
 C<%options> as parameter string.  The formatters and exporters will
 translate this subroutine call into
 
