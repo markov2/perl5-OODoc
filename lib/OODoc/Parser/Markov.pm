@@ -710,7 +710,7 @@ sub debugRemains($$$$)
 =warning You may have accidentally captured code in doc file $fn line $number
 Some keywords on the first position of a line are very common for code.
 However, code within doc should start with a blank to indicate pre-formatted
-lines.  This warning may be false.
+lines.  Rarely, this warning may be produced incorrectly.
 =cut
 
 sub forgotCut($$$$)
@@ -734,7 +734,7 @@ also be produced if some defined package is stored in one file together
 with an other module or when compilation errors are encountered.
 
 =warning subroutine $name is not defined by $package, found in $manual
-=warning option "$name" unknow for $name() in $package, found in $manual
+=warning option "$name" unknown for $call() in $package, found in $manual
 
 =warning no manual for $package (correct casing?)
 The manual for $package cannot be found.  If you have a module named this
@@ -1162,6 +1162,8 @@ sub autoP($$%)
 =method autoM $manual, $struct, %options
 Create C<M>-markups around bare package names which are not within markup
 already and not in code fragments.
+
+This method also adds a C<< C >>-markups around undef, true, and false.
 =cut
 
 sub _autoMtext($$$)
@@ -1175,6 +1177,9 @@ sub _autoMtext($$$)
 
 		# auto-M
 		$text =~ s/ \b ( [A-Z]\w+ (?: \:\: [A-Z]\w+ )+ ) \b /M<$1>/gx;
+
+		# undef => C<undef>
+		$text =~ s/ \b (false|true|undef) \b /C<$1>/gix;
 
 		push @rewritten, $text;
 		push @rewritten, $markup if defined $markup;
@@ -1202,24 +1207,27 @@ sub autoM($$%)
 	}
 
 	foreach my $sub ($struct->subroutines)
-	{	my $w   = $manual->name . '::' . $sub->name;
+	{	next if $manual->inherited($sub);
+		my $w   = $manual->name . '::' . $sub->name;
 
 		my $st  = $sub->openDescription;
-		$$st    = $self->_autoMtext($$st, "$where()");
+		$$st    = $self->_autoMtext($$st, "$w()");
 
 		foreach my $option ($sub->options)
-		{	my $opt = $option->openDescription;
-			$$opt   = $self->_autoMtext($$opt, "$where(" . $option->name . ")");
+		{	next if $manual->inherited($option);
+			my $opt = $option->openDescription;
+			$$opt   = $self->_autoMtext($$opt, "$w(" . $option->name . ")");
 		}
 
 		foreach my $diag ($sub->diagnostics)
-		{	my $dt  = $diag->openDescription;
-			$$dt    = $self->_autoMtext($$dt, "$where(" . $diag->type . ")");
+		{	next if $manual->inherited($diag);
+			my $dt  = $diag->openDescription;
+			$$dt    = $self->_autoMtext($$dt, "$w(" . $diag->type . ")");
 		}
 
 		foreach my $example ($sub->examples)
 		{	my $ex  = $example->openDescription;
-			$$ex    = $self->_autoMtext($$ex, "$where(example)");
+			$$ex    = $self->_autoMtext($$ex, "$w(example)");
 		}
 	}
 
