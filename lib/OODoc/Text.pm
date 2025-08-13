@@ -16,10 +16,10 @@ OODoc::Text - text component as found in a manual
 
 =chapter DESCRIPTION
 
-The parsers (implemented in the M<OODoc::Parser> classes) scan
+The parsers (implemented in the OODoc::Parser classes) scan
 the documentation as written down by the author of the module, and
 build a tree of these OODoc::Text objects from it. Then, any formatter
-(implemented by the M<OODoc::Format> classes) can take this tree of text
+(implemented by the OODoc::Format classes) can take this tree of text
 objects and convert it into manual pages.
 
 =chapter OVERLOADED

@@ -22,6 +22,7 @@ version 3.01:
 	- parser more documentation
 	- link to metacpan.org, not search.cpan.org
 	- parser auto-P<>
+	- parser auto-M<>
 	- add other Log::Report levels to diagnostics: info, notice, alert, failure
 	- documentation improvements
 

@@ -1046,9 +1046,9 @@ sub cleanupHtmlL($$$)
 }
 
 =method autoP $manual, $subroutine, %options
-Automatically add some C<P> markup to the subroutines in this $manual.
+Automatically add some C<P>-markup to the subroutines in this $manual.
 
-The C<P> markups are placed around things which look like a variable
+The C<P>-markups are placed around things which look like a variable
 name, and are not within markup itself already.  Also, no C<P>'s will
 be added to example code blocks.
 =cut
@@ -1063,16 +1063,21 @@ sub _collectParams($$$)
 	$params->{$_} ||= $group for $string =~ m!( [\$\@\%]\w+ )!gx;
 }
 
-sub _autoText($$$)
-{	my ($self, $params, $text, $where) = @_;
+sub _markupSplit($)
+{	my ($self, $text) = @_;
 
-	my @frags = split /
+	split /
 		( \b[A-Z]\<\< .*? \>\>   # double angled markup
 		| \b[A-Z]\< .*? \>       # single angled markup
 		| ^ [ \t] [^\n]+         # document code blocks
 		)
 	/xms, $text;
+}
 
+sub _autoPtext($$$)
+{	my ($self, $params, $text, $where) = @_;
+
+	my @frags = $self->_markupSplit($text);
 	my @rewritten;
 
 	while(@frags)
@@ -1094,17 +1099,12 @@ sub _autoText($$$)
 			$params->{$p} ? "P<$p>" : $p;
 		!gxe;
 
-		# Auto-M packages
-
-		$text =~ s! \b ([A-Z]\w+ (?: \:\: [A-Z]\w+ )+ ) \b !M<$1>!gx;
-
 		push @rewritten, $text;
 		push @rewritten, $markup if defined $markup;
 	}
 
 	join '', @rewritten;
 }
-
 
 sub autoP($$%)
 {	my ($self, $manual, $subroutine, %args) = @_;
@@ -1132,14 +1132,14 @@ sub autoP($$%)
 	# text, other, text, other, text, ... and handle the odd elements.
 
 	my $textref = $subroutine->openDescription;
-	$$textref   = $self->_autoText($params, $$textref, "$where()");
+	$$textref   = $self->_autoPtext($params, $$textref, "$where()");
 
 	foreach my $option (@options)
 	{	next if $manual->inherited($option);
 		my %p = %$params;
 		$self->_collectParams(\%p, option => $option->parameters);
 		my $text = $option->openDescription;
-		$$text   = $self->_autoText(\%p, $$text, "$where(".$option->name.")");
+		$$text   = $self->_autoPtext(\%p, $$text, "$where(".$option->name.")");
 	}
 
 	foreach my $diag ($subroutine->diagnostics)
@@ -1147,7 +1147,7 @@ sub autoP($$%)
 	 	my %p = %$params;
 		$self->_collectParams(\%p, diag => $diag->name);
 		my $text = $diag->openDescription;
-		$$text   = $self->_autoText(\%p, $$text, "$where(".$diag->type.")");
+		$$text   = $self->_autoPtext(\%p, $$text, "$where(".$diag->type.")");
 	}
 
 	foreach my $example ($subroutine->examples)
@@ -1155,8 +1155,75 @@ sub autoP($$%)
 		my %p = %$params;
 		$self->_collectParams(\%p, example => $example->name);
 		my $text = $example->openDescription;
-		$$text   = $self->_autoText(\%p, $$text, "$where(example)");
+		$$text   = $self->_autoPtext(\%p, $$text, "$where(example)");
 	}
+}
+
+=method autoM $manual, $struct, %options
+Create C<M>-markups around bare package names which are not within markup
+already and not in code fragments.
+=cut
+
+sub _autoMtext($$$)
+{	my ($self, $text, $where) = @_;
+
+	my @frags = $self->_markupSplit($text);
+	my @rewritten;
+
+	while(@frags)
+	{	my ($text, $markup) = (shift @frags, shift @frags);
+
+		# auto-M
+		$text =~ s/ \b ( [A-Z]\w+ (?: \:\: [A-Z]\w+ )+ ) \b /M<$1>/gx;
+
+		push @rewritten, $text;
+		push @rewritten, $markup if defined $markup;
+	}
+
+my $r =
+	join '', @rewritten;
+warn "$where\n$text\n==>\n$r\n" if $text ne $r;
+$r;
+}
+
+sub autoM($$%)
+{	my ($self, $manual, $struct, %args) = @_;
+	return if $manual->inherited($struct);
+
+	return if $struct->type eq 'Chapter' && $struct->name eq 'NAME';
+
+	my $where = $manual->name . '/' . $struct->name;
+	my $text  = $struct->openDescription;
+	$$text    = $self->_autoMtext($$text, $where);
+
+	foreach my $example ($struct->examples)
+	{	my $ex  = $example->openDescription;
+		$$ex    = $self->_autoMtext($$ex, "an example in $where");
+	}
+
+	foreach my $sub ($struct->subroutines)
+	{	my $w   = $manual->name . '::' . $sub->name;
+
+		my $st  = $sub->openDescription;
+		$$st    = $self->_autoMtext($$st, "$where()");
+
+		foreach my $option ($sub->options)
+		{	my $opt = $option->openDescription;
+			$$opt   = $self->_autoMtext($$opt, "$where(" . $option->name . ")");
+		}
+
+		foreach my $diag ($sub->diagnostics)
+		{	my $dt  = $diag->openDescription;
+			$$dt    = $self->_autoMtext($$dt, "$where(" . $diag->type . ")");
+		}
+
+		foreach my $example ($sub->examples)
+		{	my $ex  = $example->openDescription;
+			$$ex    = $self->_autoMtext($$ex, "$where(example)");
+		}
+	}
+
+	$self->autoM($manual, $_, %args) for $struct->nest;
 }
 
 =method finalizeManual $manual, %options
@@ -1166,6 +1233,12 @@ it might do more)
 
 =option  skip_auto_p BOOLEAN
 =default skip_auto_p <false>
+Do not add C<< P<> >> tags around variables automatically.
+
+=option  skip_auto_m BOOLEAN
+=default skip_auto_m <false>
+Skip the automatic generation of C<< M<> >> tags around packages
+names.
 =cut
 
 sub finalizeManual($%)
@@ -1174,6 +1247,10 @@ sub finalizeManual($%)
 
 	unless($args{skip_auto_p})
 	{	$self->autoP($manual, $_) for $manual->subroutines;
+	}
+
+	unless($args{skip_auto_m})
+	{	$self->autoM($manual, $_) for $manual->chapters;
 	}
 
 	$self;
@@ -1261,8 +1338,8 @@ The parser will turn this line
 
   =c_method new %options
 
-into an OODoc::Text::Subroutine, with C<name> set to C<new>, and
-C<%options> as parameter string.  The formatters and exporters will
+into an OODoc::Text::Subroutine, with attribute C<name> set to C<new>, and
+string C<%options> as parameter string.  The formatters and exporters will
 translate this subroutine call into
 
   $class->new(%options)

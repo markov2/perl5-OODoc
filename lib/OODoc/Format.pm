@@ -37,7 +37,7 @@ Currently available formatters:
 
 =over 4
 
-=item * M<OODoc::Format::Pod>
+=item * OODoc::Format::Pod
 
 Simple formatter, which has the layout of the produced POD manual pages
 hard-coded in it's body.  The only way to adapt the structure of the
@@ -45,7 +45,7 @@ pages is by extending the class, and thereby overrule some of the
 methods which produce the text.  Not much of a problem for experienced
 Object Oriented programmers.
 
-=item * M<OODoc::Format::Pod2>
+=item * OODoc::Format::Pod2
 
 This formatter uses the same methods to generate the manual page as
 defined by M<OODoc::Format::Pod>, but the general layout of the page
@@ -53,14 +53,14 @@ can be configured using templates.
 
 You have to install L<Bundle::Template::Magic> to use this feature.
 
-=item * M<OODoc::Format::Pod3>
+=item * OODoc::Format::Pod3
 
 The whole formatter, implemented as template in OODoc::Template, a
 very light weighted template system.
 
 You have to install L<OODoc::Template> to use this feature.
 
-=item * M<OODoc::Format::Html>
+=item * OODoc::Format::Html
 
 Produce HTML by filling in templates. This module requires
 L<Bundle::Template::Magic> and the ability to run cgi scripts.

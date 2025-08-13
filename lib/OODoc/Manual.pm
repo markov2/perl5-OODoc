@@ -427,7 +427,7 @@ kinds of information from various parts within the manual page.
 
 sub all($@)
 {   my $self = shift;
-    map { $_->all(@_) } $self->chapters;
+    map $_->all(@_), $self->chapters;
 }
 
 =method inherited $subroutine|$option
@@ -435,7 +435,7 @@ Returns whether the $subroutine or $option was defined by this manual page,
 or inherited from it.
 =cut
 
-sub inherited($) {$_[0]->name ne $_[1]->manual->name}
+sub inherited($) { $_[0]->name ne $_[1]->manual->name }
 
 =method ownSubroutines 
 Returns only the subroutines which are described in this manual page
@@ -624,7 +624,6 @@ gets ignored.
 The order of the objects in a sub-class shall be the same as that of
 the super class, otherwise the result of merging of the information
 received from both classes is undertermined.
-
 =cut
 
 sub mergeStructure(@)
