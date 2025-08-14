@@ -600,10 +600,10 @@ Merging is a complicated task, because the order of both lists should be
 kept as well as possible.
 
 =option  this ARRAY
-=default this C<[]>
+=default this +[]
 
 =option  super ARRAY
-=default super C<[]>
+=default super +[]
 
 =requires container OBJECT
 The object which administers this level of documentation nesting,

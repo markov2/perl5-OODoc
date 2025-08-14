@@ -501,9 +501,16 @@ sub simplify_subroutines($)
 	) !simplify_subroutine($1)!grxmes;
 }
 
+sub default_hash($)
+{	my $pod = shift;
+	$pod =~ s/ ^ (\=default\s+\w+\s+) (?: C\<\s*\+\[\s*\]\s*\> | \[\s*\] ) /$1+[]/grx
+	     =~ s/ ^ (\=default\s+\w+\s+) (?: C\<\s*\+\{\s*\}\s*\> | \{\s*\} ) /$1+{}/grx;
+}
+
 sub simplify_pod($)
 {	my $pod = shift;
 
+	default_hash
 	unwrap_c
 	unwrap_m
 	opening_parens
