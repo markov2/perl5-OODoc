@@ -590,9 +590,9 @@ sub expand()
 }
 
 =method mergeStructure %options
-Merge two lists of structured text objects: "this" list and "super" list.
-The "this" objects are defined on this level of inheritance, where the
-"super" objects are from an inheritence level higher (super class).
+Merge two lists of structured text objects: the P<this> and P<super> lists.
+The P<this> objects are defined on this level of inheritance, where the
+P<super> objects are from an inheritence level higher (super class).
 The combined list is returned, where the inherited objects are
 preferably included before the new ones.
 

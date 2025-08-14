@@ -302,7 +302,7 @@ sub add_diagnostics($)          # collect all diagnostics, even the documented
 	my @diags;
 	while(@pairs)
 	{	my ($reason, $text) = (shift @pairs, shift @pairs);
-		$text =~ s/\{(.*?)\}/C<\$$1>/g;
+		$text =~ s/\{(.*?)\}/\$$1/g;
 		$text .= ': $!' if $reason eq 'fault' || $reason eq 'alert' || $reason eq 'failure';
 		push @diags, "=$reason $text\n";
 	}
@@ -448,7 +448,10 @@ sub param_markings($)
 {	my $sub     = shift;
 	my $ref     = $sub =~ s/\n/ /gr =~ s/[ ]{2,}/ /gr;
 	substr($ref, 60, -1) = '...' if length $ref > 63;
-	my ($type, $name, $params) = $sub =~ m!^\=(\w+) \s+ (\w+) ([^\n]*)!xm or die $ref;
+
+	my ($type, $name, $params) = $sub =~ m!^\=(\w+) \s+ (\w+)? ([^\n]*)!xm;
+	defined $name || $type eq 'overload' || $type eq 'tie'
+		or die $ref;
 
 	my @params = $params =~ m! ([\$\%\@]?\w+) !gmx;
 	my @options = $sub =~ m!^\=(?:option|default|requires) \s+ (\w+)!gmx;
@@ -470,11 +473,11 @@ sub param_markings($)
 			my $is_var = $token =~ m!^[\$\@%*]!;
 			   exists $params{$token}
 			 ? ($is_var ? $token : "P<$token>")
-			 : ($is_var ? (push(@notes, "not found P $type $name($token)"), $whole) : $whole);
+			 : ($is_var ? (push(@notes, "not found P for $type $name($token)"), $whole) : $whole);
 		/gxe;
 
 		$line =~ s/ ( [\$\%\@] [a-zA-Z_]+ ) /
-			$params{$1} or push @notes, "not found P $type $name($1)"; $1
+			$params{$1} or push @notes, "not found P for $type $name($1)"; $1
 		/gxe;  # auto param
 		push @out, $line;
 	}

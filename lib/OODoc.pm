@@ -165,9 +165,9 @@ sub selectFiles($@)
 =method processFiles %options
 Extract the documentation from the selected files.
 
-=option  workdir DIRECTORY
+=option  workdir $directory
 =default workdir undef
-Specify the directory where the stripped pm-files and the pod files
+Specify the $directory where the stripped pm-files and the pod files
 will be written to.  Probably the whole distribution is collected on
 that spot.
 
@@ -192,7 +192,7 @@ Is your pod real pod or should it also be passed through the parser?
 =default source C<'.'>
 The location where the files are located.  This is useful when you collect
 the documentation of other distributions into the main one.  Usually in
-combination with an undefined value for C<workdir>.
+combination with an undefined value for P<workdir>.
 
 =option  parser CLASS|$name|OBJECT
 =default parser OODoc::Parser::Markov
@@ -205,12 +205,12 @@ documentation.
 
 =option  version STRING
 =default version <from source directory or OODoc object>
-The version of the distribution.  If not specified, the C<source>
-directory is scanned for a file named C<version> or C<VERSION>. The
+The version of the distribution.  If not specified, the P<source>
+directory is scanned for a file named F<version> or F<VERSION>. The
 content is used as version value.  If these do not exist, then the
 main OODoc object needs to provide the version.
 
-To make C<Makefile.PL> option C<VERSION_FROM> to work with this
+To make F<Makefile.PL> option C<VERSION_FROM> to work with this
 seperate version file, that line should contain something like
 
    our $VERSION = 3.14;
