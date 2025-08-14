@@ -163,9 +163,10 @@ sub selectFiles($@)
 }
 
 =method processFiles %options
+Extract the documentation from the selected files.
 
 =option  workdir DIRECTORY
-=default workdir C<undef>
+=default workdir undef
 Specify the directory where the stripped pm-files and the pod files
 will be written to.  Probably the whole distribution is collected on
 that spot.
@@ -175,15 +176,15 @@ then do not specify this option: knowledge is built, but not
 included in the release.
 
 =option  manifest FILENAME
-=default manifest <source/>'MANIFEST'
+=default manifest "$source/MANIFEST"
 The manifest file lists all files which belong to this distribution: packages,
 pods, tests, etc. before the new pod files are created.
 
 =option  select ARRAY|REGEX|CODE
-=default select qr/\.(pod|pm)$/
+=default select C<< qr/\.(pod|pm)$/ >>
 The files which contain documentation to be processed.  You can provide
-a list of filenames as array reference, a REGEX which is used to select
-names from the manifest file, or a CODE reference which is used to
+a list of filenames as array reference, a P<REGEX> which is used to select
+names from the manifest file, or a P<CODE> reference which is used to
 select elements from the manifest (filename passed as first argument).
 Is your pod real pod or should it also be passed through the parser?
 
@@ -194,7 +195,7 @@ the documentation of other distributions into the main one.  Usually in
 combination with an undefined value for C<workdir>.
 
 =option  parser CLASS|$name|OBJECT
-=default parser M<OODoc::Parser::Markov>
+=default parser OODoc::Parser::Markov
 The parser CLASS or OBJECT to be used to process the pages.
 
 =option  distribution NAME
@@ -215,23 +216,23 @@ seperate version file, that line should contain something like
    our $VERSION = 3.14;
 
 =option  notice STRING
-=default notice ''
+=default notice C<''>
 Include the string (which may consist of multiple lines) to each of the
 pm files.  This notice usually contains the copyright message.
 
 =option  skip_links ARRAY|STRING|REGEXP
-=default skip_links []
+=default skip_links C<< [] >>
 Passed to M<OODoc::Parser::new(skip_links)>.
 
 =error Cannot compile parser class
 The P<parser> class does not exist or produces compiler errors.
 
 =error Parser $parser could not be instantiated
-Something went wrong while starting the parser object.  Probably there is
+Something went wrong while starting the $parser object.  Probably there is
 an other error message which will tell you the exact cause.
 
 =error requires a directory to write the distribution to
-You have to give a value to P<workdir>, which may be C<undef>.  This
+You have to give a value to P<workdir>, which may be undef.  This
 option is enforced to avoid the accidental omission of the parameter.
 
 When processing the manifest file, some files must be copied directly
@@ -249,7 +250,7 @@ will be skipped for now, but may cause problems later on.
 
 =error there is no version defined for the source files
 Each manual will need a version number.  There are various ways to
-specify one.  For instance, create a file named C<version> or C<VERSION>
+specify one.  For instance, create a file named F<version> or F<VERSION>
 in the top source directory of your distribution, or specify a version
 as argument to M<OODoc::new()> or M<OODoc::processFiles()>.
 
@@ -494,23 +495,23 @@ for you.
 
 The first, optional argument specifies the type of pages to be produced.
 This can be either a predefined $name (currently available are C<pod>
-and C<html> representing M<OODoc::Format::Pod> and M<OODoc::Format::Html>
+and C<html>, representing OODoc::Format::Pod and OODoc::Format::Html
 respectively), the name of a $class which needs to be instantiated,
-or an instantiated formatter.
+or an instantiated formatter $object.
 
 You can also pass many options which are passed to (the effective extension
 of) M<OODoc::Format::createPages()>.
 
-=requires workdir DIRECTORY
-The directory where the output is going to.
+=requires workdir $directory
+The $directory where the output is going to.
 
 =option  manifest FILENAME|undef
-=default manifest <workdir>/MANIFEST
-The names of the produced files are appended to this file.  When undef
+=default manifest P<workdir>/MANIFEST
+The names of the produced files are appended to this file content.  When undef
 is given, no file will be written for this.
 
 =error formatter requires a directory to write the manuals to
-You have to give a value to C<workdir>, which will be used as top directory
+You have to provide a value to P<workdir>, which will be used as top directory
 for the produced output.  It does not matter whether there is already some
 stuff in that directory.
 
@@ -674,7 +675,7 @@ The final phase can be called more than once: based on the same object
 tree, documents can be produced in various formats.  The current
 implementations produce POD and HTML.
 
-More details in the M<OODoc::Format> base-class.
+More details in the OODoc::Format base-class.
 
 =subsection exporters
 
@@ -682,7 +683,7 @@ You may also export the documentation tree to be used with your own
 separate application.  At this moment, that dump will be made in JSON
 with HTML-formatted text fragments only.
 
-More details in the M<OODoc::Export> base-class.
+More details in the OODoc::Export base-class.
 
 =section Release process
 
@@ -702,13 +703,13 @@ the distribution of your module.  The simpest script looks like this:
   );
 
  $doc->processFiles(...);  # parsing
- $doc->prepare;            # collecting
+ $doc->finalize(...);      # collecting
  $doc->formatter('pod', ...)->createPages(...);
                            # formatting to POD
 
 The default parser will be used to process the files, see
-M<OODoc::Parser::Markov> for its syntax.  The formatter is described
-in M<OODoc::Format::Pod>.  Once you have this working, you may decide
+OODoc::Parser::Markov for its syntax.  The formatter is described
+in OODoc::Format::Pod.  Once you have this working, you may decide
 to add options to the calls to adapt the result more to your own taste.
 
 =subsection use oodist

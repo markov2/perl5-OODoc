@@ -1014,6 +1014,9 @@ standard POD, do:
       $0 --config3
       (hint:  vi Makefile.PL   :r! oodist --config3)
 
+  ===> 2. Configure that template.  See the OODoc Wiki at
+          https://github.com/markov2/perl5-OODoc/wiki/oodist-config
+
   ===> 2. Merge the following into your "WriteMakefile" call in Makefile.PL
 
       $0 --merge3
