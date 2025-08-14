@@ -13,6 +13,9 @@ version 3.02:
 	Fixes:
 	- option default now in auto-PMC scheme.
 
+	Improvements:
+	- oorestyle remove C<> and M<> where not needed.
+
 version 3.01: Thu 14 Aug 11:14:20 CEST 2025
 
 	Changes:

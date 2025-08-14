@@ -16,7 +16,6 @@ sub install_cleaned(@);
 sub simplify_file($);
 sub simplify_code($);
 sub simplify_pod($);
-sub call_rewrite($$);
 
 use constant {
 	TABSTOP          => 4,
@@ -91,26 +90,9 @@ sub install_cleaned(@)
 	}
 }
 
-sub rewrite_kw($)
-{	my $kw = shift;
-	$rewrite_kw{$kw} // $core{$kw} // '$'.lc $kw;
-}
-
-sub call_rewrite($$)
-{	my ($line, $vars) = @_;
-	my @tokens;
-	for($line)
-	{	while(s/^('[^']*'|"[^"]*"|[\@\$\%]?[a-zA-Z_][\w:]*|.)//)
-		{	my $token = $1;
-			$token    = $vars->{$token} = rewrite_kw $token
-				if $token =~ m/^[a-zA-Z_]/ && $token !~ /\:/;
-			push @tokens, $token;
-		}
-	}
-	my $new = join '', @tokens;
-	1 while $new =~ s/\(([^)]+)\)/<$1>/g;
-	$new;
-}
+###
+### Clean syntax
+###
 
 sub clean_syntax($)
 {	my ($fn) = @_;
@@ -136,8 +118,7 @@ sub clean_syntax($)
 	}
 	push @out, simplify_code(shift @blocks) if @blocks;
 
-#	write_text $outfn, join '',
-	print join '',
+	write_text $outfn, join '',
 		(!$in_podfile && $has_pod ? $warn_oodist : ''),
 		(map "#oorestyle: $_\n", @notes),
 		(@notes ? "\n" : ''),
@@ -382,6 +363,17 @@ sub simplify_code($)
 ### SIMPLIFY_POD
 ###
 
+sub unwrap_c($)
+{	my $pod = shift;
+	$pod =~ s/\bC\< (undef|true|false) \>/$1/grx
+	     =~ s/^ < (undef|true|false) \> $/$1/grx;
+}
+
+sub unwrap_m($)
+{	my $pod = shift;
+	$pod =~ s/\bM\< ( [A-Z]\w+ (?: \:\: [A-Z]\w+ )+ ) \>/$1/grx;
+}
+
 sub add_separator($)
 {	my $pod = shift;
 	my $begintags = join '|', @text_blocks;
@@ -512,6 +504,8 @@ sub simplify_subroutines($)
 sub simplify_pod($)
 {	my $pod = shift;
 
+	unwrap_c
+	unwrap_m
 	opening_parens
 	improve_doc_code
 	simplify_subroutines
