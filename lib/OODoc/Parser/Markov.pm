@@ -1115,10 +1115,7 @@ sub _markupText($$%)
 		push @rewritten, $markup if defined $markup;
 	}
 
-my $r =
 	join '', @rewritten;
-warn "$where\n$text\n==>\n$r\n" if $text ne $r;
-$r;
 }
 
 sub autoMarkup($$%)

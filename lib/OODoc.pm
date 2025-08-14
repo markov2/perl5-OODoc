@@ -48,7 +48,7 @@ That is also an example of the produced html output.
 =c_method new %options
 
 =option  project STRING
-=default project <distribution>
+=default project $distribution
 A short description of the distribution, as will be shown on many places
 in the produced manual pages and code.  You can use the main package name,
 or something which is nicer to read.
@@ -396,7 +396,7 @@ sub processFiles(@)
 }
 
 #-------------------------------------------
-=section Preparation
+=section Actions
 
 =method finalize %options
 [3.01] After all documentation fragments have been read via M<processFiles()>,
@@ -404,7 +404,7 @@ the pages need to be composed together.  For instance, inheritance and final
 cleanups are due here.
 =cut
 
-sub finalize(@)
+sub finalize(%)
 {   my ($self, %args) = @_;
 
     info "* collect package relations";
@@ -417,7 +417,7 @@ sub finalize(@)
     $_->createInheritance for $self->manuals;
 
 	info "* finalize each manual";
-	$_->finalize for $self->manuals;
+	$_->finalize(%args) for $self->manuals;
 
     $self;
 }
@@ -486,9 +486,6 @@ sub getPackageRelations($)
     $self;
 }
 
-#-------------------------------------------
-=section Main entries
-
 =method formatter $name|$class|$object, %options
 [2.03] Create a manual for the set of manuals read so far.  The manuals are
 produced by different formatters which produce one page at a time.
@@ -501,7 +498,8 @@ and C<html> representing M<OODoc::Format::Pod> and M<OODoc::Format::Html>
 respectively), the name of a $class which needs to be instantiated,
 or an instantiated formatter.
 
-You can also pass many options which are passed to M<OODoc::Format::createPages()>
+You can also pass many options which are passed to (the effective extension
+of) M<OODoc::Format::createPages()>.
 
 =requires workdir DIRECTORY
 The directory where the output is going to.
@@ -597,12 +595,12 @@ syntax.  POD is very simple to learn, and the produced manual pages
 look like standard Unix manual pages.  However, when you start writing
 larger programs, you start seeing the weaker aspects of POD.
 
-One of the main problems with POD is that is using a visual markup
-style: you specify information by how it must be presented to the
-viewer.  This in contrast with logical markup where you specify the
-information more abstract, and a visual representation is created by
-an application.  For instance in HTML defines an C<I> tag as visual markup
-Italic, and C<EM> as logical markup for EMphasis, which will usually show
+One of the main problems with POD is that is using a visual markup style:
+you specify information by how it must be presented to the viewer.
+This in contrast with logical markup where you specify the information
+more abstract, and a visual representation is created by an application.
+For instance, HTML defines an C<< <I> >> tag as visual markup Italic,
+and C<< <EM> >> as logical markup for EMphasis, which will usually show
 in italic.
 
 The main disadvantage of visual markup is limited expression: the

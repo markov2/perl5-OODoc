@@ -109,7 +109,7 @@ For each text section M<cleanupPod()> or M<cleanupHtml()> is called
 for the final touch for the requested output markup.
 
 =method skipManualLink $package
-Returns true is the $package name matches one of the links to be
+Returns true if the $package name matches one of the links to be
 skipped, set by M<new(skip_links)>.
 =cut
 

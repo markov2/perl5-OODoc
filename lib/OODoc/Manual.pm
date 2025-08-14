@@ -829,6 +829,8 @@ sub publish($%)
 
 =method finalize %options
 [3.01] The manual processor gets a last chance to work on the document.
+
+All %options are passed to M<OODoc::Parser::Markov::finalizeManual()>.
 =cut
 
 sub finalize(%)
@@ -837,7 +839,7 @@ sub finalize(%)
     trace "finalize manual $self";
 
 	# Maybe the parser has still things to do
-	$self->parser->finalizeManual($self);
+	$self->parser->finalizeManual($self, %args);
 
 	$self;
 }
