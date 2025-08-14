@@ -94,9 +94,9 @@ string which explains where the data came from.
 The file where the stripped code is written to.
 
 =option  pure_pod BOOLEAN
-=default pure_pod <false>
+=default pure_pod false
 Some documentation is stored in files which look like a module,
-but do not contain any code.  Their filenames usually end with C<.pod>.
+but do not contain any code.  Their filenames usually end with F<.pod>.
 
 =requires distribution STRING
 
@@ -341,7 +341,7 @@ sub diagnostics(@)
     my @select = $args{select} ? @{$args{select}} : ();
 
     my @diag = map {$_->diagnostics} $self->subroutines;
-    return @diag unless @select;
+    @select or return @diag;
 
     my $select;
     {   local $" = '|';
@@ -411,7 +411,7 @@ sub extraCode()
     my $name = $self->name;
 
     $self->package eq $name
-    ? grep {$_->name ne $name} $self->manualsForPackage($name)
+    ? grep $_->name ne $name, $self->manualsForPackage($name)
     : ();
 }
 
@@ -445,7 +445,7 @@ itself.  M<subroutines()> returns them all.
 sub ownSubroutines
 {   my $self = shift;
     my $me   = $self->name || return 0;
-    grep {not $self->inherited($_)} $self->subroutines;
+    grep ! $self->inherited($_), $self->subroutines;
 }
 
 #-------------------------------------------
@@ -600,22 +600,22 @@ Merging is a complicated task, because the order of both lists should be
 kept as well as possible.
 
 =option  this ARRAY
-=default this []
+=default this C<[]>
 
 =option  super ARRAY
-=default super []
+=default super C<[]>
 
 =requires container OBJECT
 The object which administers this level of documentation nesting,
 which may be a manual, chapter, and such.
 
 =option  equal CODE
-=default equal sub {"$_[0]" eq "$_[1]"}
+=default equal C<< sub {"$_[0]" eq "$_[1]"} >>
 Define how can be determined that two objects are the same.  By default,
 the stringification of both objects are compared.
 
 =option  merge CODE
-=default merge sub {$_[0]}
+=default merge C<< sub {$_[0]} >>
 What to call if both lists contain the same object.  These two objects
 will be passed as argument to the code reference. By default, the second
 gets ignored.

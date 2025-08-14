@@ -5,6 +5,7 @@ use strict;
 use warnings;
 
 use Log::Report    'oodoc';
+use Scalar::Util   qw/blessed/;
 
 =chapter NAME
 
@@ -238,7 +239,7 @@ that will be stored.
 
 sub default($)
 {   my ($self, $it) = @_;
-    ref $it
+    blessed $it
         or return $self->{OTS_defaults}{$it};
 
     my $name = $it->name;

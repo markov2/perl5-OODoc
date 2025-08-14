@@ -985,8 +985,8 @@ sub cleanupHtml($$$)
     for($string)
     {   unless($is_html)
         {   s#\&#\&amp;#g;
-            s#(\s|^)\<([^>]+)\>#$1&lt;$2&gt;#g;
-            s#(?<!\b[BCEFILSXMP])\<#&lt;#g;
+            s#(\s|^) \< ([^<>]+) \> #$1&lt;$2&gt;#gx;
+            s#(?<!\b[BCEFILSXMP<])\<#&lt;#g;
             s#([=-])\>#$1\&gt;#g;
         }
 		s# \b ([A-Z]) (?: \<\<\s*(.*?)\s*\>\> | \<(.*?)\> ) #
@@ -1052,12 +1052,14 @@ tags.
 
 sub _collectParamsAllCaps($$$)
 {	my ($self, $params, $group, $string) = @_;
+	$string =~ s/\b[A-Z](?:\<\<.*?\>\>|\<.*?\>)/ /g;
 	my @found = map +( $_ => $group ), $string =~ m! \b ([A-Z][A-Z\d]*) \b !gx;
 	+{ %$params, @found };
 }
 
 sub _collectParams($$$)
 {	my ($self, $params, $group, $string) = @_;
+	$string =~ s/\b[A-Z](?:\<\<.*?\>\>|\<.*?\>)/ /g;
 	my @found = map +( $_ => $group ), $string =~ m!( [\$\@\%]\w+ )!gx;
 	+{ %$params, @found };
 }
@@ -1157,9 +1159,20 @@ sub autoMarkup($$%)
 
 		foreach my $option (@options)
 		{	next if $manual->inherited($option);
-			my $p   = $self->_collectParams($params, option => $option->parameters);
-			my $opt = $option->openDescription;
-			$$opt   = $self->_markupText($$opt, "$w(" . $option->name . ")", %args, params => $p);
+			my $p    = $self->_collectParams($params, option => $option->parameters);
+
+			my $name = $option->name;
+			my $default = $sub->default($name);
+			my $v    = $default->value;
+			my $q    = $self->_collectParams($p, default => $v);
+
+			# modify the default value
+			my $w    = $self->_markupText($v, "$w(D=$name)", %args, params => $q);
+			$default->_setValue($w);
+
+			# modify the option text
+			my $opt  = $option->openDescription;
+			$$opt    = $self->_markupText($$opt, "$w($name)", %args, params => $q);
 		}
 
 		foreach my $diag ($sub->diagnostics)

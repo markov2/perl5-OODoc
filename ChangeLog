@@ -7,10 +7,11 @@ TODO:
 	- move "Manual Repository" from ::Object into separate object
 	- subs could not only list 'Inherited from', but also 'Extended by'
 	- in POD, group "Inherited" referenced subs?
-	- to fix: processFiles(select) default in HTML shows <>
-	- to fix: processFiles(parser) default in HTML not M<>
 
 version 3.02:
+
+	Fixes:
+	- option default now in auto-PMC scheme.
 
 version 3.01: Thu 14 Aug 11:14:20 CEST 2025
 

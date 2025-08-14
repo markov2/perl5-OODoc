@@ -70,4 +70,6 @@ The value of this default.
 
 sub value() { $_[0]->{OTD_value} }
 
+sub _setValue() { $_[0]->{OTD_value} = $_[1] }
+
 1;
