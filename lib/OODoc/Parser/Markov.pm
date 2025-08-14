@@ -1146,7 +1146,7 @@ sub autoMarkup($$%)
 
 		my @options = $sub->options;
 		!@options || $params->{'%options'}
-			or warning __x"In {where}, options but no call parameter %options", where => "$where()";
+			or warning __x"In {where}, options but no call parameter %options", where => "$w()";
 
 		# Specifying possible %options without defining one is not a
 		# problem: maybe the extension uses them.
@@ -1185,12 +1185,12 @@ C<P> markings: the "this is a parameter" marking.  (But in the future
 it might do more)
 
 =option  skip_auto_p BOOLEAN
-=default skip_auto_p <false>
-Do not add C<< P<> >> tags around variables automatically.
+=default skip_auto_p false
+Do not add C<< P <> >> tags around variables automatically.
 
 =option  skip_auto_m BOOLEAN
-=default skip_auto_m <false>
-Skip the automatic generation of C<< M<> >> tags around packages
+=default skip_auto_m false
+Skip the automatic generation of C<< M <> >> tags around packages
 names.
 
 =option  wrap_c ARRAY-of-WORDS
@@ -1264,10 +1264,10 @@ that documentation will be ignored.
 Do not use the words undef, true, and false in other sense then undefined,
 and boolean, because they will get automaticly wrapped in C<< C< > >> markup.
 
-Package names will automatically be wrapped in C<< M< > >> markup.
+Package names will automatically be wrapped in C<< M <> >> markup.
 
 Variables mentioned in subroutine parameter lists, diagnostics and as
-option parameter will automatically be wrapped in C<< P< > >> markup.
+option parameter will automatically be wrapped in C<< P <> >> markup.
 
 =subsection Subroutines
 

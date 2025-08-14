@@ -534,10 +534,11 @@ sub showSubroutines(@)
     }
 }
 
-=method showSubroutine <@>
+=method showSubroutine %options
+Show a single subroutine.
 
 =requires subroutine OBJECT
-=requires manual  MANUAL
+=requires manual  $manual
 
 =option  output  FILE
 =default output  <selected filehandle>
@@ -557,11 +558,11 @@ sub showSubroutines(@)
 =option  show_sub_description 'NO'|'DESCRIBED'|'REFER'|'ALL'
 =default show_sub_description 'DESCRIBED'
 Included the description of the use of the subroutines, which
-comes before the options are being explained.  C<NO> will cause
-the description to be ignored, C<DESCRIBED> means that only
+comes before the options are being explained.  P<NO> will cause
+the description to be ignored, P<DESCRIBED> means that only
 text which was written in the manual-page at hand is included,
-C<REFER> means that a reference to inherited documentation is
-made, and with C<ALL> the inherited texts are expanded into this
+P<REFER> means that a reference to inherited documentation is
+made, and with P<ALL> the inherited texts are expanded into this
 file as well.
 
 =option  show_examples 'NO'|'EXPAND'
@@ -575,7 +576,7 @@ default behavior, for instance, puts them all in a separate DIAGNOSTICS
 chapter per manual page.
 
 =option  last BOOLEAN
-=default last 0
+=default last false
 
 =cut
 
