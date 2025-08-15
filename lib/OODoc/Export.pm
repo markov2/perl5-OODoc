@@ -358,11 +358,27 @@ with OODoc, for instance OODoc itself at L<https://metacpan.org/XXX>
     "package": "lib/Mail/Box.pm",              # SAFE
     "distribution": "Mail-Box",                # SAFE
     "is_pure_pod": false,                      # BOOLEAN
+    "inheritance": \%interitance,              # see below
     "chapters": [ REF, ... ]
   }
 
 The chapters are sorted logically, as they appear in traditional unix manual pages,
 with a few extensions.
+
+=subsection Inheritance
+The manual contains a details inheritance relationship structure, which MAY
+use the following fields:
+
+  { "extends": [ CLASS, ... ],                 # parent class(es)
+    "extended_by": [ CLASS, ... ],             # extension class(es)
+    "extra_code_for": PACKAGE,                 # package != filename
+    "extra_code_in": [ PACKAGE, ... ],         # dynamically loaded code
+    "realizes": CLASS,                         # see Object::Realize::Later
+    "realized_by": [ CLASS, ... ],             #   "
+  }
+
+Objects which extend Object::Realize::Later are placeholders, which can become
+real objects when they are used.  It's a beautiful trick, hence supported here.
 
 =subsection Nested blocks of text
 

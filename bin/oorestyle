@@ -35,7 +35,6 @@ my @subroutine_types = qw/function method i_method c_method ci_method overload t
 my @text_blocks      = qw/chapter section subsection subsubsection/;
 
 my $warn_oodist = <<__OODIST;
-
 #oodist: *** DO NOT USE THIS VERSION FOR PRODUCTION ***
 #oodist: This file contains OODoc-style documentation which will get stripped
 #oodist: during its release in the distribution.  You can use this file for

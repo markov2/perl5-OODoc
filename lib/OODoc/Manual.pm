@@ -732,7 +732,7 @@ still has to be cleaned-up before inclusion.
 
 sub createInheritance()
 {	my $self = shift;
-	my $has = $self->chapter('INHERITANCE');
+	my $has  = $self->chapter('INHERITANCE');
 	return $has if defined $has;
 
 	trace "create inheritance for $self";
@@ -753,7 +753,7 @@ sub createInheritance()
 
 	if(my @extras = $self->extraCode)
 	{	$output .= "\n $self has extra code in\n";
-		$output .= "   M<$_>\n" foreach sort @extras;
+		$output .= "   M<$_>\n" for sort @extras;
 	}
 
 	foreach my $super (@supers)
@@ -763,12 +763,12 @@ sub createInheritance()
 
 	if(my @subclasses = $self->subClasses)
 	{	$output .= "\n $self is extended by\n";
-		$output .= "   M<$_>\n" foreach sort @subclasses;
+		$output .= "   M<$_>\n" for sort @subclasses;
 	}
 
 	if(my @realized = $self->realizers)
 	{	$output .= "\n $self is realized by\n";
-		$output .= "   M<$_>\n" foreach sort @realized;
+		$output .= "   M<$_>\n" for sort @realized;
 	}
 
 	my $chapter = OODoc::Text::Chapter->new(name => 'INHERITANCE', manual => $self, linenr => -1, description => $output)
@@ -800,6 +800,39 @@ sub createSuperSupers($)
 	$output;
 }
 
+sub exportInheritance()
+{	my $self = shift;
+
+	trace "export inheritance for $self";
+
+	$self->name eq $self->package
+		or return +{ extra_code_for => $self->package };
+
+	my %tree;
+	my @supers  = $self->superClasses;
+
+	if(my $realized = $self->realizes)
+	{	$tree{realizes} = "$realized";
+		@supers = $realized->superClasses if blessed $realized;
+	}
+
+	if(my @extras = $self->extraCode)
+	{	$tree{extra_code_in} = [ sort map "$_", @extras ];
+	}
+
+	$tree{extends} = [ sort map "$_", @supers ] if @supers;
+
+	if(my @subclasses = $self->subClasses)
+	{	$tree{extended_by} = [ sort map "$_", @subclasses ];
+	}
+
+	if(my @realized = $self->realizers)
+	{	$tree{realized_by} = [ sort map "$_", @realized ];
+	}
+
+	\%tree;
+}
+
 sub publish($%)
 {	my ($self, $config, %args) = @_;
 	my $manual   = $config->{manual} = $self;
@@ -822,6 +855,7 @@ sub publish($%)
 	$p->{version}      = $exporter->markup($self->version);
 	$p->{is_pure_pod}  = $exporter->boolean($self->isPurePod);
 	$p->{chapters}     = \@ch;
+	$p->{inheritance}  = $self->exportInheritance;
 
 	$exporter->processingManual(undef);
 	$p;
