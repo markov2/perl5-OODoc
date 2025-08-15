@@ -18,6 +18,7 @@ version 3.02:
 	- oorestyle default [] and {}
 	- apply oorestyle to OODoc
 	- remove "Commonly used functions" section
+	- html display of diagnostics
 
 version 3.01: Thu 14 Aug 11:14:20 CEST 2025
 

@@ -987,8 +987,7 @@ sub templateIndex($$)
 			}
 		}
 
-		@rows = map { $_->[1] }
-			sort { $a->[0] cmp $b->[0] } @subs;
+		@rows = map $_->[1], sort { $a->[0] cmp $b->[0] } @subs;
 	}
 	elsif($group eq 'DIAGNOSTICS')
 	{	foreach my $manual ($self->manuals)
@@ -996,10 +995,11 @@ sub templateIndex($$)
 			{	my @diags    = $select->($sub->diagnostics) or next;
 
 				my $linksub  = $self->link($manual, $sub, $sub->name);
+				$linksub     =~ s#\</a\>#()</a>#;   # add call ()
 				my $linkman  = $self->link(undef, $manual, $manual->name);
 
 				foreach my $diag (@diags)
-				{	my $type = uc($diag->type);
+				{	my $type = lc($diag->type);
 					push @rows, <<"DIAG";
 $type: $diag<br>
 &middot;&nbsp;$linksub in $linkman<br>
@@ -1038,10 +1038,11 @@ DIAG
 
 	push @rows, ('') x ($columns-1);
 	my $rows   = int(@rows/$columns);
+	my $width  = int(100/$columns) . '%';
 
 	my $output = qq[<tr>];
 	while(@rows >= $columns)
-	{	$output .= qq[<td valign="top">]
+	{	$output .= qq[<td valign="top" width="$width">]
 				. join( "<br>\n", splice(@rows, 0, $rows))
 				.  qq[</td>\n];
 	}
