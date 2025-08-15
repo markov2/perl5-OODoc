@@ -380,6 +380,8 @@ use the following fields:
 Objects which extend Object::Realize::Later are placeholders, which can become
 real objects when they are used.  It's a beautiful trick, hence supported here.
 
+One of the most extensive uses of this structure is Mail::Message::Body.
+
 =subsection Nested blocks of text
 
 Manuals are a collection of chapters, which can contain sections, which may have
