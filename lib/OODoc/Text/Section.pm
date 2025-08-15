@@ -1,3 +1,8 @@
+#oodist: *** DO NOT USE THIS VERSION FOR PRODUCTION ***
+#oodist: This file contains OODoc-style documentation which will get stripped
+#oodist: during its release in the distribution.  You can use this file for
+#oodist: testing, however the code of this development version may be broken!
+
 package OODoc::Text::Section;
 use parent 'OODoc::Text::Structure';
 
@@ -7,19 +12,20 @@ use warnings;
 use Log::Report    'oodoc';
 use List::Util     'first';
 
+#--------------------
 =chapter NAME
 
 OODoc::Text::Section - collects the text of one section within a chapter
 
 =chapter SYNOPSIS
 
- my $chapter = $section->chapter;
- my @subsect = $section->subsections;
+  my $chapter = $section->chapter;
+  my @subsect = $section->subsections;
 
- my $index   = $section->subsection('INDEX');
+  my $index   = $section->subsection('INDEX');
 
- my $index   = OODoc::Text::SubSection->new(...);
- $section->subsection($index);           # add subsection
+  my $index   = OODoc::Text::SubSection->new(...);
+  $section->subsection($index);           # add subsection
 
 =chapter DESCRIPTION
 
@@ -35,82 +41,82 @@ OODoc::Text::Section - collects the text of one section within a chapter
 =cut
 
 sub init($)
-{   my ($self, $args) = @_;
-    $args->{type}      ||= 'Section';
-    $args->{level}     ||= 2;
-    $args->{container} ||= delete $args->{chapter} or panic;
+{	my ($self, $args) = @_;
+	$args->{type}      ||= 'Section';
+	$args->{level}     ||= 2;
+	$args->{container} ||= delete $args->{chapter} or panic;
 
-    $self->SUPER::init($args) or return;
+	$self->SUPER::init($args) or return;
 
-    $self->{OTS_subsections} = [];
-    $self;
+	$self->{OTS_subsections} = [];
+	$self;
 }
 
 sub emptyExtension($)
-{   my ($self, $container) = @_;
-    my $empty = $self->SUPER::emptyExtension($container);
-    my @subsections = map $_->emptyExtension($empty), $self->subsections;
-    $empty->subsections(@subsections);
-    $empty;
+{	my ($self, $container) = @_;
+	my $empty = $self->SUPER::emptyExtension($container);
+	my @subsections = map $_->emptyExtension($empty), $self->subsections;
+	$empty->subsections(@subsections);
+	$empty;
 }
 
-#-------------------------------------------
+#--------------------
 =section Location
 
-=method chapter 
+=method chapter
 Returns the chapter object for this section.
 =cut
 
-sub chapter() { shift->container }
+sub chapter() { $_[0]->container }
 
 sub path()
-{   my $self = shift;
-    $self->chapter->path . '/' . $self->name;
+{	my $self = shift;
+	$self->chapter->path . '/' . $self->name;
 }
 
 sub findSubroutine($)
-{   my ($self, $name) = @_;
-    my $sub = $self->SUPER::findSubroutine($name);
-    return $sub if defined $sub;
+{	my ($self, $name) = @_;
+	my $sub = $self->SUPER::findSubroutine($name);
+	return $sub if defined $sub;
 
-    foreach my $subsection ($self->subsections)
-    {   my $sub = $subsection->findSubroutine($name);
-        return $sub if defined $sub;
-    }
+	foreach my $subsection ($self->subsections)
+	{	my $sub = $subsection->findSubroutine($name);
+		return $sub if defined $sub;
+	}
 
-    undef;
+	undef;
 }
 
 sub findEntry($)
-{   my ($self, $name) = @_;
-    return $self if $self->name eq $name;
-    my $subsect = $self->subsection($name);
-    defined $subsect ? $subsect : ();
+{	my ($self, $name) = @_;
+	return $self if $self->name eq $name;
+	my $subsect = $self->subsection($name);
+	defined $subsect ? $subsect : ();
 }
 
 sub all($@)
-{   my $self = shift;
-    ($self->SUPER::all(@_), map {$_->all(@_)} $self->subsections);
+{	my $self = shift;
+	( $self->SUPER::all(@_), map $_->all(@_), $self->subsections );
 }
 
-#-------------------
+#--------------------
 =section Subsections
 
 =method subsection $name|$object
 With a $name, the subsection within this section with that name is
-returned.  With an $object (which must be a M<OODoc::Text::SubSection>),
+returned.  With an $object (which must be a OODoc::Text::SubSection),
 a new subsection is added to the end of the list.
 
 =cut
 
 sub subsection($)
-{   my ($self, $thing) = @_;
-    if(ref $thing)
-    {   push @{$self->{OTS_subsections}}, $thing;
-        return $thing;
-    }
+{	my ($self, $thing) = @_;
+	if(ref $thing)
+	{	push @{$self->{OTS_subsections}}, $thing;
+		return $thing;
+	}
 
-    first {$_->name eq $thing} $self->subsections;
+	first {$_->name eq $thing} $self->subsections;
 }
 
 =method subsections [$subsections]
@@ -118,19 +124,15 @@ Returns a list of all subsections in this chapter.
 =cut
 
 sub subsections(;@)
-{   my $self = shift;
-    if(@_)
-    {   $self->{OTS_subsections} = [ @_ ];
-        $_->container($self) for @_;
-    }
+{	my $self = shift;
+	if(@_)
+	{	$self->{OTS_subsections} = [ @_ ];
+		$_->container($self) for @_;
+	}
 
-    @{$self->{OTS_subsections}};
+	@{$self->{OTS_subsections}};
 }
 
 *nest = \*subsections;
-
-#------------------
-=section Commonly used functions
-=cut
 
 1;

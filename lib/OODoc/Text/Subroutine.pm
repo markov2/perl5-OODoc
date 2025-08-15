@@ -1,3 +1,8 @@
+#oodist: *** DO NOT USE THIS VERSION FOR PRODUCTION ***
+#oodist: This file contains OODoc-style documentation which will get stripped
+#oodist: during its release in the distribution.  You can use this file for
+#oodist: testing, however the code of this development version may be broken!
+
 package OODoc::Text::Subroutine;
 use parent 'OODoc::Text';
 
@@ -7,6 +12,7 @@ use warnings;
 use Log::Report    'oodoc';
 use Scalar::Util   qw/blessed/;
 
+#--------------------
 =chapter NAME
 
 OODoc::Text::Subroutine - collects information about one documented sub
@@ -30,85 +36,83 @@ they differ.
 The STRING which is found as description of the parameters which can be
 passed to the subroutine.  Although free format, there is a convertion
 which you can find in the manual page of the selected parser.
+
 =cut
 
 sub init($)
-{   my ($self, $args) = @_;
+{	my ($self, $args) = @_;
 
-    exists $args->{name}
-        or error __x"no name for subroutine";
+	exists $args->{name} or panic;
+	$self->SUPER::init($args) or return;
 
-    $self->SUPER::init($args)
-        or return;
-
-    $self->{OTS_param}    = delete $args->{parameters};
-    $self->{OTS_options}  = {};
-    $self->{OTS_defaults} = {};
-    $self->{OTS_diags}    = [];
-    $self;
+	$self->{OTS_param}    = delete $args->{parameters};
+	$self->{OTS_options}  = {};
+	$self->{OTS_defaults} = {};
+	$self->{OTS_diags}    = [];
+	$self;
 }
 
 sub _call($)
 {	my ($self, $exporter) = @_;
-    my $type       = $self->type;
-    my $unique     = $self->unique;
-    my $style      = $exporter->markupStyle;
+	my $type       = $self->type;
+	my $unique     = $self->unique;
+	my $style      = $exporter->markupStyle;
 
-    my $name       = $exporter->markupString($self->name);
-    my $paramlist  = $exporter->markupString($self->parameters);
+	my $name       = $exporter->markupString($self->name);
+	my $paramlist  = $exporter->markupString($self->parameters);
 
 	if($style eq 'html')
-    {   my $call       = qq[<b><a name="$unique">$name</a></b>];
-        $call         .= "(&nbsp;$paramlist&nbsp;)" if length $paramlist;
+	{	my $call       = qq[<b><a name="$unique">$name</a></b>];
+		$call         .= "(&nbsp;$paramlist&nbsp;)" if length $paramlist;
 
-        return
-            $type eq 'i_method' ? qq[\$obj-&gt;$call]
-          : $type eq 'c_method' ? qq[\$class-&gt;$call]
-          : $type eq 'ci_method'? qq[\$any-&gt;$call]
-          : $type eq 'overload' ? qq[overload: $call]
-          : $type eq 'function' ? qq[$call]
-          : $type eq 'tie'      ? $call
-          : panic "Type $type? for $call";
-    }
-
-    if($style eq 'pod')
-    {   my $params
-          = !length $paramlist ? '()'
-          : $paramlist =~ m/^[\[<]|[\]>]$/ ? "( $paramlist )"
-          :                      "($paramlist)";
-
-        return
-            $type eq 'i_method' ? qq[\$obj-E<gt>B<$name>$params]
-          : $type eq 'c_method' ? qq[\$class-E<gt>B<$name>$params]
-          : $type eq 'ci_method'? qq[\$any-E<gt>B<$name>$params]
-          : $type eq 'function' ? qq[B<$name>$params]
-          : $type eq 'overload' ? qq[overload: B<$name>]
-          : $type eq 'tie'      ? qq[B<$name>$params]
-          :    panic $type;
+		return
+			$type eq 'i_method' ? qq[\$obj-&gt;$call]
+		  : $type eq 'c_method' ? qq[\$class-&gt;$call]
+		  : $type eq 'ci_method'? qq[\$any-&gt;$call]
+		  : $type eq 'overload' ? qq[overload: $call]
+		  : $type eq 'function' ? qq[$call]
+		  : $type eq 'tie'      ? $call
+		  : panic "Type $type? for $call";
 	}
 
-    panic $style;
+	if($style eq 'pod')
+	{	my $params
+		  = !length $paramlist ? '()'
+		  : $paramlist =~ m/^[\[<]|[\]>]$/ ? "( $paramlist )"
+		  :                      "($paramlist)";
+
+		return
+			$type eq 'i_method' ? qq[\$obj-E<gt>B<$name>$params]
+		  : $type eq 'c_method' ? qq[\$class-E<gt>B<$name>$params]
+		  : $type eq 'ci_method'? qq[\$any-E<gt>B<$name>$params]
+		  : $type eq 'function' ? qq[B<$name>$params]
+		  : $type eq 'overload' ? qq[overload: B<$name>]
+		  : $type eq 'tie'      ? qq[B<$name>$params]
+		  :    panic $type;
+	}
+
+	panic $style;
 }
 
 sub publish($)
-{   my ($self, $args) = @_;
-    my $exporter = $args->{exporter} or panic;
+{	my ($self, $args) = @_;
+	my $exporter = $args->{exporter} or panic;
 
-    my $p      = $self->SUPER::publish($args);
-    $p->{call} = $self->_call($exporter);
+	my $p      = $self->SUPER::publish($args);
+	$p->{call} = $self->_call($exporter);
 
-    my $opts   = $self->collectedOptions; # = [ [ $option, $default ], ... ]
-    if(keys %$opts)
-    {   my @options = map +[ map $_->publish($args)->{id}, @$_ ],
-            sort { $a->[0]->name cmp $b->[0]->name }
-                values %$opts;
+	my $opts   = $self->collectedOptions; # = [ [ $option, $default ], ... ]
+	if(keys %$opts)
+	{	my @options = map +[ map $_->publish($args)->{id}, @$_ ],
+			sort { $a->[0]->name cmp $b->[0]->name }
+				values %$opts;
 
-        $p->{options}= \@options;
-    }
+		$p->{options}= \@options;
+	}
 
-    my @d = map $_->publish($args)->{id}, $self->diagnostics;
-    $p->{diagnostics} = \@d if @d;
-    $p;
+	my @d = map $_->publish($args)->{id}, $self->diagnostics;
+	$p->{diagnostics} = \@d if @d;
+	$p;
 }
 
 =method extends [$object]
@@ -125,34 +129,37 @@ In very rare cases, this warning can be ignored, but usually these
 situation is errorneous of confusing for the users of the library.
 =cut
 
-sub extends($)
-{   my $self  = shift;
-    @_ or return $self->SUPER::extends;
-
-    my $super = shift;
-    if($self->type ne $super->type)
-    {   my ($fn1, $ln1) = $self->where;
-        my ($fn2, $ln2) = $super->where;
-        my ($t1,  $t2 ) = ($self->type, $super->type);
-
-        warning __x"subroutine {name}() extended by different type:\n  {type1} in {file1} line {line1}\n  {type2} in {file2} line {line2}"
-          , name => "$self"
-          , type1 => $t1, file1 => $fn1, line1 => $ln1
-          , type2 => $t2, file2 => $fn2, line2 => $ln2;
-    }
-
-    $self->SUPER::extends($super);
-}
-
-#-------------------------------------------
-=section Attributes
-
-=method parameters 
-The parameter list for the subroutine is returned as string.  The
-result may be C<undef> or empty.
+=warning subroutine $name() extended by different type:\n  $type1 in $file1 line $line1\n  $type2 in $file2 line $line2
 =cut
 
-sub parameters() {shift->{OTS_param}}
+sub extends($)
+{	my $self  = shift;
+	@_ or return $self->SUPER::extends;
+
+	my $super = shift;
+	if($self->type ne $super->type)
+	{	my ($fn1, $ln1) = $self->where;
+		my ($fn2, $ln2) = $super->where;
+		my ($t1,  $t2 ) = ($self->type, $super->type);
+
+		warning __x"subroutine {name}() extended by different type:\n  {type1} in {file1} line {line1}\n  {type2} in {file2} line {line2}",
+			name => "$self",
+			type1 => $t1, file1 => $fn1, line1 => $ln1,
+			type2 => $t2, file2 => $fn2, line2 => $ln2;
+	}
+
+	$self->SUPER::extends($super);
+}
+
+#--------------------
+=section Attributes
+
+=method parameters
+The parameter list for the subroutine is returned as string.  The
+result may be undef or empty.
+=cut
+
+sub parameters() { $_[0]->{OTS_param} }
 
 =method location $manual
 Try to figure-out what the location for the subroutine is within the
@@ -170,64 +177,67 @@ be a part of the chapter).
 
 =cut
 
+=warning subroutine $name() location conflict:\n  $path1 in $file1 line $line1\n  $path2 in $file2 line $line2
+=cut
+
 sub location($)
-{   my ($self, $manual) = @_;
-    my $container = $self->container;
-    my $super     = $self->extends
-        or return $container;
+{	my ($self, $manual) = @_;
+	my $container = $self->container;
+	my $super     = $self->extends
+		or return $container;
 
-    my $superloc  = $super->location;
-    my $superpath = $superloc->path;
-    my $mypath    = $container->path;
+	my $superloc  = $super->location;
+	my $superpath = $superloc->path;
+	my $mypath    = $container->path;
 
-    return $container if $superpath eq $mypath;
+	return $container if $superpath eq $mypath;
 
-    if(length $superpath < length $mypath)
-    {   return $container
-            if substr($mypath, 0, length($superpath)+1) eq "$superpath/";
-    }
-    elsif(substr($superpath, 0, length($mypath)+1) eq "$mypath/")
-    {   return $self->manual->chapter($superloc->name)
-            if $superloc->isa("OODoc::Text::Chapter");
+	if(length $superpath < length $mypath)
+	{	return $container
+			if substr($mypath, 0, length($superpath)+1) eq "$superpath/";
+	}
+	elsif(substr($superpath, 0, length($mypath)+1) eq "$mypath/")
+	{	return $self->manual->chapter($superloc->name)
+			if $superloc->isa("OODoc::Text::Chapter");
 
-        my $chapter = $self->manual->chapter($superloc->chapter->name);
+		my $chapter = $self->manual->chapter($superloc->chapter->name);
 
-        return $chapter->section($superloc->name)
-            if $superloc->isa("OODoc::Text::Section");
+		return $chapter->section($superloc->name)
+			if $superloc->isa("OODoc::Text::Section");
 
-        my $section = $chapter->section($superloc->section->name);
+		my $section = $chapter->section($superloc->section->name);
 
-        return $section->subsection($superloc->name)
-            if $superloc->isa("OODoc::Text::SubSection");
+		return $section->subsection($superloc->name)
+			if $superloc->isa("OODoc::Text::SubSection");
 
-        my $subsection = $section->subsection($superloc->subsection->name);
+		my $subsection = $section->subsection($superloc->subsection->name);
 
-        return $subsection->subsubsection($superloc->name)
-            if $superloc->isa("OODoc::Text::SubSubSection");
+		return $subsection->subsubsection($superloc->name)
+			if $superloc->isa("OODoc::Text::SubSubSection");
 
-        panic $superloc;
-   }
+		panic $superloc;
+	}
 
-   unless($manual->inherited($self))
-   {   my ($myfn, $myln)       = $self->where;
-       my ($superfn, $superln) = $super->where;
+	unless($manual->inherited($self))
+	{	my ($myfn, $myln)       = $self->where;
+		my ($superfn, $superln) = $super->where;
 
-       warning __x"subroutine {name}() location conflict:\n  {path1} in {file1} line {line1}\n  {path2} in {file2} line {line2}"
-         , name => "$self"
-         , path1 => $mypath, file1 => $myfn, line1 => $myln
-         , path2 => $superpath, file2 => $superfn, line2 => $superln;
-   }
+		warning __x"subroutine {name}() location conflict:\n  {path1} in {file1} line {line1}\n  {path2} in {file2} line {line2}",
+			name => "$self",
+			path1 => $mypath, file1 => $myfn, line1 => $myln,
+			path2 => $superpath, file2 => $superfn, line2 => $superln;
+	}
 
-   $container;
+	$container;
 }
 
-=method path 
+=method path
 Returns the path of the text structure which contains this subroutine.
 =cut
 
-sub path() { shift->container->path }
+sub path() { $_[0]->container->path }
 
-#-------------------------------------------
+#--------------------
 =section Collected
 
 =method default $name|$object
@@ -238,21 +248,21 @@ that will be stored.
 =cut
 
 sub default($)
-{   my ($self, $it) = @_;
-    blessed $it
-        or return $self->{OTS_defaults}{$it};
+{	my ($self, $it) = @_;
+	blessed $it
+		or return $self->{OTS_defaults}{$it};
 
-    my $name = $it->name;
-    $self->{OTS_defaults}{$name} = $it;
-    $it;
+	my $name = $it->name;
+	$self->{OTS_defaults}{$name} = $it;
+	$it;
 }
 
-=method defaults 
+=method defaults
 Returns a list of all defaults as defined by this documentation item in
 one manual.
 =cut
 
-sub defaults() { values %{shift->{OTS_defaults}} }
+sub defaults() { values %{ $_[0]->{OTS_defaults}} }
 
 =method option $name|$object
 In case of a $name, the option object for this method is looked up.  This
@@ -262,13 +272,13 @@ that will be stored.
 =cut
 
 sub option($)
-{   my ($self, $it) = @_;
-    ref $it
-        or return $self->{OTS_options}{$it};
+{	my ($self, $it) = @_;
+	blessed $it
+		or return $self->{OTS_options}{$it};
 
-    my $name = $it->name;
-    $self->{OTS_options}{$name} = $it;
-    $it;
+	my $name = $it->name;
+	$self->{OTS_options}{$name} = $it;
+	$it;
 }
 
 =method findOption $name
@@ -277,20 +287,20 @@ options for this subroutine as well.
 =cut
 
 sub findOption($)
-{   my ($self, $name) = @_;
-    my $option = $self->option($name);
-    return $option if $option;
+{	my ($self, $name) = @_;
+	my $option = $self->option($name);
+	return $option if $option;
 
-    my $extends = $self->extends or return;
-    $extends->findOption($name);
+	my $extends = $self->extends or return;
+	$extends->findOption($name);
 }
 
-=method options 
+=method options
 Returns a list of all options as defined by this documentation item in
 one manual.
 =cut
 
-sub options() { values %{shift->{OTS_options}} }
+sub options() { values %{ $_[0]->{OTS_options}} }
 
 =method diagnostic $object
 Add a new diagnostic message (a OODoc::Text::Diagnostic object) to the
@@ -299,57 +309,60 @@ these names are without use.
 =cut
 
 sub diagnostic($)
-{   my ($self, $diag) = @_;
-    push @{$self->{OTS_diags}}, $diag;
-    $diag;
+{	my ($self, $diag) = @_;
+	push @{$self->{OTS_diags}}, $diag;
+	$diag;
 }
 
-=method diagnostics 
+=method diagnostics
 Returns a list of all diagnostics.
 =cut
 
-sub diagnostics() { @{shift->{OTS_diags}} }
+sub diagnostics() { @{ $_[0]->{OTS_diags}} }
 
-=method collectedOptions 
+=method collectedOptions %options
 Returns a list of option-default combinations on this subroutine.
+
+=warning no option $name for default in $file line $linenr
+=warning no default for option $name defined in $file line $linenr
 =cut
 
 sub collectedOptions(@)
-{   my ($self, %args) = @_;
-    my @extends   = $self->extends;
-    my %options;
-    foreach my $base ($self->extends)
-    {   my $options = $base->collectedOptions;
-        @options{keys %$options} = values %$options;
-    }
+{	my ($self, %args) = @_;
+	my @extends   = $self->extends;
+	my %options;
+	foreach my $base ($self->extends)
+	{	my $options = $base->collectedOptions(%args);
+		@options{keys %$options} = values %$options;
+	}
 
-    $options{$_->name}[0] = $_ for $self->options;
+	$options{$_->name}[0] = $_ for $self->options;
 
-    foreach my $default ($self->defaults)
-    {   my $name = $default->name;
+	foreach my $default ($self->defaults)
+	{	my $name = $default->name;
 
-        unless(exists $options{$name})
-        {   my ($fn, $ln) = $default->where;
-            warning __x"no option {name} for default in {file} line {line}", name => $name, file => $fn, line => $ln;
-            next;
-        }
-        $options{$name}[1] = $default;
-    }
+		unless(exists $options{$name})
+		{	my ($fn, $ln) = $default->where;
+			warning __x"no option {name} for default in {file} line {linenr}", name => $name, file => $fn, linenr => $ln;
+			next;
+		}
+		$options{$name}[1] = $default;
+	}
 
-    foreach my $option ($self->options)
-    {   my $name = $option->name;
-        next if defined $options{$name}[1];
+	foreach my $option ($self->options)
+	{	my $name = $option->name;
+		next if defined $options{$name}[1];
 
-        my ($fn, $ln) = $option->where;
-        warning __x"no default for option {name} defined in {file} line {line}", name => $name, file => $fn, line => $ln;
+		my ($fn, $ln) = $option->where;
+		warning __x"no default for option {name} defined in {file} line {linenr}", name => $name, file => $fn, linenr => $ln;
 
-        my $default = $options{$name}[1] =
-            OODoc::Text::Default->new(name => $name, value => 'undef', subroutine => $self, linenr => $ln);
+		my $default = $options{$name}[1] =
+			OODoc::Text::Default->new(name => $name, value => 'undef', subroutine => $self, linenr => $ln);
 
-        $self->default($default);
-    }
+		$self->default($default);
+	}
 
-    \%options;
+	\%options;
 }
 
 1;

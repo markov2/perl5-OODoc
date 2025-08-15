@@ -1,3 +1,8 @@
+#oodist: *** DO NOT USE THIS VERSION FOR PRODUCTION ***
+#oodist: This file contains OODoc-style documentation which will get stripped
+#oodist: during its release in the distribution.  You can use this file for
+#oodist: testing, however the code of this development version may be broken!
+
 package OODoc::Text;
 use parent 'OODoc::Object';
 
@@ -6,13 +11,14 @@ use warnings;
 
 use Log::Report    'oodoc';
 
+#--------------------
 =chapter NAME
 
 OODoc::Text - text component as found in a manual
 
 =chapter SYNOPSIS
 
- # Cannot be instantiated itself
+  # Cannot be instantiated itself
 
 =chapter DESCRIPTION
 
@@ -33,10 +39,10 @@ check whether it is the same object: subtilly different.
 =cut
 
 use overload
-    '""'   => sub {$_[0]->name},
-    'cmp'  => sub {$_[0]->name cmp "$_[1]"};
+	'""'   => sub {$_[0]->name},
+	'cmp'  => sub {$_[0]->name cmp "$_[1]"};
 
-#-------------------------------------------
+#--------------------
 =chapter METHODS
 
 =c_method new %options
@@ -58,33 +64,28 @@ is filled in later by M<openDescription()>.
 
 =requires linenr INTEGER
 
-=error no text container specified for the $type object
-Each text element is encapsulated by an other text element, except
-chapters.  A value must be known for this C<container> option to
-define the elements relative location.
-
 =cut
 
 sub init($)
-{   my ($self, $args) = @_;
-    $self->SUPER::init($args) or return;
+{	my ($self, $args) = @_;
+	$self->SUPER::init($args) or return;
 
-    $self->{OT_name}     = delete $args->{name};
+	$self->{OT_name}     = delete $args->{name};
 
-    my $nr = $self->{OT_linenr} = delete $args->{linenr} or panic;
-    $self->{OT_type}     = delete $args->{type} or panic;
+	my $nr = $self->{OT_linenr} = delete $args->{linenr} or panic;
+	$self->{OT_type}     = delete $args->{type} or panic;
 
-    exists $args->{container}   # may be explicit undef
-        or panic "no text container specified for the {pkg} object", pkg => ref $self;
+	exists $args->{container}   # may be explicit undef
+		or panic "no text container specified for the ".(ref $self)." object";
 
-    $self->{OT_container}= delete $args->{container};    # may be undef initially
-    $self->{OT_descr}    = delete $args->{description} || '';
-    $self->{OT_examples} = [];
-    $self->{OT_extends}  = [];
-    $self;
+	$self->{OT_container}= delete $args->{container};    # may be undef initially
+	$self->{OT_descr}    = delete $args->{description} || '';
+	$self->{OT_examples} = [];
+	$self->{OT_extends}  = [];
+	$self;
 }
 
-#-------------------------------------------
+#--------------------
 =section Attributes
 
 =method name
@@ -92,8 +93,8 @@ The name of this text element.  Stringification is overloaded to call
 this name method.
 
 =examples
- print $text->name;
- print $text;   # via overload
+  print $text->name;
+  print $text;   # via overload
 =cut
 
 sub name() { $_[0]->{OT_name} }
@@ -110,10 +111,10 @@ contains some kind of introductory description.
 =cut
 
 sub description()
-{   my @lines = split /^/m, shift->{OT_descr};
-    shift @lines while @lines && $lines[ 0] =~ m/^\s*$/;
-    pop   @lines while @lines && $lines[-1] =~ m/^\s*$/;
-    join '', @lines;
+{	my @lines = split /^/m, shift->{OT_descr};
+	shift @lines while @lines && $lines[ 0] =~ m/^\s*$/;
+	pop   @lines while @lines && $lines[-1] =~ m/^\s*$/;
+	join '', @lines;
 }
 
 =method container [$object]
@@ -123,8 +124,8 @@ Only for chapters, this value will be undefined.
 =cut
 
 sub container(;$)
-{   my $self = shift;
-    @_ ? ($self->{OT_container} = shift) : $self->{OT_container};
+{	my $self = shift;
+	@_ ? ($self->{OT_container} = shift) : $self->{OT_container};
 }
 
 =method linenr
@@ -138,8 +139,8 @@ number of the start of it.
 =cut
 
 sub where()
-{   my $self = shift;
-    ( $self->manual->source, $self->linenr );
+{	my $self = shift;
+	( $self->manual->source, $self->linenr );
 }
 
 =method manual
@@ -147,8 +148,8 @@ The manual of the text object is returned.
 =cut
 
 sub manual(;$)
-{   my $self = shift;
-    $self->container->manual;
+{	my $self = shift;
+	$self->container->manual;
 }
 
 =method extends [$object]
@@ -158,14 +159,14 @@ is not supported here.
 =cut
 
 sub extends(;$)
-{   my $self = shift;
-    my $ext  = $self->{OT_extends};
-    push @$ext, @_;
+{	my $self = shift;
+	my $ext  = $self->{OT_extends};
+	push @$ext, @_;
 
-    wantarray ? @$ext : $ext->[0];
+	wantarray ? @$ext : $ext->[0];
 }
 
-#-------------------------------------------
+#--------------------
 =section Collected
 
 =method openDescription
@@ -173,8 +174,8 @@ Returns a reference to the scalar which will contain the description for
 this object.
 
 =example
- my $descr = $text->openDescription;
- $$descr  .= "add a line\n";
+  my $descr = $text->openDescription;
+  $$descr  .= "add a line\n";
 
 =cut
 
@@ -186,55 +187,51 @@ which has a content for the description field.
 =cut
 
 sub findDescriptionObject()
-{   my $self   = shift;
-    return $self if length $self->description;
+{	my $self   = shift;
+	return $self if length $self->description;
 
-    my @descr = map $_->findDescriptionObject, $self->extends;
-    wantarray ? @descr : $descr[0];
+	my @descr = map $_->findDescriptionObject, $self->extends;
+	wantarray ? @descr : $descr[0];
 }
 
 =method addExample $object
-Add a new example (an M<OODoc::Text::Example> object) to the list already
+Add a new example (an OODoc::Text::Example object) to the list already
 in this object.  You can not search for a specific example, because they
 have no real name (only a sequence number).
 =cut
 
 sub addExample($)
-{   my ($self, $example) = @_;
-    push @{$self->{OT_examples}}, $example;
-    $example;
+{	my ($self, $example) = @_;
+	push @{$self->{OT_examples}}, $example;
+	$example;
 }
 
 =method examples
 Returns a LIST of all examples contained in this text element.
 =cut
 
-sub examples() { @{shift->{OT_examples}} }
+sub examples() { @{ $_[0]->{OT_examples}} }
 
 sub publish($%)
-{   my ($self, $args) = @_;
-    my $exporter = $args->{exporter} or panic;
+{	my ($self, $args) = @_;
+	my $exporter = $args->{exporter} or panic;
 	my $manual   = $args->{manual}   or panic;
 
 	my $p = $self->SUPER::publish($args);
-    $p->{type}      = $exporter->markup(lc $self->type);
+	$p->{type}      = $exporter->markup(lc $self->type);
 	$p->{inherited} = $exporter->boolean($manual->inherited($self));
 
-    if(my $name  = $self->name)
-    {   $p->{name} = $exporter->markupString($name);
-    }
+	if(my $name  = $self->name)
+	{	$p->{name} = $exporter->markupString($name);
+	}
 
-    my $descr    = $self->description // '';
-    $p->{intro}  = $exporter->markupBlock($descr)
-        if length $descr;
+	my $descr    = $self->description // '';
+	$p->{intro}  = $exporter->markupBlock($descr)
+		if length $descr;
 
-    my @e        = map $_->publish($args)->{id}, $self->examples;
-    $p->{examples} = \@e if @e;
+	my @e        = map $_->publish($args)->{id}, $self->examples;
+	$p->{examples} = \@e if @e;
 	$p;
 }
-
-#-------------------------------------------
-=section Commonly used functions
-=cut
 
 1;

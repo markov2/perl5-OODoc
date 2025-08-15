@@ -1,3 +1,8 @@
+#oodist: *** DO NOT USE THIS VERSION FOR PRODUCTION ***
+#oodist: This file contains OODoc-style documentation which will get stripped
+#oodist: during its release in the distribution.  You can use this file for
+#oodist: testing, however the code of this development version may be broken!
+
 package OODoc::Text::Option;
 use parent 'OODoc::Text';
 
@@ -6,6 +11,7 @@ use warnings;
 
 use Log::Report    'oodoc';
 
+#--------------------
 =chapter NAME
 
 OODoc::Text::Option - one option for one subroutine
@@ -14,7 +20,7 @@ OODoc::Text::Option - one option for one subroutine
 
 =chapter DESCRIPTION
 
-Each M<OODoc::Text::Subroutine> can have a list of options, which are each
+Each OODoc::Text::Subroutine can have a list of options, which are each
 captured in a separate object as described in this manual page.
 
 =chapter METHODS
@@ -33,14 +39,14 @@ An informal short description of the valid values for this option.
 =cut
 
 sub init($)
-{   my ($self, $args) = @_;
-    $args->{type}    ||= 'Option';
-    $args->{container} = delete $args->{subroutine} or panic;
+{	my ($self, $args) = @_;
+	$args->{type}    ||= 'Option';
+	$args->{container} = delete $args->{subroutine} or panic;
 
-    $self->SUPER::init($args) or return;
+	$self->SUPER::init($args) or return;
 
-    $self->{OTO_parameters} = delete $args->{parameters} or panic;
-    $self;
+	$self->{OTO_parameters} = delete $args->{parameters} or panic;
+	$self;
 }
 
 sub publish($)
@@ -52,16 +58,16 @@ sub publish($)
 	$p;
 }
 
-#-------------------------------------------
+#--------------------
 =section Attributes
 
-=method subroutine 
+=method subroutine
 Returns the subroutine object for this option.
 =cut
 
 sub subroutine() { $_[0]->container }
 
-=method parameters 
+=method parameters
 Returns the short, informal description of the valid parameters for
 this option.
 =cut

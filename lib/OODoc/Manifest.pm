@@ -1,3 +1,8 @@
+#oodist: *** DO NOT USE THIS VERSION FOR PRODUCTION ***
+#oodist: This file contains OODoc-style documentation which will get stripped
+#oodist: during its release in the distribution.  You can use this file for
+#oodist: testing, however the code of this development version may be broken!
+
 package OODoc::Manifest;
 use parent 'OODoc::Object';
 
@@ -8,13 +13,14 @@ use Log::Report    'oodoc';
 
 use File::Basename 'dirname';
 
+#--------------------
 =chapter NAME
 
 OODoc::Manifest - maintain the information inside a manifest file.
 
 =chapter SYNOPSIS
 
- my $manifest = OODoc::Manifest->new(filename => ...);
+  my $manifest = OODoc::Manifest->new(filename => ...);
 
 =chapter DESCRIPTION
 
@@ -28,7 +34,7 @@ manifest.
 use overload '@{}' => sub { [ shift->files ] };
 use overload bool  => sub {1};
 
-#-------------------------------------------
+#--------------------
 =chapter METHODS
 
 =c_method new %options
@@ -41,72 +47,72 @@ the data will not be written.
 =cut
 
 sub init($)
-{   my ($self, $args) = @_;
-    $self->SUPER::init($args) or return;
+{	my ($self, $args) = @_;
+	$self->SUPER::init($args) or return;
 
-    my $filename = $self->{OM_filename} = delete $args->{filename};
+	my $filename = $self->{OM_filename} = delete $args->{filename};
 
-    $self->{OM_files} = {};
-    $self->read if defined $filename && -e $filename;
-    $self->modified(0);
-    $self;
+	$self->{OM_files} = {};
+	$self->read if defined $filename && -e $filename;
+	$self->modified(0);
+	$self;
 }
 
-#-------------------------------------------
+#--------------------
 =section Attributes
 
-=method filename 
+=method filename
 The name of the file which is read or will be written.
 =cut
 
-sub filename() {shift->{OM_filename}}
+sub filename() { $_[0]->{OM_filename} }
 
-#-------------------------------------------
+#--------------------
 =section The manifest list
 
-=method files 
+=method files
 Returns an unsorted list with all filenames in this manifest.
 =cut
 
-sub files() { keys %{shift->{OM_files}} }
+sub files() { keys %{ $_[0]->{OM_files}} }
 
-=method add $filenames
-Adds the $filenames to the manifest, doubles are ignored.
+=method add @filenames
+Adds the @filenames to the manifest, doubles are ignored.
 =cut
 
-sub add($)
-{   my $self = shift;
-    while(@_)
-    {   my $add = $self->relative(shift);
-        $self->modified(1) unless exists $self->{O_file}{$add};
-        $self->{OM_files}{$add}++;
-    }
-    $self;
+sub add(@)
+{	my $self = shift;
+	while(@_)
+	{	my $add = $self->relative(shift);
+		$self->modified(1) unless exists $self->{O_file}{$add};
+		$self->{OM_files}{$add}++;
+	}
+	$self;
 }
 
-#-------------------------------------------
+#--------------------
 =section Internals
 
-=method read 
+=method read
 Read the MANIFEST file.  The comments are stripped from the lines.
 
-=error Cannot read manifest file $filename: $!
+=fault cannot read manifest file $file: $!
 The manifest file could not be opened for reading.
 =cut
 
 sub read()
-{   my $self = shift;
-    my $filename = $self->filename;
+{	my $self = shift;
+	my $filename = $self->filename;
 
-    open my $file, "<:encoding(utf8)", $filename
-       or fault __x"cannot read manifest file {file}", file => $filename;
+	open my $file, "<:encoding(utf8)", $filename
+		or fault __x"cannot read manifest file {file}", file => $filename;
 
-    my @dist = $file->getlines;
-    $file->close;
+	my @dist = $file->getlines;
+	$file->close;
 
-    s/\s+.*\n?$// for @dist;
-    $self->{OM_files}{$_}++ foreach @dist;
-    $self;
+	s/\s+.*\n?$// for @dist;
+	$self->{OM_files}{$_}++ foreach @dist;
+	$self;
 }
 
 =method modified [BOOLEAN]
@@ -114,39 +120,40 @@ Whether filenames have been added to the list after initiation.
 =cut
 
 sub modified(;$)
-{   my $self = shift;
-    @_ ? $self->{OM_modified} = @_ : $self->{OM_modified};
+{	my $self = shift;
+	@_ ? $self->{OM_modified} = @_ : $self->{OM_modified};
 }
 
-=method write 
+=method write
 Write the MANIFEST file if it has changed.  The file will automatically
 be written when the object leaves scope.
+
+=fault cannot write manifest $file: $!
 =cut
 
 sub write()
-{   my $self = shift;
-    return unless $self->modified;
-    my $filename = $self->filename || return $self;
+{	my $self = shift;
+	return unless $self->modified;
+	my $filename = $self->filename || return $self;
 
-    open my $file, ">:encoding(utf8)", $filename
-      or fault __x"cannot write manifest {file}", file => $filename;
+	open my $file, ">:encoding(utf8)", $filename
+		or fault __x"cannot write manifest {file}", file => $filename;
 
-    $file->print($_, "\n") foreach sort $self->files;
-    $file->close;
+	$file->print($_, "\n") foreach sort $self->files;
+	$file->close;
 
-    $self->modified(0);
-    $self;
+	$self->modified(0);
+	$self;
 }
 
-sub DESTROY() { shift->write }
+sub DESTROY() { $_[0]->write }
 
 =method relative $filename
 Returns the name of the file relative to the location of the MANIFEST
 file.  The MANIFEST file should always be in top of the directory tree,
 so the $filename should be in the same directory and below.
 
-=warning MANIFEST file $name lists filename outside (sub)directory: $file
-
+=warning MANIFEST file $file lists filename outside (sub)directory: $out
 The MANIFEST file of a distributed package should be located in the top
 directory of that packages.  All files of the distribution are in that
 same directory, or one of its sub-directories, otherwise they will not
@@ -154,26 +161,22 @@ be packaged.
 =cut
 
 sub relative($)
-{   my ($self, $filename) = @_;
+{	my ($self, $filename) = @_;
 
-    my $dir = dirname $self->filename;
-    return $filename if $dir eq '.';
+	my $dir = dirname $self->filename;
+	return $filename if $dir eq '.';
 
-    # normalize path for windows
-    s!\\!/!g for $filename, $dir;
+	# normalize path for windows
+	s!\\!/!g for $filename, $dir;
 
-    if(substr($filename, 0, length($dir)+1) eq "$dir/")
-    {   substr $filename, 0, length($dir)+1, '';
-        return $filename;
-    }
+	if(substr($filename, 0, length($dir)+1) eq "$dir/")
+	{	substr $filename, 0, length($dir)+1, '';
+		return $filename;
+	}
 
-    warn "WARNING: MANIFEST file ".$self->filename." lists filename outside (sub)directory: $filename\n";
+	warning __x"MANIFEST file {file} lists filename outside (sub)directory: {out}", file => $self->filename, out => $filename;
 
-    $filename;
+	$filename;
 }
-
-#-------------------------------------------
-=section Commonly used functions
-=cut
 
 1;

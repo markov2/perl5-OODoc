@@ -1,3 +1,8 @@
+#oodist: *** DO NOT USE THIS VERSION FOR PRODUCTION ***
+#oodist: This file contains OODoc-style documentation which will get stripped
+#oodist: during its release in the distribution.  You can use this file for
+#oodist: testing, however the code of this development version may be broken!
+
 package OODoc::Text::Default;
 use parent 'OODoc::Text';
 
@@ -6,6 +11,7 @@ use warnings;
 
 use Log::Report    'oodoc';
 
+#--------------------
 =chapter NAME
 
 OODoc::Text::Default - one default for an option in one subroutine
@@ -14,7 +20,7 @@ OODoc::Text::Default - one default for an option in one subroutine
 
 =chapter DESCRIPTION
 
-Each M<OODoc::Text::Subroutine> can have a list of options, which have
+Each OODoc::Text::Subroutine can have a list of options, which have
 default values which are each captured in a separate object as described
 in this manual page.
 
@@ -33,43 +39,41 @@ The value which is related to this default.
 =cut
 
 sub init($)
-{   my ($self, $args) = @_;
-    $args->{type}    ||= 'Default';
-    $args->{container} = delete $args->{subroutine} or panic;
+{	my ($self, $args) = @_;
+	$args->{type}    ||= 'Default';
+	$args->{container} = delete $args->{subroutine} or panic;
 
-    $self->SUPER::init($args)
-        or return;
+	$self->SUPER::init($args) or return;
 
-    $self->{OTD_value} = delete $args->{value};
-    defined $self->{OTD_value} or panic;
+	$self->{OTD_value} = delete $args->{value};
+	defined $self->{OTD_value} or panic;
 
-    $self;
+	$self;
 }
 
 sub publish($)
-{   my ($self, $args) = @_;
-    my $exporter = $args->{exporter};
+{	my ($self, $args) = @_;
+	my $exporter = $args->{exporter};
 
-    my $p = $self->SUPER::publish($args);
-    $p->{value} = $exporter->markupString($self->value);
-    $p;
+	my $p = $self->SUPER::publish($args);
+	$p->{value} = $exporter->markupString($self->value);
+	$p;
 }
 
-#-------------------------------------------
+#--------------------
 =section Attributes
 
-=method subroutine 
+=method subroutine
 Returns the subroutine object for this option.
 =cut
 
 sub subroutine() { $_[0]->container }
 
-=method value 
+=method value
 The value of this default.
 =cut
 
-sub value() { $_[0]->{OTD_value} }
-
-sub _setValue() { $_[0]->{OTD_value} = $_[1] }
+sub value()      { $_[0]->{OTD_value} }
+sub _setValue()  { $_[0]->{OTD_value} = $_[1] }
 
 1;

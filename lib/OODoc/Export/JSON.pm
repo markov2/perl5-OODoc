@@ -1,3 +1,8 @@
+#oodist: *** DO NOT USE THIS VERSION FOR PRODUCTION ***
+#oodist: This file contains OODoc-style documentation which will get stripped
+#oodist: during its release in the distribution.  You can use this file for
+#oodist: testing, however the code of this development version may be broken!
+
 package OODoc::Export::JSON;
 use parent 'OODoc::Export';
 
@@ -8,6 +13,7 @@ use Log::Report  'oodoc';
 
 use JSON   ();
 
+#--------------------
 =chapter NAME
 
 OODoc::Export::JSON - Dump the parsed docs into JSON
@@ -33,7 +39,7 @@ generated web-pages.
 
 sub new(%) { my $class = shift; $class->SUPER::new(serializer => 'json', @_) }
 
-#------------------
+#--------------------
 =section Output
 
 =cut
@@ -45,31 +51,30 @@ sub boolean($) { $_[1] ? $JSON::true : $JSON::false }
 Serialize the collected publishable data to the file.
 
 =option  pretty_print BOOLEAN
-=default pretty_print C<false>
+=default pretty_print false
 Produce readible output.
 
-=error Cannot write output to '$file': $!
-=error Write errors to {file}: $!
+=fault cannot write output to $file: $!
+=fault write errors to $file: $!
 =cut
 
 sub write($$%)
-{   my ($self, $output, $data, %args) = @_;
+{	my ($self, $output, $data, %args) = @_;
 
-    my $fh;
-    if($output eq '-')
-    {   $fh = \*STDOUT;
-    }
-    else
-    {   open $fh, '>:raw', $output
-            or fault __x"Cannot write output to '{file}'", file => $output;
-    }
+	my $fh;
+	if($output eq '-')
+	{	$fh = \*STDOUT;
+	}
+	else
+	{	open $fh, '>:raw', $output
+			or fault __x"cannot write output to {file}", file => $output;
+	}
 
-    my $json = JSON->new->pretty($args{pretty_print});
-    $fh->print($json->encode($data));
+	my $json = JSON->new->pretty($args{pretty_print});
+	$fh->print($json->encode($data));
 
-    $output eq '-' || $fh->close
-        or fault __x"Write errors to {file}", file => $output;
-
+	$output eq '-' || $fh->close
+		or fault __x"write errors to {file}", file => $output;
 }
 
 1;

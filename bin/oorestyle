@@ -45,19 +45,31 @@ __OODIST
 my @notes;   # dirty global: add to the header of this file
 
 GetOptions
-	'recursive|r!' => \(my $recursive  = 1),
 	'accept|a!'    => \(my $accept     = 0),
+	'force|f!'     => \(my $force      = 0),
+	'recursive|r!' => \(my $recursive  = 1),
 	'verbose|v+'   => \(my $verbose    = 0),
 		or exit 1;
 
-$accept || $verbose or $verbose = 'DEBUG';
+#$accept || $verbose or $verbose = 'DEBUG';
 dispatcher mode => $verbose, 'ALL' if $verbose;
 
 my @elements = @ARGV ? @ARGV : 'lib';
 my @files    = expand_names @elements;
 
+@files
+	or error __x"no files found";
+
+if($accept)
+{	install_cleaned @files;
+	exit 0;
+}
+
+$force || !	-f "$files[0].clean"
+	or error __x"are you sure you want to restart cleaning?  Use --force";
+
 clean_syntax $_ for @files;
-install_cleaned @files if $accept;
+print "Now inspect the *.pm.clean, before running '$0 --accept'\n";
 
 exit 0;
 
@@ -84,7 +96,12 @@ sub expand_names(@)
 ###
 
 sub install_cleaned(@)
-{	foreach my $fn (@_)
+{	my @files = @_;
+
+	-f "$files[0].clean"
+		or error __x"run without -a first, and inspect the '.clean' versions first";
+
+	foreach my $fn (@files)
 	{	rename "$fn.clean", $fn
 			or fault __x"cannot install cleaned {file}", file => $fn;
 	}
@@ -172,7 +189,7 @@ sub warn_old_disclaimer($)
 
 sub expect_log_report($)        # all my code should use Log::Report
 {	my $code = shift;           # a bit sloppy: scan contains pod
-	$code =~ m!^use\+Log::Report\b!
+	$code =~ m!^use\s+Log::Report\b!m
 		or push @notes, 'not using Log::Report yet.';
 	$code;
 }
@@ -243,9 +260,9 @@ sub commas($)
 		[ ]+\,\s+               # the comma
 	!,$1$2$3    !grxm
 
-	      =~ s#
-		(?<![,;]) (\n[ \t]+ [\)\}\]])
-	#,$1#grx;                   # eod of list, missing comma
+#	      =~ s#
+#		(?<![,;]) (\n[ \t]+ [\)\}\]])
+#	#,$1#grx;                   # eod of list, missing comma
 }
 
 sub _tabstop($)
@@ -263,7 +280,10 @@ sub create_tabbing($)
 {	my $code = shift;
 	$code =~ s!
 		^ ([ \t]+)              # leaning blanks
-	!_tabstop($1)!grxme;
+	!_tabstop($1)!grxme
+	      =~ s!
+		(?: ^ (\t*) \{ [ ]{1,4} )
+	!$1\{\t!grxm;
 }
 
 sub quote_bareword_class($)     # not permitted anymore under 'warnings'
@@ -302,7 +322,7 @@ sub add_diagnostics($)          # collect all diagnostics, even the documented
 	my @diags;
 	while(@pairs)
 	{	my ($reason, $text) = (shift @pairs, shift @pairs);
-		$text =~ s/\{(.*?)\}/\$$1/g;
+		$text =~ s/\{(.*?)(?:\%.*?)?\}/\$$1/g;  # also remove format modifiers
 		$text .= ': $!' if $reason eq 'fault' || $reason eq 'alert' || $reason eq 'failure';
 		push @diags, "=$reason $text\n";
 	}

@@ -1,3 +1,8 @@
+#oodist: *** DO NOT USE THIS VERSION FOR PRODUCTION ***
+#oodist: This file contains OODoc-style documentation which will get stripped
+#oodist: during its release in the distribution.  You can use this file for
+#oodist: testing, however the code of this development version may be broken!
+
 package OODoc::Object;
 
 use strict;
@@ -7,13 +12,14 @@ use Log::Report    'oodoc';
 
 use List::Util     qw/first/;
 
+#--------------------
 =chapter NAME
 
 OODoc::Object - base class for all OODoc classes.
 
 =chapter SYNOPSIS
 
- # Never instantiated directly.
+  # Never instantiated directly.
 
 =chapter DESCRIPTION
 
@@ -33,11 +39,11 @@ Always returns true: "exists".
 =cut
 
 use overload
-    '=='   => sub {$_[0]->unique == $_[1]->unique},
-    '!='   => sub {$_[0]->unique != $_[1]->unique},
-    'bool' => sub {1};
+	'=='   => sub {$_[0]->unique == $_[1]->unique},
+	'!='   => sub {$_[0]->unique != $_[1]->unique},
+	'bool' => sub {1};
 
-#-------------
+#--------------------
 =chapter METHODS
 
 =section Constructors
@@ -52,39 +58,39 @@ the specific object.
 The validity of the options for C<new> is checked, in contrary to the
 options when used with many other method defined by OODoc.
 
-=warning Unknown option $name
+=error Unknown object attribute '$name' for $pkg
 You have used the option with $name, which is not defined with the
 instantiation (the C<new> method) of this object.
 
-=warning Unknown options @names
+=error Unknown object attributes for $pkg: '$names'
 You have used more than one option which is not defined to instantiate
 the object.
 
 =cut
 
 sub new(@)
-{   my ($class, %args) = @_;
-    my $self = (bless {}, $class)->init(\%args);
+{	my ($class, %args) = @_;
+	my $self = (bless {}, $class)->init(\%args);
 
-    if(my @missing = keys %args)
-    {   error __xn"Unknown object attribute '{options}' for {pkg}", "Unknown object attributes for {pkg}: {options}",
-            scalar @missing, options => \@missing, pkg => $class;
-    }
+	if(my @missing = keys %args)
+	{	error __xn"Unknown object attribute '{names}' for {pkg}", "Unknown object attributes for {pkg}: {names}",
+			scalar @missing, names => \@missing, pkg => $class;
+	}
 
-    $self;
+	$self;
 }
 
 my $unique = 42;
 
 sub init($)
-{   my ($self, $args) = @_;
+{	my ($self, $args) = @_;
 
 	# prefix with 'id', otherwise confusion between string and number
-    $self->{OO_unique} = 'id' . $unique++;
-    $self;
+	$self->{OO_unique} = 'id' . $unique++;
+	$self;
 }
 
-#-------------------------------------------
+#--------------------
 =section Attributes
 
 =method unique
@@ -93,14 +99,14 @@ see whether two references to the same (overloaded) objects point to
 the same thing. The ids are numeric.
 
 =example
- if($obj1->unique == $obj2->unique) {...}
- if($obj1 == $obj2) {...}   # same via overload
+  if($obj1->unique == $obj2->unique) {...}
+  if($obj1 == $obj2) {...}   # same via overload
 
 =cut
 
 sub unique() { $_[0]->{OO_unique} }
 
-#-------------------------------------------
+#--------------------
 =section Manual Repository
 
 All manuals can be reached everywhere in the program: it is a global
@@ -109,10 +115,10 @@ collection.
 =method addManual $manual
 The $manual will be added to the list of known manuals.  The same package
 name can appear in more than one manual.  This OBJECT shall be of type
-M<OODoc::Manual>.
+OODoc::Manual.
 
 =error manual definition requires manual object
-A call to M<addManual()> expects a new manual object (a M<OODoc::Manual>),
+A call to M<addManual()> expects a new manual object (a OODoc::Manual),
 however an incompatible thing was passed.  Usually, intended was a call
 to M<manualsForPackage()> or M<mainManual()>.
 
@@ -122,14 +128,14 @@ my %packages;
 my %manuals;
 
 sub addManual($)
-{   my ($self, $manual) = @_;
+{	my ($self, $manual) = @_;
 
-    ref $manual && $manual->isa('OODoc::Manual')
-        or panic "manual definition requires manual object";
+	ref $manual && $manual->isa('OODoc::Manual')
+		or panic "manual definition requires manual object";
 
-    push @{$packages{$manual->package}}, $manual;
-    $manuals{$manual->name} = $manual;
-    $self;
+	push @{$packages{$manual->package}}, $manual;
+	$manuals{$manual->name} = $manual;
+	$self;
 }
 
 =method mainManual $name
@@ -138,8 +144,8 @@ documentation for the code of the package $name.
 =cut
 
 sub mainManual($)
-{  my ($self, $name) = @_;
-   first { $_ eq $_->package } $self->manualsForPackage($name);
+{	my ($self, $name) = @_;
+	first { $_ eq $_->package } $self->manualsForPackage($name);
 }
 
 =method manualsForPackage $name
@@ -149,23 +155,23 @@ returned.
 =cut
 
 sub manualsForPackage($)
-{   my ($self, $name) = @_;
-    @{$packages{$name || 'doc'} || []};
+{	my ($self, $name) = @_;
+	@{$packages{$name || 'doc'} || []};
 }
 
-=method manuals 
+=method manuals
 All manuals are returned.
 =cut
 
 sub manuals() { values %manuals }
 
 =method findManual $name
-[3.00] Returns the manual with the specified name, or else C<undef>.
+[3.00] Returns the manual with the specified name, or else undef.
 =cut
 
 sub findManual($) { $manuals{ $_[1] } }
 
-=method packageNames 
+=method packageNames
 Returns the names of all defined packages.
 =cut
 
@@ -187,35 +193,5 @@ Returns the collected objects for publication.
 =cut
 
 sub publicationIndex() { \%index }
-#-------------------------------------------
-=section Commonly used functions
-
-=ci_method mkdirhier $directory
-Creates this $directory and all its non-existing parents.
-=cut
-
-sub mkdirhier($)
-{   my $thing = shift;
-    my @dirs  = File::Spec->splitdir(shift);
-    my $path  = $dirs[0] eq '' ? shift @dirs : '.';
-
-    while(@dirs)
-    {   $path = File::Spec->catdir($path, shift @dirs);
-        -d $path || mkdir $path
-            or fault __x"cannot create {dir}", dir => $path;
-    }
-
-    $thing;
-}
-
-=ci_method filenameToPackage $filename
-=example
- print $self->filenameToPackage('Mail/Box.pm'); # prints Mail::Box
-=cut
-
-sub filenameToPackage($)
-{   my ($thing, $package) = @_;
-    $package =~ s!^lib/!!r =~ s#/#::#gr =~ s/\.(?:pm|pod)$//gr;
-}
 
 1;
