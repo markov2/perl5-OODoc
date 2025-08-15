@@ -9,7 +9,7 @@ use parent 'OODoc::Object';
 use strict;
 use warnings;
 
-our $VERSION = '3.02';  # needed here for own release process
+our $VERSION = '3.03';  # needed here for own release process
 
 use Log::Report    'oodoc';
 
