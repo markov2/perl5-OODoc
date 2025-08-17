@@ -548,7 +548,7 @@ sub docSubroutine($$$$)
 		parameters => $params, linenr => $ln, container => $container);
 
 	$self->setBlock($sub->openDescription);
-	$container->addSubroutine($sub);
+	$container->addSubroutine($fn, $sub);
 	$sub;
 }
 

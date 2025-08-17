@@ -174,22 +174,21 @@ sub publish($$)
 Each manual page structure element (chapter, section, subsection, and
 subsubsection) can contain a list of subroutine descriptions.
 
-=method addSubroutine $objects
-A subroutine (OODoc::Text::Subroutine object) is added to the
-chapter, section, or subsection.
-
+=method addSubroutine $file, @objects
+One or more subroutines (OODoc::Text::Subroutine @objects) are added to the
+chapter, section, subsection, or subsubsection.
 =cut
 
 sub addSubroutine(@)
-{	my $self = shift;
+{	my ($self, $fn, @objs) = @_;
 	my $subs = $self->{OTS_subs} ||= [];
 
-	foreach my $sub (@_)
+	foreach my $sub (@objs)
 	{	$sub->container($self);
 
 		my $name = $sub->name;
 		if(my $has = first { $_->name eq $name } @$subs)
-		{	warn "WARNING: name '$name' seen before, lines ".$has->linenr. " and " . $sub->linenr . "\n";
+		{	warning __x"name '{name}' seen before, file {file} lines {nr1} and {nr2}", name => $name, file => $fn, nr1 => $has->linenr, nr2 => $sub->linenr;
 		}
 		push @{$self->{OTS_subs}}, $sub;
 	}
