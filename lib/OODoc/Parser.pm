@@ -77,8 +77,8 @@ sub init($)
 	$self->SUPER::init($args) or return;
 
 	my $skip = delete $args->{skip_links} || [];
-	my @skip = map { reftype $_ eq 'REGEXP' ? $_ : qr/^\Q$_\E(?:\:\:|$)/ }
-		reftype $skip eq 'ARRAY' ? @$skip : $skip;
+	my @skip = map { ref $_ eq 'REGEXP' ? $_ : qr/^\Q$_\E(?:\:\:|$)/ }
+		ref $skip eq 'ARRAY' ? @$skip : $skip;
 
 	$self->{skip_links} = \@skip;
 	$self;

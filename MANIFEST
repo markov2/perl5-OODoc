@@ -6,6 +6,7 @@ README.md
 bin/oodist
 examples/markov.pm
 lib/OODoc.pm
+lib/OODoc/Examples.pm
 lib/OODoc/Export.pm
 lib/OODoc/Export/JSON.pm
 lib/OODoc/Format.pm

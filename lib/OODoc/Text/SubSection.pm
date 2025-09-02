@@ -11,6 +11,8 @@ use warnings;
 
 use Log::Report    'oodoc';
 
+use List::Util     qw/first/;
+
 #--------------------
 =chapter NAME
 
@@ -61,7 +63,9 @@ sub emptyExtension($)
 
 sub findEntry($)
 {	my ($self, $name) = @_;
-	$self->name eq $name ? $self : ();
+	return $self if $self->name eq $name;
+	my $subsubsect = $self->subsubsection($name);
+	defined $subsubsect ? $subsubsect : ();
 }
 
 #--------------------

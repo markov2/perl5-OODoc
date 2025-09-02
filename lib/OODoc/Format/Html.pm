@@ -176,11 +176,11 @@ sub mark($$)
 
 =method createManual %options
 
-=option  template DIRECTORY|HASH
+=option  template $directory|HASH
 =default template "html/manual/"
 
-A DIRECTORY containing all template files which have to be filled-in
-and copied per manual page created.  You may also specify an HASH
+A $directory containing all template files which have to be filled-in
+and copied per manual page created.  You may also specify an P<HASH>
 of file- and directory names and format options for each of those files.
 These options can be overruled by values specified in the template file.
 
@@ -192,9 +192,10 @@ Default:
 
 Complex:
 
-  template => { "man_index/"    => [ show_examples => 'NO' ],
-                "man_main.html" => [ show_examples => 'EXPAND' ]
-              }
+  template => {
+     "man_index/"    => [ show_examples => 'NO' ],
+     "man_main.html" => [ show_examples => 'EXPAND' ]
+  }
 
 =fault cannot write markers to $file: $!
 =fault cannot write html manual to $file: $!
@@ -527,6 +528,7 @@ sub showSubroutineUse(@)
 	my $subroutine = $args{subroutine} or panic;
 	my $manual     = $args{manual}     or panic;
 	my $output     = $args{output}     or panic;
+	my $type       = $subroutine->type;
 
 	my $unique     = $subroutine->unique;
 	$self->mark($manual, $unique);
@@ -534,16 +536,15 @@ sub showSubroutineUse(@)
 	my $name       = $self->cleanupString($manual, $subroutine->name);
 	my $paramlist  = $self->cleanupString($manual, $subroutine->parameters);
 	my $call       = qq[<b><a name="$unique">$name</a></b>];
-	$call         .= "(&nbsp;$paramlist&nbsp;)" if length $paramlist;
+	my $param      = length $paramlist ? "(&nbsp;$paramlist&nbsp;)" : '';
 
-	my $type       = $subroutine->type;
 	my $use
-	  = $type eq 'i_method' ? qq[\$obj-&gt;$call]
-	  : $type eq 'c_method' ? qq[\$class-&gt;$call]
-	  : $type eq 'ci_method'? qq[\$any-&gt;$call]
-	  : $type eq 'overload' ? qq[overload: $call]
-	  : $type eq 'function' ? qq[$call]
-	  : $type eq 'tie'      ? $call
+	  = $type eq 'i_method' ? qq[\$obj-&gt;$call$param]
+	  : $type eq 'c_method' ? qq[\$class-&gt;$call$param]
+	  : $type eq 'ci_method'? qq[\$any-&gt;$call$param]
+	  : $type eq 'overload' ? qq[overload: $call $paramlist]
+	  : $type eq 'function' ? qq[$call$param]
+	  : $type eq 'tie'      ? qq[tie $call, $paramlist];
 	  :     panic "Type $type? for $call";
 
 	$output->print( <<SUBROUTINE );

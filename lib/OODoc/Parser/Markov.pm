@@ -529,6 +529,7 @@ within a restricted set of chapters.  You have not started any
 chapter yet.
 
 =error subroutine $name outside chapter in $file line $line
+=error subroutine without name in $file line $line
 =cut
 
 sub docSubroutine($$$$)
@@ -538,7 +539,13 @@ sub docSubroutine($$$$)
 	$line    =~ s/^\=(\w+)\s+//;
 	my $type = $1;
 
-	my ($name, $params) = $type eq 'overload' ? ($line, '') : $line =~ m/^(\w*)\s*(.*?)\s*$/;
+	my ($name, $params)
+	  = $type eq 'tie'      ? $line =~ m/^([$@%*]\w+)\,?\s*(.*?)\s*$/
+	  : $type eq 'overload' ? $line =~ m/^(\S+)\s*(.*?)\s*$/
+	  :    $line =~ m/^(\w+)\s*(.*?)\s*$/;
+
+	defined $name
+		or error __x"subroutine without name in {file} line {line}", file => $fn, line => $ln;
 
 	my $container = $self->{OPM_subsection} || $self->{OPM_section} || $self->{OPM_chapter}
 		or error __x"subroutine {name} outside chapter in {file} line {line}", name => $name, file => $fn, line => $ln;
@@ -867,8 +874,7 @@ sub decomposeL($$)
 		$text //= $item;
 	}
 	else
-	{	warning __x"manual {manual} links to unknown entry '{item}' in {other_manual}",
-			manual => $manual, entry => $item, other_manual => $man;
+	{	warning __x"manual {manual} links to unknown entry '{item}' in {other_manual}", manual => $manual, item => $item, other_manual => $man;
 		$dest   = $man;
 		$text //= "$man";
 	}

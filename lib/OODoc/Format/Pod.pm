@@ -331,10 +331,12 @@ sub subroutineUse($$)
 	my $type       = $subroutine->type;
 	my $name       = $self->cleanup($manual, $subroutine->name);
 	my $paramlist  = $self->cleanup($manual, $subroutine->parameters);
-	my $params
-	= !length $paramlist ? '()'
-	: $paramlist =~ m/^[\[<]|[\]>]$/ ? "( $paramlist )"
-	:                      "($paramlist)";
+
+	$type eq 'tie'
+		and return qq[tie B<$name>, $paramlist];
+
+	my $params     = !length $paramlist ? '()' :
+		$paramlist =~ m/^[\[<]|[\]>]$/ ? "( $paramlist )" : "($paramlist)";
 
 	my $class      = $manual->package;
 	my $use
@@ -342,8 +344,7 @@ sub subroutineUse($$)
 	  : $type eq 'c_method' ? qq[\$class-E<gt>B<$name>$params]
 	  : $type eq 'ci_method'? qq[\$any-E<gt>B<$name>$params]
 	  : $type eq 'function' ? qq[B<$name>$params]
-	  : $type eq 'overload' ? qq[overload: B<$name>]
-	  : $type eq 'tie'      ? qq[B<$name>$params]
+	  : $type eq 'overload' ? qq[overload: B<$name> $paramlist]
 	  :    panic $type;
 
 	$use;

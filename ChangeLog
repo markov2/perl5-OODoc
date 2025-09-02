@@ -11,6 +11,7 @@ version 3.03:
 
 	Improvements:
 	- warning in addSubroutine()
+	- display of ties and overload in both POD and HTML
 
 version 3.02: Fri 15 Aug 14:52:20 CEST 2025
 
