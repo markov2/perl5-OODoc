@@ -11,12 +11,12 @@ version 3.03:
 
 	Fixes:
 	- html template: functions not shown alphabetically.
-	- html link to options
+	- html link to specific options
 
 	Improvements:
 	- warning in addSubroutine()
 	- display of ties and overload in both POD and HTML
-	- add OODoc::Examples
+	- add OODoc::Examples for Markov parser
 	- pod diagnostics show which function produces them.
 	- subsubsection is h5 in html
 

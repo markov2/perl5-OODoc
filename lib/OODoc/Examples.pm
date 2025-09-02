@@ -75,7 +75,12 @@ standard PerlPod.  This does understand inheritance.
 =item * M<subr(is_optional)>; refers to option C<is_optional> of method subr
 =back
 
-These may also be in other manual-pages.
+These may also be in other manual-pages:
+
+=over 4
+=item * M<OODoc::finalize()>; refers to a method in a different manual
+=item * M<OODoc::processFiles(version)>; refers to an option of a method in another manual
+=back
 
 =section Blocks
 This is a section.
