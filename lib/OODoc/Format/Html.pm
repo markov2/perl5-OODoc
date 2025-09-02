@@ -544,7 +544,7 @@ sub showSubroutineUse(@)
 	  : $type eq 'ci_method'? qq[\$any-&gt;$call$param]
 	  : $type eq 'overload' ? qq[overload: $call $paramlist]
 	  : $type eq 'function' ? qq[$call$param]
-	  : $type eq 'tie'      ? qq[tie $call, $paramlist];
+	  : $type eq 'tie'      ? qq[tie $call, $paramlist]
 	  :     panic "Type $type? for $call";
 
 	$output->print( <<SUBROUTINE );
@@ -1026,8 +1026,7 @@ DIAG
 
 			my $sections = join "\n", map "<li>".$self->link($manual, $_)."</li>", @sections;
 
-			push @rows, $self->link($manual, $details, "Details in $manual")
-			. qq[\n<ul>\n$sections</ul>\n]
+			push @rows, $self->link($manual, $details, "Details in $manual") . qq[\n<ul>\n$sections</ul>\n]
 		}
 	}
 	elsif($group eq 'MANUALS')
@@ -1043,9 +1042,7 @@ DIAG
 
 	my $output = qq[<tr>];
 	while(@rows >= $columns)
-	{	$output .= qq[<td valign="top" width="$width">]
-				. join( "<br>\n", splice(@rows, 0, $rows))
-				.  qq[</td>\n];
+	{	$output .= qq[<td valign="top" width="$width">] . join( "<br>\n", splice(@rows, 0, $rows)) . qq[</td>\n];
 	}
 	$output   .= qq[</tr>\n];
 	$output;

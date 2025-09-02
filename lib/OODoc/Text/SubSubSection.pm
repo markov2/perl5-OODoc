@@ -32,7 +32,7 @@ part of a section.
 The section in which this sub-section lives.
 
 =default container M<new(subsection)>
-=default level     3
+=default level     4
 =default type      'Subsubsection'
 
 =cut
@@ -41,7 +41,7 @@ sub init($)
 {	my ($self, $args) = @_;
 	$args->{type}      ||= 'Subsubsection';
 	$args->{container} ||= delete $args->{subsection} or panic;
-	$args->{level}     ||= 3;
+	$args->{level}     ||= 4;
 	$self->SUPER::init($args);
 }
 
