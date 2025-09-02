@@ -9,6 +9,9 @@ TODO:
 
 version 3.03:
 
+	Fixes:
+	- html template: functions not shown alphabetically.
+
 	Improvements:
 	- warning in addSubroutine()
 	- display of ties and overload in both POD and HTML
