@@ -29,10 +29,13 @@ for all of the other classes.
 
 =chapter OVERLOADED
 
-=overload  '==' and '!=' (numeric comparison)
+=overload  '==' (numeric equivalent)
 Numeric comparison is used to compare to objects whether they are
-identical.  String comparison is overloaded to compare the names
-of the objects.
+identical.  On many extensions, string comparison is overloaded to
+compare the names of the objects.
+
+=overload  '!=' (numeric different)
+Results in true when the objects are different
 
 =overload 'bool'
 Always returns true: "exists".

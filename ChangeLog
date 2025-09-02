@@ -11,6 +11,7 @@ version 3.03:
 
 	Fixes:
 	- html template: functions not shown alphabetically.
+	- html link to options
 
 	Improvements:
 	- warning in addSubroutine()

@@ -16,7 +16,8 @@ OODoc::Examples - check the generated output
 
 =chapter DESCRIPTION
 This manual page does not produce any code, and does not document OODoc:
-it lists various existing constructs, to check whether the produced output
+it lists various existing constructs supported by the Markov parser
+(M<OODoc::Parser::Markov>), to check whether the produced output
 (POD, HTML or generated via Export) from OODoc is correct.
 
 It is really useful to look at the source of this page on github, metacpan,
@@ -62,6 +63,19 @@ Errors reflect problems in the running code.
 =info transfer completed
 Info statements usually show at verbose runs, to elaborate on
 steps made.
+
+=section Subroutine references
+
+The C<M> tag can be used to make references to Methods (functions, ...)
+and even parameters and options of them.  Much more fine-grained than
+standard PerlPod.  This does understand inheritance.
+
+=over 4
+=item * M<subr()>; refers to method subr
+=item * M<subr(is_optional)>; refers to option C<is_optional> of method subr
+=back
+
+These may also be in other manual-pages.
 
 =section Blocks
 This is a section.

@@ -600,7 +600,10 @@ sub showOptionUse(@)
 	$params    = qq[ =&gt; <span class="params">$params</span>]
 		if length $params;
 
-	my $use    = qq[<span class="option">$option</span>];
+	my $id     = $option->unique;
+	$self->mark($manual, $id);
+
+	my $use    = qq[<span class="option"><a name="$id">$option</a></span>];
 	$output->print( qq[<dt class="option_use">$use$params</dt>\n] );
 	$self;
 }
