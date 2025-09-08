@@ -7,6 +7,8 @@ TODO:
 	- subs could not only list 'Inherited from', but also 'Extended by'
 	- in POD, group "Inherited" referenced subs?
 
+version 3.04:
+
 version 3.03: Mon  8 Sep 12:57:12 CEST 2025
 
 	Changes:
