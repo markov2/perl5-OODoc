@@ -94,7 +94,7 @@ sub link($$;$$)
 The %options are a collection of all options available to C<show*()> methods.
 
 =option  append STRING|CODE
-=default append ''
+=default append C<"">
 Used after each manual page has been formatting according to the
 standard rules.  When a STRING is specified, it will be appended to
 the manual page.  When a CODE reference is given, that function is

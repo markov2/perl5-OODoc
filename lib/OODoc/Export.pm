@@ -135,16 +135,19 @@ sub tree($%)
 {	my ($self, $doc, %args)   = @_;
 	$args{exporter}      = $self;
 
+	my $pubindex         = +{};
+	$self->_publicationIndex($pubindex);
+
 	my $selected_manuals = $args{manuals};
 	my %need_manual      = map +($_ => 1), @{$selected_manuals || []};
 	my @podtail_chapters = $self->podChapters($args{podtail});
 
 	my %man;
-	my $index = $doc->index;
+	my $manindex = $doc->index;
 
-	foreach my $package (sort $index->packageNames)
+	foreach my $package (sort $manindex->packageNames)
 	{
-		foreach my $manual ($index->manualsForPackage($package))
+		foreach my $manual ($manindex->manualsForPackage($package))
 		{	!$selected_manuals || $need_manual{$manual} or next;
 			my $man = $manual->publish(\%args) or next;
 
@@ -163,7 +166,7 @@ sub tree($%)
 		manuals        => \%man,
 		meta           => \%meta,
 		distributions  => $args{distributions} || {},
-		index          => $self->publicationIndex,
+		index          => $pubindex, # $self->publicationIndex,
 
 		generated_by   => {
 			program         => $0,

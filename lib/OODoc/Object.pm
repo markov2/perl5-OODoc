@@ -114,16 +114,12 @@ Extract the data of an object for export, and register it in the index.
 A HASH is returned which should get filled with useful data.
 =cut
 
-my %index;
+my $index;  # still a global :-(  Set by ::Export
+sub _publicationIndex($) { $index = $_[1] }
+
 sub publish($)
 {	my ($self, $args) = @_;
-	$index{$self->unique} = +{ id => $self->unique };
+	$index->{$self->unique} = +{ id => $self->unique };
 }
-
-=method publicationIndex
-Returns the collected objects for publication.
-=cut
-
-sub publicationIndex() { \%index }
 
 1;

@@ -23,6 +23,7 @@ version 3.03:
 	- add OODoc::Examples for Markov parser
 	- pod diagnostics show which function produces them.
 	- subsubsection is h5 in html
+	- publicationIndex() hidden
 
 version 3.02: Fri 15 Aug 14:52:20 CEST 2025
 
