@@ -88,7 +88,7 @@ sub init($)
 }
 
 #--------------------
-=section Atributes
+=section Attributes
 
 =method serializer
 The label for this serializer.
@@ -140,9 +140,11 @@ sub tree($%)
 	my @podtail_chapters = $self->podChapters($args{podtail});
 
 	my %man;
-	foreach my $package (sort $doc->packageNames)
+	my $index = $doc->index;
+
+	foreach my $package (sort $index->packageNames)
 	{
-		foreach my $manual ($doc->manualsForPackage($package))
+		foreach my $manual ($index->manualsForPackage($package))
 		{	!$selected_manuals || $need_manual{$manual} or next;
 			my $man = $manual->publish(\%args) or next;
 
@@ -253,8 +255,8 @@ sub markupBlock($%)
 }
 
 =method markupString $string, %args
-Convert a line of text, which still contains markup.  This sometimes as some
-differences with a M<markupBlock()>.
+Convert a line of text, which still contains markup.  This sometimes shows some
+different markup compared to the output of M<markupBlock()>.
 =cut
 
 sub markupString($%)

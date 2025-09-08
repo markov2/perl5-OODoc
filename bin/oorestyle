@@ -335,6 +335,8 @@ sub shift_to_0($)              # sub { shift } => sub { $_[0] }
 
 	my $replace = sub {
 		my ($whole, $lead, $content) = @_;
+
+		# fragile when there are other shifts or @_ on the line
 		$content =~ m/ \@\_ | \bshift\b /x ? $whole : "$lead \$_[0]$content \}";
 	};
 

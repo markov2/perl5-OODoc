@@ -978,11 +978,12 @@ sub templateIndex($$)
 
 	my $columns = $attrs->{table_columns} || 2;
 	my @rows;
+	my @manuals = $self->index->manuals;
 
 	if($group eq 'SUBROUTINES')
 	{	my @subs;
 
-		foreach my $manual ($self->manuals)
+		foreach my $manual (@manuals)
 		{	foreach my $sub ($select->($manual->ownSubroutines))
 			{	my $linksub = $self->link($manual, $sub, $sub->name);
 				my $linkman = $self->link(undef, $manual, $manual->name);
@@ -994,7 +995,7 @@ sub templateIndex($$)
 		@rows = map $_->[1], sort { $a->[0] cmp $b->[0] } @subs;
 	}
 	elsif($group eq 'DIAGNOSTICS')
-	{	foreach my $manual ($self->manuals)
+	{	foreach my $manual (@manuals)
 		{	foreach my $sub ($manual->ownSubroutines)
 			{	my @diags    = $select->($sub->diagnostics) or next;
 
@@ -1015,7 +1016,7 @@ DIAG
 		@rows = sort @rows;
 	}
 	elsif($group eq 'DETAILS')
-	{	foreach my $manual (sort $select->($self->manuals))
+	{	foreach my $manual (sort $select->(@manuals))
 		{	my $details  = $manual->chapter("DETAILS") or next;
 			my @sections;
 			foreach my $section ($details->sections)
@@ -1033,7 +1034,7 @@ DIAG
 		}
 	}
 	elsif($group eq 'MANUALS')
-	{	@rows = map $self->link(undef, $_, $_->name), sort $select->($self->manuals);
+	{	@rows = map $self->link(undef, $_, $_->name), sort $select->(@manuals);
 	}
 	else
 	{	error __x"unknown group {name} as list attribute", name => $group;

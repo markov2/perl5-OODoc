@@ -26,7 +26,14 @@ L<https://github.com/markov2/perl5-OODoc/blob/master/lib/OODoc/Examples.pm>
 
 =chapter METHODS
 
+The chapter names which you can use in the manual-pages are restricted.  Only
+with "podtail", you may add some of your own at the end of the generated
+manual-page.
+
 =section Subroutine calls
+
+These are the various code entry points, where C<tie> and C<overload> are
+weird outliers.
 
 =c_method classMethod %options
 =i_method instanceMethod %options
@@ -83,7 +90,7 @@ These may also be in other manual-pages:
 =back
 
 =section Blocks
-This is a section.
+This is a section, within chapter METHODS.
 
 =subsection SubSection
 This is a subsection.

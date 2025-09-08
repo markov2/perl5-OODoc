@@ -15,6 +15,7 @@ use Log::Report    'oodoc';
 
 use OODoc::Manifest ();
 use OODoc::Format   ();
+use OODoc::Index    ();
 
 use File::Basename        qw/dirname/;
 use File::Copy            qw/copy move/;
@@ -109,6 +110,7 @@ sub init($)
 	$self->{O_version} = $version
 		or error __x"no version specified for distribution {dist}", dist  => $distribution;
 
+	$self->{O_index}   = OODoc::Index->new;
 	$self;
 }
 
@@ -134,6 +136,12 @@ Returns the general project description, by default the distribution name.
 =cut
 
 sub project() { $_[0]->{O_project} }
+
+=method index
+Returns the OODoc::Index which maintains the collected information.
+=cut
+
+sub index() { $_[0]->{O_index} }
 
 #--------------------
 =section Parser
@@ -367,8 +375,8 @@ sub processFiles(@)
 		eval "require $parser";
 		$@ and error __x"cannot compile {pkg} class: {err}", pkg => $parser, err => $@;
 
-		$parser = $parser->new(skip_links => delete $args{skip_links})
-			or error __x"parser {name} could not be instantiated", name=> $parser;
+		$parser = $parser->new(skip_links => delete $args{skip_links}, index => $self->index)
+			or error __x"parser {name} could not be instantiated", name => $parser;
 	}
 
 	#
@@ -401,7 +409,7 @@ sub processFiles(@)
 		trace $_->stats for @manuals;
 
 		foreach my $man (@manuals)
-		{	$self->addManual($man) if $man->chapters;
+		{	$self->index->addManual($man) if $man->chapters;
 		}
 	}
 
@@ -428,14 +436,16 @@ sub finalize(%)
 	info "* collect package relations";
 	$self->getPackageRelations;
 
+	my @manuals = $self->index->manuals;
+
 	info "* expand manual contents";
-	$_->expand for $self->manuals;
+	$_->expand for @manuals;
 
 	info "* create inheritance chapters";
-	$_->createInheritance for $self->manuals;
+	$_->createInheritance for @manuals;
 
 	info "* finalize each manual";
-	$_->finalize(%args) for $self->manuals;
+	$_->finalize(%args) for @manuals;
 
 	$self;
 }
@@ -458,7 +468,7 @@ manual-pages as well...
 
 sub getPackageRelations($)
 {	my $self    = shift;
-	my @manuals = $self->manuals;  # all
+	my @manuals = $self->index->manuals;  # all
 
 	info "compiling all packages";
 
@@ -472,27 +482,28 @@ sub getPackageRelations($)
 	}
 
 	info "detect inheritance relationships";
+	my $index = $self->index;
 
 	foreach my $manual (@manuals)
 	{
 		trace "  relations for $manual";
 
 		if($manual->name ne $manual->package)  # autoloaded code
-		{	my $main = $self->mainManual("$manual");
+		{	my $main = $index->mainManual("$manual");
 			$main->extraCode($manual) if defined $main;
 			next;
 		}
 		my %uses = $manual->collectPackageRelations;
 
 		foreach (defined $uses{isa} ? @{$uses{isa}} : ())
-		{	my $isa = $self->mainManual($_) || $_;
+		{	my $isa = $index->mainManual($_) || $_;
 
 			$manual->superClasses($isa);
 			$isa->subClasses($manual) if blessed $isa;
 		}
 
 		if(my $realizes = $uses{realizes})
-		{	my $to  = $self->mainManual($realizes) || $realizes;
+		{	my $to  = $index->mainManual($realizes) || $realizes;
 
 			$manual->realizes($to);
 			$to->realizers($manual) if blessed $to;
@@ -555,6 +566,7 @@ sub formatter($@)
 		workdir     => $dest,
 		project     => $self->distribution,
 		version     => $self->version,
+		index       => $self->index,
 	);
 }
 
@@ -567,9 +579,8 @@ document set.
 
 sub stats()
 {	my $self = shift;
-	my @manuals  = $self->manuals;
-	my $manuals  = @manuals;
-	my $realpkg  = $self->packageNames;
+	my @manuals  = $self->index->manuals;
+	my $realpkg  = $self->index->packageNames;
 
 	my $subs     = map $_->subroutines, @manuals;
 	my @options  = map { map $_->options, $_->subroutines } @manuals;
@@ -578,10 +589,11 @@ sub stats()
 	my $diags    = map $_->diagnostics, @manuals;
 	my $version  = $self->version;
 	my $project  = $self->project;
+	my $nr_mans  = @manuals;
 
 	<<__STATS;
 Project $project contains:
-  Number of package manuals: $manuals
+  Number of package manuals: $nr_mans
   Real number of packages:   $realpkg
   documented subroutines:    $subs
   documented options:        $options

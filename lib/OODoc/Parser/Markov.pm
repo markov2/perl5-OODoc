@@ -23,7 +23,7 @@ use OODoc::Text::Example       ();
 use OODoc::Manual              ();
 
 use File::Spec     ();
-use Scalar::Util   qw/blessed/;
+use Scalar::Util   qw/blessed weaken/;
 
 my $url_modsearch = 'https://metacpan.org/dist/';
 my $url_coderoot  = 'CODE';
@@ -55,11 +55,12 @@ into manual pages.
 
 =option  additional_rules ARRAY
 =default additional_rules []
-
 Reference to an array which contains references to match-action pairs,
 as accepted by M<rule()>.  These rules get preference over the existing
 rules.
 
+=requires index  OODoc::Index object
+[2.01] where the package and manual administration is.
 =cut
 
 sub init($)
@@ -72,6 +73,10 @@ sub init($)
 
 	$self->{OPM_rules} = [];
 	$self->rule(@$_) for @rules;
+
+	$self->{OPM_index} = delete $args->{index} or panic; 
+	weaken($self->{OPM_index});
+
 	$self;
 }
 
@@ -109,6 +114,12 @@ Returns the ARRAY of active rules.  You may modify it.
 =cut
 
 sub rules() { $_[0]->{OPM_rules} }
+
+=method index
+[2.01] Returns the documentation tree administration.
+=cut
+
+sub index() { $_[0]->{OPM_index} }
 
 #--------------------
 =section Parsing a file
@@ -210,6 +221,7 @@ sub findMatchingRule($)
 }
 
 =method parse %options
+Process an input file into manual fragments.
 
 =requires input FILENAME
 
@@ -274,6 +286,7 @@ sub parse(@)
 			parser       => $self,
 			distribution => $distr,
 			version      => $version,
+			index        => $self->index,
 		);
 
 		push @manuals, $manual;
@@ -307,6 +320,7 @@ sub parse(@)
 				source   => $input,
 				stripped => $output,
 				parser   => $self,
+				index    => $self->index,
 
 				distribution => $distr,
 				version      => $version,
@@ -323,6 +337,7 @@ sub parse(@)
 				parser   => $self,
 				distribution => $distr,
 				version  => $version,
+				index    => $self->index,
 			);
 			push @manuals, $manual;
 			$self->currentManual($manual);
@@ -775,7 +790,7 @@ sub decomposeM($$)
 
 	my $man;
 		if(not length($link)) { $man = $manual }
-	elsif(defined($man = $self->findManual($link))) { ; }
+	elsif(defined($man = $self->index->findManual($link))) { ; }
 	else
 	{	eval "no warnings; require $link";
 		if(  ! $@
@@ -800,7 +815,7 @@ sub decomposeM($$)
 	defined $subroutine && length $subroutine
 		or return (undef, $man);
 
-	my $package = $self->findManual($man->package);
+	my $package = $self->index->findManual($man->package);
 	unless(defined $package)
 	{	my $want = $man->package;
 		warning __x"no manual for {package} (correct casing?)", package => $want;
@@ -851,7 +866,7 @@ sub decomposeL($$)
 	($name, $item)    = (undef, $name) if $name =~ m/^".*"$/;
 	$item     =~ s/^"(.*)"$/$1/        if defined $item;
 
-	my $man   = length $name ? ($self->findManual($name) || $name) : $manual;
+	my $man   = length $name ? ($self->index->findManual($name) || $name) : $manual;
 
 	my $dest;
 	if(!ref $man)

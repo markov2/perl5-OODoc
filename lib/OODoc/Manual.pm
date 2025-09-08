@@ -15,6 +15,7 @@ use OODoc::Text::Chapter ();
 
 use Scalar::Util  qw/blessed/;
 use List::Util    qw/first/;
+use Scalar::Util  qw/weaken/;
 
 # Prefered order of all supported chapters
 my @chapter_names = qw/
@@ -40,11 +41,13 @@ OODoc::Manual - one manual about a package
   my $doc    = OODoc->new(...);
   my $manual = OODoc::Manual->new(name => ..., source => ...);
 
-  $doc->findManual($manual);
-  my @manual = $doc->manualsForPackage('Mail::Box');
+  my $index  = $doc->index;
+  my $manual = $index->findManual($name);
+  my @manual = $index->manualsForPackage('Mail::Box');
 
   print $manual->name;
   print $manual->package;
+  print $manual->overview;
 
 =chapter DESCRIPTION
 
@@ -104,6 +107,9 @@ but do not contain any code.  Their filenames usually end with F<.pod>.
 
 =requires distribution STRING
 
+=requires index OODoc::Index
+[2.01] Needed for see which packages belong to this manual.
+
 =error   package name is not specified
 You try to instantiate a manual, but have not specified the name
 of the package which is described in this manual, which is required.
@@ -134,6 +140,8 @@ sub init($)
 
 	$self->{OM_parser}   = delete $args->{parser}    or panic;
 	$self->{OM_stripped} = delete $args->{stripped};
+	$self->{OM_index}    = delete $args->{index}     or panic;
+	weaken($self->{OM_index});
 
 	$self->{OM_pure_pod} = delete $args->{pure_pod} || 0;
 	$self->{OM_chapter_hash} = {};
@@ -150,45 +158,36 @@ sub init($)
 
 =method package
 Returns the package of the manual.
-=cut
-
-sub package() {$_[0]->{OM_package}}
 
 =method parser
 Returns the parser which has produced this manual object.
-=cut
-
-sub parser() {$_[0]->{OM_parser}}
 
 =method source
 Returns the source of this manual information.
-=cut
-
-sub source() {$_[0]->{OM_source}}
 
 =method version
 Returns the version of this manual information.
-=cut
-
-sub version() {$_[0]->{OM_version}}
 
 =method distribution
 Returns the distribution which includes this manual.
-=cut
-
-sub distribution() {$_[0]->{OM_distr}}
 
 =method stripped
 The name of the produced stripped package file.
-=cut
-
-sub stripped() {$_[0]->{OM_stripped}}
 
 =method isPurePod
 Returns whether this package has real code related to it.
+
+=method index
 =cut
 
-sub isPurePod() {$_[0]->{OM_pure_pod}}
+sub package()   { $_[0]->{OM_package}  }
+sub parser()    { $_[0]->{OM_parser}   }
+sub source()    { $_[0]->{OM_source}   }
+sub version()   { $_[0]->{OM_version}  }
+sub stripped()  { $_[0]->{OM_stripped} }
+sub isPurePod() { $_[0]->{OM_pure_pod} }
+sub index()     { $_[0]->{OM_index}    }
+sub distribution() { $_[0]->{OM_distr} }
 
 #--------------------
 =section Collected
@@ -301,7 +300,7 @@ sub subroutine($)
 	my $sub;
 
 	my $package = $self->package;
-	my @parts   = defined $package ? $self->manualsForPackage($package) : $self;
+	my @parts   = defined $package ? $self->index->manualsForPackage($package) : $self;
 
 	foreach my $part (@parts)
 	{	foreach my $chapter ($part->chapters)
@@ -414,7 +413,7 @@ sub extraCode()
 	my $name = $self->name;
 
 	$self->package eq $name
-	? grep $_->name ne $name, $self->manualsForPackage($name)
+	? grep $_->name ne $name, $self->index->manualsForPackage($name)
 	: ();
 }
 
@@ -906,14 +905,14 @@ $head
 STATS
 }
 
-=method index
-Returns a string which can be used as index of headings used in this
+=method overview
+[2.01] Returns a string which can be used as index of headings used in this
 manual page.
 =example
-  print $manual->index;
+  print $manual->overview;
 =cut
 
-sub index()
+sub overview()
 {	my $self  = shift;
 	my @lines;
 	foreach my $chapter ($self->chapters)

@@ -61,11 +61,11 @@ the specific object.
 The validity of the options for C<new> is checked, in contrary to the
 options when used with many other method defined by OODoc.
 
-=error Unknown object attribute '$name' for $pkg
+=error unknown object attribute '$name' for $pkg
 You have used the option with $name, which is not defined with the
 instantiation (the C<new> method) of this object.
 
-=error Unknown object attributes for $pkg: '$names'
+=error unknown object attributes for $pkg: '$names'
 You have used more than one option which is not defined to instantiate
 the object.
 
@@ -76,7 +76,7 @@ sub new(@)
 	my $self = (bless {}, $class)->init(\%args);
 
 	if(my @missing = keys %args)
-	{	error __xn"Unknown object attribute '{names}' for {pkg}", "Unknown object attributes for {pkg}: {names}",
+	{	error __xn"unknown object attribute '{names}' for {pkg}", "unknown object attributes for {pkg}: {names}",
 			scalar @missing, names => \@missing, pkg => $class;
 	}
 
@@ -108,77 +108,6 @@ the same thing. The ids are numeric.
 =cut
 
 sub unique() { $_[0]->{OO_unique} }
-
-#--------------------
-=section Manual Repository
-
-All manuals can be reached everywhere in the program: it is a global
-collection.
-
-=method addManual $manual
-The $manual will be added to the list of known manuals.  The same package
-name can appear in more than one manual.  This OBJECT shall be of type
-OODoc::Manual.
-
-=error manual definition requires manual object
-A call to M<addManual()> expects a new manual object (a OODoc::Manual),
-however an incompatible thing was passed.  Usually, intended was a call
-to M<manualsForPackage()> or M<mainManual()>.
-
-=cut
-
-my %packages;
-my %manuals;
-
-sub addManual($)
-{	my ($self, $manual) = @_;
-
-	ref $manual && $manual->isa('OODoc::Manual')
-		or panic "manual definition requires manual object";
-
-	push @{$packages{$manual->package}}, $manual;
-	$manuals{$manual->name} = $manual;
-	$self;
-}
-
-=method mainManual $name
-Returns the manual of the named package which contains the primar
-documentation for the code of the package $name.
-=cut
-
-sub mainManual($)
-{	my ($self, $name) = @_;
-	first { $_ eq $_->package } $self->manualsForPackage($name);
-}
-
-=method manualsForPackage $name
-Returns a list package objects which are related to the specified $name.
-One $name can appear in more than one file, and therefore a list is
-returned.
-=cut
-
-sub manualsForPackage($)
-{	my ($self, $name) = @_;
-	@{$packages{$name || 'doc'} || []};
-}
-
-=method manuals
-All manuals are returned.
-=cut
-
-sub manuals() { values %manuals }
-
-=method findManual $name
-[3.00] Returns the manual with the specified name, or else undef.
-=cut
-
-sub findManual($) { $manuals{ $_[1] } }
-
-=method packageNames
-Returns the names of all defined packages.
-=cut
-
-sub packageNames() { keys %packages }
 
 =method publish \%options
 Extract the data of an object for export, and register it in the index.

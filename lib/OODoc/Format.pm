@@ -12,13 +12,14 @@ use warnings;
 use Log::Report    'oodoc';
 
 use OODoc::Manifest ();
+use Scalar::Util    qw/weaken/;
 
-our %formatters =
-( pod   => 'OODoc::Format::Pod',
+our %formatters = (
+	pod   => 'OODoc::Format::Pod',
 	pod2  => 'OODoc::Format::Pod2',
 	pod3  => 'OODoc::Format::Pod3',
 	html  => 'OODoc::Format::Html',
-	html2 => 'OODoc::Format::Html2'   # not (yet) included in the OODoc release
+	html2 => 'OODoc::Format::Html2',   # not (yet) included in the OODoc release
 );
 
 #--------------------
@@ -79,6 +80,9 @@ L<Bundle::Template::Magic> and the ability to run cgi scripts.
 
 =c_method new %options
 
+=requires index OODoc::Index
+[2.01] The knowledge of the collected documentation.
+
 =requires format 'pod*'|'html*'|PACKAGE
 Select the formatter to be used.
 
@@ -96,7 +100,8 @@ it will be created for you.
 =option  manifest OBJECT
 =default manifest undef
 
-=error no formatter specified.
+=error no formatter specified
+=error no index specified
 
 =error formatter has no project name
 A formatter was created without a name specified for the project at
@@ -118,9 +123,7 @@ sub new($%)
 	$class eq __PACKAGE__
 		or return $class->SUPER::new(%args);
 
-	my $format = $args{format}
-		or error __x"no formatter specified.";
-
+	my $format = $args{format} or error __x"no formatter specified";
 	my $pkg = $formatters{$format} || $format;
 
 	eval "require $pkg";
@@ -145,6 +148,10 @@ sub init($)
 		or error __x"no working directory specified for {name}", name => $name;
 
 	$self->{OF_manifest} = delete $args->{manifest} || OODoc::Manifest->new;
+
+	$self->{OF_index}    = delete $args->{index}  or error __x"no index specified";
+	weaken($self->{OF_index});
+
 	$self;
 }
 
@@ -173,12 +180,16 @@ of created files.
 
 =method format
 Code for the format.
+
+=method index
+[2.01] The collected documentation.
 =cut
 
 sub version()  { $_[0]->{OF_version} }
 sub workdir()  { $_[0]->{OF_workdir} }
 sub manifest() { $_[0]->{OF_manifest} }
 sub format()   { $_[0]->{OF_format} }
+sub index()    { $_[0]->{OF_index} }
 
 #--------------------
 =section Page generation
@@ -232,9 +243,11 @@ sub createPages(%)
 	# Manual knowledge is global
 
 	my $options = $args{manual_format} || [];
-	foreach my $package (sort $self->packageNames)
+	my $index   = $self->index;
+
+	foreach my $package (sort $index->packageNames)
 	{
-		foreach my $manual ($self->manualsForPackage($package))
+		foreach my $manual ($index->manualsForPackage($package))
 		{	$select->($manual) or next;
 
 			unless($manual->chapters)

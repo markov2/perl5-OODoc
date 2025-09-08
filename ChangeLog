@@ -9,6 +9,10 @@ TODO:
 
 version 3.03:
 
+	Changes:
+	- documentation tree now in OODoc::Index, not global.
+	- manual->index became manual->overview.
+
 	Fixes:
 	- html template: functions not shown alphabetically.
 	- html link to specific options

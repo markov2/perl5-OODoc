@@ -15,6 +15,7 @@ lib/OODoc/Format/Pod.pm
 lib/OODoc/Format/Pod2.pm
 lib/OODoc/Format/Pod3.pm
 lib/OODoc/Format/TemplateMagic.pm
+lib/OODoc/Index.pm
 lib/OODoc/Manifest.pm
 lib/OODoc/Manual.pm
 lib/OODoc/Object.pm
