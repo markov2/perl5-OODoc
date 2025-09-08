@@ -744,13 +744,9 @@ sub create_export($$)
 	require OODoc::Export;
 	my $exporter = OODoc::Export->new(serializer => $serial, markup => $markup);
 
-#	my $tail = oodist_meta $makefile;
-#	$tail->{license_year_range} = delete $tail->{year};  # naming improvement
-
 	my $tree = $exporter->tree($doc,
 		manuals       => $manuals,
 		distributions => \%distros,
-#		meta     => $tail,      # only flat key-value, where value is a string
 	);
 
 	-d $dest || mkdir $dest

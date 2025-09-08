@@ -25,8 +25,13 @@ OODoc::Export - base-class for exporters
 
 =chapter SYNOPSIS
 
-  my $doc = OODoc->new(...);
-  $doc->export('json');
+  my $doc  = OODoc->new(...);
+  my $tree = $doc->export('json');
+
+  my $export = OODoc::Export::JSON->new(markup => 'html');
+  my $export = OODoc::Export->new(serializer => 'json', markup => 'html');
+  my $tree   = $export->tree;
+  $export->write("a.json", $tree, pretty_print => 1);
 
 =chapter DESCRIPTION
 This base-class organizes export transformations which can be shared between
@@ -166,9 +171,9 @@ sub tree($%)
 		manuals        => \%man,
 		meta           => \%meta,
 		distributions  => $args{distributions} || {},
-		index          => $pubindex, # $self->publicationIndex,
+		index          => $pubindex,
 
-		generated_by   => {
+		generated_by   => +{
 			program         => $0,
 			program_version => $main::VERSION // undef,
 			oodoc_version   => $OODoc::VERSION // 'devel',
