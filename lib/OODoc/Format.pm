@@ -319,6 +319,12 @@ instance.
 
 sub cleanup($$%) { ... }
 
+=method cleanupString $manual, $string, %options
+Format a single line piece of text.  The %options are passed to M<cleanup()>.
+=cut
+
+sub cleanupString($$%) { shift->cleanup(@_) }
+
 =method showChapter %options
 You can pass all %options about formatting to this method.  They will passed
 to the related methods.  So: the list of options you can pass here is much
@@ -750,9 +756,9 @@ sub showOptionTable(@)
 	{	my ($option, $default) = @$_;
 		my $optman = $option->manual;
 		push @rows, [
-			$self->cleanup($manual, $option->name, tag => 'option_name'),
+			$self->cleanupString($manual, $option->name, tag => 'option_name'),
 			($manual->inherited($option) ? $self->link(undef, $optman) : ''),
-			$self->cleanup($manual, $default->value, tag => 'option_default'),
+			$self->cleanupString($manual, $default->value, tag => 'option_default'),
 		];
 	}
 

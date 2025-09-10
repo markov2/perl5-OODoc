@@ -12,6 +12,7 @@ version 3.04:
 	Fixes:
 	- fix split skip_links
 	- fix warning message with an option uses non-existing P
+	- fix cleanup in HTML
 
 version 3.03: Mon  8 Sep 12:57:12 CEST 2025
 
