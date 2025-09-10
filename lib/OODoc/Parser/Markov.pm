@@ -1199,8 +1199,8 @@ sub autoMarkup($$%)
 			my $q    = $self->_collectParams($p, default => $v);
 
 			# modify the default value
-			my $w    = $self->_markupText($v, "$w(D=$name)", %args, params => $q);
-			$default->_setValue($w);
+			my $dv   = $self->_markupText($v, "$w(D=$name)", %args, params => $q);
+			$default->_setValue($dv);
 
 			# modify the option text
 			my $opt  = $option->openDescription;
