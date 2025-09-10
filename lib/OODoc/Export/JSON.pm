@@ -66,7 +66,7 @@ sub write($$%)
 	{	$fh = \*STDOUT;
 	}
 	else
-	{	open $fh, '>:raw', $output
+	{	open $fh, '>:encoding(UTF-8)', $output
 			or fault __x"cannot write output to {file}", file => $output;
 	}
 
