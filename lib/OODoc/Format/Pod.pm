@@ -116,7 +116,7 @@ sub createManual($@)
 	my $tmpfile  = catfile $self->workdir, $tmpname;
 	my $podfile  = catfile $self->workdir, $podname;
 
-	open my $output, '>:encoding(utf8)', $tmpfile
+	open my $output, '>:encoding(UTF-8)', $tmpfile
 		or fault __x"cannot write prelimary pod manual to {file}", file => $tmpfile;
 
 	$self->_formatManual(
@@ -568,10 +568,10 @@ clean-up activities may be implemented later.
 sub simplifyPod($$)
 {	my ($self, $infn, $outfn) = @_;
 
-	open my $in, "<:encoding(utf8)", $infn
+	open my $in, '<:encoding(UTF-8)', $infn
 		or fault __x"cannot read prelimary pod from {file}", file => $infn;
 
-	open my $out, ">:encoding(utf8)", $outfn
+	open my $out, '>:encoding(UTF-8)', $outfn
 		or fault __x"cannot write final pod to {file}", file => $outfn;
 
 	my $last_is_blank = 1;

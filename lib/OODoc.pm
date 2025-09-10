@@ -99,7 +99,7 @@ sub init($)
 	unless(defined $version)
 	{	my $fn         = -f 'version' ? 'version' : -f 'VERSION' ? 'VERSION' : undef;
 		if(defined $fn)
-		{	open my $v, "<", $fn
+		{	open my $v, '<:encoding(UTF-8)', $fn
 				or fault __x"cannot read distribution version from file {file}", file=> $fn;
 			$version = $v->getline;
 			$version = $1 if $version =~ m/(\d+\.[\d\.]+)/;
@@ -292,7 +292,7 @@ sub processFiles(@)
 				: defined $source ? catfile($source, 'VERSION')
 				:                   'VERSION';
 		if(defined $fn)
-		{	open my $v, '<', $fn
+		{	open my $v, '<:encoding(UTF-8)', $fn
 				or fault __x"cannot read version from {file}", file => $fn;
 			$version = $v->getline;
 			$version = $1 if $version =~ m/(\d+\.[\d\.]+)/;

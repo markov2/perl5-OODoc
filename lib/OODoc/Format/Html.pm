@@ -13,6 +13,7 @@ use warnings;
 use Log::Report     'oodoc';
 use OODoc::Template ();
 
+use Encode          qw/decode/;
 use File::Spec::Functions qw/catfile catdir/;
 use File::Find      qw/find/;
 use File::Basename  qw/basename dirname/;
@@ -61,7 +62,6 @@ Cascading Style Sheets, and such.
 =option  html_stylesheet STRING
 =default html_stylesheet undef
 Adds a link to the stylesheet to the meta-data.
-
 =cut
 
 sub init($)
@@ -78,8 +78,10 @@ sub init($)
 
 	my $meta  = delete $args->{html_meta_data} || '';
 	if(my $ss = delete $args->{html_stylesheet})
-	{	$meta   .= qq[<link rel="STYLESHEET" href="$ss">];
+	{	$meta .= qq[<link rel="STYLESHEET" href="$ss">\n];
 	}
+	$meta    .= qq[<meta charset="UTF-8">\n];
+
 	$self->{OFH_meta} = $meta;
 	$self;
 }
@@ -219,7 +221,7 @@ sub createManual($@)
 
 	unless(defined $self->markers)
 	{	my $markers = catfile $self->workdir, 'markers';
-		open my $mark, ">:encoding(utf8)", $markers
+		open my $mark, ">:encoding(UTF-8)", $markers
 			or fault __x"cannot write markers to {file}", file => $markers;
 		$self->markers($mark);
 		$mark->print($self->htmlRoot, "\n");
@@ -236,7 +238,7 @@ sub createManual($@)
 		print "$manual: $cooked\n" if $verbose > 2;
 		$manifest->add($cooked);
 
-		open my $output, ">:encoding(utf8)", $cooked
+		open my $output, ">:encoding(UTF-8)", $cooked
 			or fault __x"cannot write html manual to {file}", file => $cooked;
 
 		$self->filename(basename $raw);
@@ -287,12 +289,12 @@ sub createOtherPages(@)
 	$self->mkdirhier($dest);
 
 	my @sources;
-	find( { no_chdir => 1,
-			wanted   => sub { my $fn = $File::Find::name;
-							push @sources, $fn if -f $fn;
-							}
-			}, $source
-		);
+	find( +{
+		no_chdir => 1,
+		wanted   => sub {
+			my $fn = $File::Find::name;
+			push @sources, $fn if -f $fn;
+		} }, $source);
 
 	#
 	# Process files, one after the other
@@ -307,7 +309,7 @@ sub createOtherPages(@)
 
 		if($raw =~ $process)
 		{	$self->mkdirhier(dirname $cooked);
-			open my $output, ">:encoding(utf8)", $cooked
+			open my $output, '>:encoding(UTF-8)', $cooked
 				or fault __x"cannot write html to {fn}", fn => $cooked;
 
 			my $options = [];
@@ -868,9 +870,11 @@ sub templateInheritance(@)
 	my $chapter = $manual->chapter('INHERITANCE')
 		or return '';
 
-	open my $out, '>', \(my $buffer);
+	open my $out, '>:encoding(UTF-8)', \(my $buffer);
 	$self->showChapter(%$attrs, manual => $self->manual, chapter => $chapter, output => $out);
 	close $out;
+
+	$buffer = decode 'UTF-8', $buffer;   # open to buffer produces bytes :-(
 
 	for($buffer)
 	{	s#\<pre\>\s*(.*?)\</pre\>\n*#\n$1#gs;   # over-eager cleanup
@@ -904,11 +908,11 @@ sub templateChapter($$)
 	defined $manual or panic;
 	my $chapter = $manual->chapter($name) or return '';
 
-	open my $out, '>', \(my $buffer);
+	open my $out, '>:encoding(UTF-8)', \(my $buffer);
 	$self->showChapter(%$attrs, manual => $self->manual, chapter => $chapter, output => $out);
 	close $out;
 
-	$buffer;
+	decode 'UTF-8', $buffer;
 }
 
 =method templateIndex $templ, \%options, $if, $else

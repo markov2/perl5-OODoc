@@ -13,6 +13,7 @@ use Log::Report      'oodoc';
 
 use OODoc::Template  ();
 use List::Util       qw/first/;
+use Encode           qw/decode/;
 
 #--------------------
 =chapter NAME
@@ -224,7 +225,7 @@ sub subroutines($$$$$$)
 	length $out or return ();
 
 	$out =~ s/\n*$/\n\n/;
-	($out);
+	decode 'UTF-8', $out;
 }
 
 sub diagnostics($$$$$$)
@@ -237,7 +238,7 @@ sub diagnostics($$$$$$)
 	$fh->close;
 
 	$out =~ s/\n*$/\n\n/;
-	($out);
+	decode 'UTF-8', $out;
 }
 
 1;

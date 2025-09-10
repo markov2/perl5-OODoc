@@ -2,8 +2,6 @@
 #oodist: This file contains OODoc-style documentation which will get stripped
 #oodist: during its release in the distribution.  You can use this file for
 #oodist: testing, however the code of this development version may be broken!
-#oorestyle: use of deprecated IO::Scalar: use open(my)
-
 
 package OODoc::Format::Pod2;
 use parent 'OODoc::Format::Pod', 'OODoc::Format::TemplateMagic';
@@ -15,6 +13,7 @@ use Log::Report    'oodoc';
 
 use Template::Magic ();
 use File::Spec      ();
+use Encode          qw/decode/;
 
 #--------------------
 =chapter NAME
@@ -113,23 +112,23 @@ sub templateChapter($$)
 
 	my @attrs = $self->zoneGetParameters($attrs);
 
-	open my $output, '>', \(my $out);
+	open my $output, '>:encoding(UTF-8)', \(my $out);
 	$self->showOptionalChapter($name, %$args, output => $output, @attrs);
-	$out;
+	decode 'UTF-8', $out;
 }
 
 sub templateDiagnostics($$)
 {	my ($self, $zone, $args) = @_;
-	open my $output, '>', \(my $out);
+	open my $output, '>:encoding(UTF-8)', \(my $out);
 	$self->chapterDiagnostics(%$args, output => $output);
-	$out;
+	decode 'UTF-8', $out;
 }
 
 sub templateAppend($$)
 {	my ($self, $zone, $args) = @_;
-	open my $output, '>', \(my $out);
+	open my $output, '>:encoding(UTF-8)', \(my $out);
 	$self->showAppend(%$args, output => $output);
-	$out;
+	decode 'UTF-8', $out;
 }
 
 1;

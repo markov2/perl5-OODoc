@@ -266,10 +266,10 @@ sub parse(@)
 	my $version = $args{version}      or panic;
 	my $distr   = $args{distribution} or panic;
 
-	open my $in, '<:encoding(utf8)', $input
+	open my $in, '<:encoding(UTF-8)', $input
 		or fault __x"cannot read document from {file}", file => $input;
 
-	open my $out, '>:encoding(utf8)', $output
+	open my $out, '>:encoding(UTF-8)', $output
 		or fault __x"cannot write stripped code to {file}", file => $output;
 
 	# pure doc files have no package statement included, so it shall
@@ -972,17 +972,17 @@ sub cleanupPodL($$$)
 sub _htmlReformat($$$$)
 {	my ($self, $manual, $key, $body, $args) = @_;
 		$key eq 'B' ? "<b>$body</b>"
-	: $key eq 'C' ? "<code>$body</code>"
-	: $key eq 'E' ? "&$body;"
-	: $key eq 'F' ? qq{<i class="filename">$body</i>}
-	: $key eq 'I' ? "<i>$body</i>"
-	: $key eq 'L' ? $self->cleanupHtmlL($manual, $body, $args)
-	: $key eq 'M' ? $self->cleanupHtmlM($manual, $body, $args)
-	: $key eq 'P' ? qq{<tt class="parameter">$body</tt>}
-	: $key eq 'S' ? $body =~ s/[ ]/&nbsp;/gr
-	: $key eq 'X' ? ''
-	: $key eq 'Z' ? '&ZeroWidthSpace;'
-	: error __x"Unknown format key '{key}' in manual {manual}", key => $key, manual => $manual->name;
+	  : $key eq 'C' ? "<code>$body</code>"
+	  : $key eq 'E' ? "&$body;"
+	  : $key eq 'F' ? qq{<i class="filename">$body</i>}
+	  : $key eq 'I' ? "<i>$body</i>"
+	  : $key eq 'L' ? $self->cleanupHtmlL($manual, $body, $args)
+	  : $key eq 'M' ? $self->cleanupHtmlM($manual, $body, $args)
+	  : $key eq 'P' ? qq{<tt class="parameter">$body</tt>}
+	  : $key eq 'S' ? $body =~ s/[ ]/&nbsp;/gr
+	  : $key eq 'X' ? ''
+	  : $key eq 'Z' ? '&ZeroWidthSpace;'
+	  : error __x"Unknown format key '{key}' in manual {manual}", key => $key, manual => $manual->name;
 }
 
 sub cleanupHtml($$$)
@@ -991,10 +991,10 @@ sub cleanupHtml($$$)
 
 	my $is_html = $args{is_html};
 
-	if($string =~ m/(?:\A|\n)                   # start of line
-					\=begin\s+(:?\w+)\s*        # begin statement
-					(.*?)                       # encapsulated
-					\n\=end\s+\1\s*             # related end statement
+	if($string =~ m/(?:\A|\n)                  # start of line
+					\=begin\s+(:?\w+)\s*       # begin statement
+					(.*?)                      # encapsulated
+					\n\=end\s+\1\s*            # related end statement
 					/xs
 	|| $string =~ m/(?:\A|\n)                  # start of line
 					\=for\s+(:?\w+)\b          # for statement
@@ -1003,6 +1003,7 @@ sub cleanupHtml($$$)
 					/xs
 	)
 	{	my ($before, $type, $capture, $after) = ($`, lc($1), $2, $');
+
 		if($type =~ m/^\:?html\b/ )
 		{	$type    = 'html';
 			$capture = $self->cleanupHtml($manual, $capture, is_html => 1);
@@ -1014,11 +1015,11 @@ sub cleanupHtml($$$)
 	for($string)
 	{	unless($is_html)
 		{	s#\&#\&amp;#g;
-			s#(\s|^) \< ([^<>]+) \> #$1&lt;$2&gt;#gx;
-			s#(?<!\b[BCEFILSXMP<])\<#&lt;#g;
+#			s#(\s|^) \< ([^<>]+) \> #$1&lt;$2&gt;#gx;
+#			s#(?<!\b[BCEFILSXMP<])\<#&lt;#g;
 			s#([=-])\>#$1\&gt;#g;
 		}
-		s# \b ([A-Z]) (?: \<\<\s*(.*?)\s*\>\> | \<(.*?)\> ) #
+		s# ([A-Z]) (?: \<\<\s*(.*?)\s*\>\> | \<(.*?)\> ) #
 			$self->_htmlReformat($manual, $1, $+, \%args) #gxe;
 
 		s#^\=over(?:\s+\d+)?\s*$#\n<ul>\n#gms;
@@ -1035,15 +1036,15 @@ sub cleanupHtml($$$)
 
 		next if $is_html;
 
-		s!(?:(?:^|\n)
+		s!((?:(?:^|\n)
 			[^\ \t\n]+[^\n]*      # line starting with blank: para
-		)+
-		!<p>$&</p>!gsx;
+		)+)
+		!<p>$1</p>!gsx;
 
-		s!(?:(?:^|\n)               # start of line
+		s!((?:(?:^|\n)            # start of line
 			[\ \t]+[^\n]+         # line starting with blank: pre
-		)+
-		!<pre>$&\n</pre>!gsx;
+		)+)
+		!<pre>$1\n</pre>!gsx;
 
 		s#</pre>\n<pre>##gs;
 		s#<p>\n#\n<p>#gs;

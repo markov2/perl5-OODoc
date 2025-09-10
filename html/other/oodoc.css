@@ -29,7 +29,7 @@ DD > P, DD > PRE {
 	margin-top: 0;
 }
 
-TD > P, TH > P, TD > A {
-	margin: 2px 3px;
+TD, TH {
+	margin: 2px 5px;
 }
 
