@@ -415,10 +415,10 @@ sub showStructureExpanded(@)
 
 	# Show the subroutines and examples.
 
-	$self->showSubroutines(%args, subroutines => [ $text->subroutines ]);
 	$self->showExamples(%args, examples => [ $text->examples] )
 		if $examples eq 'EXPAND';
 
+	$self->showSubroutines(%args, subroutines => [ $text->subroutines ]);
 	$self;
 }
 

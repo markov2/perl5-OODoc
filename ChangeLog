@@ -9,6 +9,9 @@ TODO:
 
 version 3.04:
 
+	Changes:
+	- HTML show structural examples before subs
+
 	Fixes:
 	- fix split skip_links
 	- fix warning message with an option uses non-existing P
