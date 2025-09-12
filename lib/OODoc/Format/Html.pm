@@ -398,7 +398,7 @@ sub showStructureExpanded(@)
 	my $descr   = $self->cleanup($manual, $text->description, tag => 'block_intro');
 	my $unique  = $text->unique;
 	my $id      = $name =~ s/\W+/_/gr;
-	my $n       = $self->cleanup($manual, $name);
+	my $n       = $self->cleanupString($manual, $name);
 	$output->print( qq[\n<h$level id="$id"><a name="$unique">$n</a></h$level>\n$descr] );
 
 	$self->mark($manual, $unique);
