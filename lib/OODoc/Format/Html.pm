@@ -155,11 +155,11 @@ sub link($$;$)
 
 	my $jump;
 	if($object->isa('OODoc::Manual'))
-	{	(my $manname = $object->name) =~ s!\:\:!_!g;
+	{	my $manname = $object->name =~ s!\:\:!_!gr;
 		$jump = $self->htmlRoot . "/$manname/index.html";
 	}
 	else
-	{	(my $manname = $manual->name) =~ s!\:\:!_!g;
+	{	my $manname = $manual->name =~ s!\:\:!_!gr;
 		$jump = $self->jumpScript . "?$manname&". $object->unique;
 	}
 
@@ -180,7 +180,6 @@ sub mark($$)
 
 =option  template $directory|HASH
 =default template "html/manual/"
-
 A $directory containing all template files which have to be filled-in
 and copied per manual page created.  You may also specify an P<HASH>
 of file- and directory names and format options for each of those files.
@@ -343,10 +342,10 @@ which can be overruled by values which the $location is specified as hash.
   #   index.html show NO
   #   main.html show NO
 
-  my $exp = $self->expandTemplate     (
- {"html/manual/index.html" => [show => 'YES']
+  my $exp = $self->expandTemplate( +{
+      "html/manual/index.html" => [show => 'YES']
       "html/manual/main.html"  => []
-    } , [show => 'NO']);
+  } , [show => 'NO']);
   # will print something like
   #   index.html show YES
   #   main.html show NO
@@ -371,12 +370,13 @@ sub expandTemplate($$)
 		}
 	}
 	elsif(-d $loc)
-	{	find( { no_chdir => 1,
-				wanted   => sub { my $fn = $File::Find::name;
-								push @result, $fn, $defaults if -f $fn;
-								}
-			}, $loc
-			);
+	{	find( +{
+			no_chdir => 1,
+			wanted   => sub {
+				my $fn = $File::Find::name;
+				push @result, $fn, $defaults if -f $fn;
+			} }, $loc
+		);
 	}
 	elsif(-f $loc) { push @result, $loc => $defaults }
 	else { error __x"cannot find template source '{name}'", name => $loc }
@@ -549,19 +549,21 @@ sub showSubroutineUse(@)
 	  : $type eq 'tie'      ? qq[tie $call, $paramlist]
 	  :     panic "Type $type? for $call";
 
+	my $is_inherited = $manual->inherited($subroutine) ? 'inherited' : '';
 	$output->print( <<SUBROUTINE );
-<div class="sub $type" id="$name">
+<div class="sub $type $is_inherited" id="$name">
 <dl>
 <dt>$use</dt>
 <dd>
 SUBROUTINE
 
-	if($manual->inherited($subroutine))
+	if($is_inherited)
 	{	my $defd    = $subroutine->manual;
 		my $sublink = $self->link($defd, $subroutine, $name);
 		my $manlink = $self->link($manual, $defd);
 		$output->print( qq[Inherited from $sublink in $manlink.<br>\n] );
 	}
+
 	$self;
 }
 

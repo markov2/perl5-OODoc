@@ -985,6 +985,13 @@ sub _htmlReformat($$$$)
 	  : error __x"Unknown format key '{key}' in manual {manual}", key => $key, manual => $manual->name;
 }
 
+sub _htmlItems($)
+{	my ($self, $manual, $block) = @_;
+	my $type = $block =~ m!^=item\s+\d+\.!m ? 'ol' : 'ul';
+	$block =~ s#^\=item\s*(?:\*\s*|\d+\.\s*)?([^\n]*)#\n<li>$1<br />#gms;
+	"<$type>$block</$type>";
+}
+
 sub cleanupHtml($$$)
 {	my ($self, $manual, $string, %args) = @_;
 	defined $string && length $string or return '';
@@ -1015,16 +1022,14 @@ sub cleanupHtml($$$)
 	for($string)
 	{	unless($is_html)
 		{	s#\&#\&amp;#g;
-#			s#(\s|^) \< ([^<>]+) \> #$1&lt;$2&gt;#gx;
+			s#(\s|^) \< ([^<>]+) \> #$1&lt;$2&gt;#gx;
 #			s#(?<!\b[BCEFILSXMP<])\<#&lt;#g;
 			s#([=-])\>#$1\&gt;#g;
 		}
 		s# ([A-Z]) (?: \<\<\s*(.*?)\s*\>\> | \<(.*?)\> ) #
 			$self->_htmlReformat($manual, $1, $+, \%args) #gxe;
 
-		s#^\=over(?:\s+\d+)?\s*$#\n<ul>\n#gms;
-		s#^\=item\s*(?:\*\s*)?([^\n]*)#\n<li>$1<br />#gms;
-		s#^\=back\b#\n</ul>#gms;
+		s#^\=over(?:\s+\d+)?(.*?)\n=back#$self->_htmlItems($manual, $1)#gmes;
 		s#^\=pod\b##gm;
 
 		my ($label, $level, $title);
