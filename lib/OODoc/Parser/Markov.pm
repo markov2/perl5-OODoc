@@ -982,7 +982,7 @@ sub _htmlReformat($$$$)
 	  : $key eq 'S' ? $body =~ s/[ ]/&nbsp;/gr
 	  : $key eq 'X' ? ''
 	  : $key eq 'Z' ? '&ZeroWidthSpace;'
-	  : error __x"Unknown format key '{key}' in manual {manual}", key => $key, manual => $manual->name;
+	  :   error __x"Unknown format key '{key}' in manual {manual}", key => $key, manual => $manual->name;
 }
 
 sub _htmlItems($)

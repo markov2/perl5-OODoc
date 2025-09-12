@@ -17,6 +17,7 @@ version 3.04:
 	- fix warning message with an option uses non-existing P
 	- fix cleanup in HTML
 	- fix utf8 problems
+	- html cleanup structure headers
 
 	Improvements:
 	- html output support numbered items.

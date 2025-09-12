@@ -398,8 +398,8 @@ sub showStructureExpanded(@)
 	my $descr   = $self->cleanup($manual, $text->description, tag => 'block_intro');
 	my $unique  = $text->unique;
 	my $id      = $name =~ s/\W+/_/gr;
-
-	$output->print( qq[\n<h$level id="$id"><a name="$unique">$name</a></h$level>\n$descr] );
+	my $n       = $self->cleanup($manual, $name);
+	$output->print( qq[\n<h$level id="$id"><a name="$unique">$n</a></h$level>\n$descr] );
 
 	$self->mark($manual, $unique);
 
@@ -435,7 +435,8 @@ sub showStructureRefer(@)
 	my $manual   = $args{manual}  or panic;
 
 	my $link     = $self->link($manual, $text);
-	$output->print( qq[\n<h$level id="$name"><a href="$link">$name</a><h$level>\n] );
+	my $n        =  $self->cleanup($manual, $name);
+	$output->print( qq[\n<h$level id="$name"><a href="$link">$n</a><h$level>\n] );
 	$self;
 }
 
