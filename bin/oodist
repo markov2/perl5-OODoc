@@ -937,7 +937,7 @@ __POD
 
 	push @generate, $html_output ? <<__HTML : "\t  # You may add HTML formatters here.\n";
 	  {	format         => 'html',
-		webpages       => "\$webpages${ $html_docroot eq '/' ? \'' : \$html_docroot },
+		webpages       => "\$webpages${ $html_docroot eq '/' ? \'' : \$html_docroot }",
 		publish        => "\$publish/${ \basename $makefile->{HTML_PACKAGE}}",
 		docroot        => ${ $p->($html_docroot) },
 		templates      => ${ $p->($makefile->{HTML_TEMPLATES}  // 'html') },
