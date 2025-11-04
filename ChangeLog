@@ -13,6 +13,10 @@ version 3.05:
 	- do not check loadable Pod2: needs optional Template/Magic
 	  [Slaven Rezic] cpantesters, rt.cpan.org #169881
 
+	Improvements:
+	- example header formatting
+	- error option without default
+
 version 3.04: Fri 12 Sep 13:58:58 CEST 2025
 
 	Changes:

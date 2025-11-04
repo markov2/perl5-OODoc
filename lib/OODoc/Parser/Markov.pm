@@ -1086,6 +1086,7 @@ tags.
 
 =warning in $where, text uses unknown '$label'
 =warning in $where, options but no call parameter %options
+=warning option {where} has no default
 =cut
 
 sub _collectParamsAllCaps($$$)
@@ -1195,12 +1196,18 @@ sub autoMarkup($$%)
 		my $st  = $sub->openDescription;
 		$$st    = $self->_markupText($$st, "$w()", %args, params => $params);
 
+	OPTION:
 		foreach my $option (@options)
 		{	next if $manual->inherited($option);
 			my $p    = $self->_collectParams($params, option => $option->parameters);
 
 			my $name = $option->name;
 			my $default = $sub->default($name);
+			unless($default)
+			{	warning __x"option {where} has no default", where => "$w($name)";
+				next OPTION;
+			}
+
 			my $v    = $default->value;
 			my $q    = $self->_collectParams($p, default => $v);
 

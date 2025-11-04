@@ -860,7 +860,7 @@ __HEAD
 
 	if($html_output) {
 		my $webpages = $html_output =~ s/\Q$html_docroot\E$//r;
-		print "my \$webpages = ${ $p->($webpages) }\n";
+		print "my \$webpages = ${ $p->($webpages) };\n";
 	}
 
 	my $git          = qx(git config --get remote.origin.url 2>/dev/null);

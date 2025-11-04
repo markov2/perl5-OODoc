@@ -8,6 +8,7 @@ use parent 'OODoc::Format::Pod';
 
 use strict;
 use warnings;
+use utf8;
 
 use Log::Report      'oodoc';
 
@@ -267,7 +268,7 @@ Extends L<"<{header}>" in <{manual}>|<{manual}>/"<{header}>">.
 
 
 <{macro name=example}>\
-B<. <{title}>>
+=head4 » <{title}>
 
 <{descr}>
 <{/macro}>\

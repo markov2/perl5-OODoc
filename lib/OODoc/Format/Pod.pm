@@ -9,6 +9,7 @@ use parent 'OODoc::Format';
 
 use strict;
 use warnings;
+use utf8;
 
 use Log::Report    'oodoc';
 
@@ -263,7 +264,7 @@ sub showExamples(@)
 
 	foreach my $example (@$examples)
 	{	my $name    = $self->cleanup($manual, $example->name);
-		$output->print("\nexample: $name\n\n");
+		$output->print("\n» example: $name\n\n");
 		$output->print($self->cleanup($manual, $example->description));
 		$output->print("\n");
 	}
@@ -283,7 +284,7 @@ sub showDiagnostics(@)
 		my $type    = $diag->type;
 		$output->print("\n=item $type: $name\n\n");
 		$output->print($self->cleanup($manual, $diag->description));
-		$output->print("Cast by ", $diag->subroutine->name, "()\n");
+		$output->print("Cast by C<", $diag->subroutine->name, "()>\n");
 		$output->print("\n");
 	}
 	$self;
