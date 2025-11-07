@@ -64,26 +64,27 @@ my %oodist = (
 	],
 );
 
+my %requries = (
+	'File::Basename'    => 0,
+	'File::Copy'        => 0,
+	'File::Find'        => 0,
+	'File::Glob'        => 0,
+	'File::Slurper'     => 0.014,
+	'File::Spec'        => 0,
+	'HTML::Entities'    => 0,
+	'IO::File'          => 0,
+	'JSON'              => 0,
+	'List::Util'        => 0,
+	'Log::Report'       => 0,
+	'OODoc::Template'   => 0.16,
+	'Pod::Escapes'      => 0,
+	'Scalar::Util'      => 0,
+	'Software::License' => 0.103014,
+);
+
 WriteMakefile
 	NAME         => 'OODoc',
 	VERSION_FROM => 'lib/OODoc.pm',
-	PREREQ_PM    => {
-		'File::Basename'    => 0,
-		'File::Copy'        => 0,
-		'File::Find'        => 0,
-		'File::Glob'        => 0,
-		'File::Slurper'     => 0.014,
-		'File::Spec'        => 0,
-		'HTML::Entities'    => 0,
-		'IO::File'          => 0,
-		'JSON'              => 0,
-		'List::Util'        => 0,
-		'Log::Report'       => 0,
-		'OODoc::Template'   => 0.16,
-		'Pod::Escapes'      => 0,
-		'Scalar::Util'      => 0,
-		'Software::License' => 0.103014,
-	},
 	EXE_FILES    => [ 'bin/oodist' ],
 
 	AUTHOR       => 'Mark Overmeer <perl@overmeer.net>',
@@ -98,10 +99,16 @@ WriteMakefile
 				url  => "$git.git",
 				web  => $git,
 			},
+			bugtracker => {
+				web  => "$git/issues",
+			},
 			homepage => $homepage,
 			licenses => [ 'http://dev.perl.org/licenses/' ],
 		},
 		prereqs => {
+			runtime => {
+				requires => \%requires,
+			},
 			develop => {
 				requires => {
 					'OODoc' => '3.00',

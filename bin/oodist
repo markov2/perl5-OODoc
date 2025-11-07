@@ -969,6 +969,9 @@ WriteMakefile
 				url  => "\$git.git",
 				web  => \$git,
 			},
+			bugtracker => {
+				web  => "\$git/issues",
+			},
 			homepage => \$homepage,
 			license  => [ 'http//dev.perl.org/licenses/' ],
 		},
