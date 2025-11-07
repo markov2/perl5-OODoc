@@ -64,7 +64,7 @@ my %oodist = (
 	],
 );
 
-my %requries = (
+my %requires = (
 	'File::Basename'    => 0,
 	'File::Copy'        => 0,
 	'File::Find'        => 0,

@@ -959,6 +959,8 @@ sub merge3()
 {
 	print <<__MERGE;
 
+my %requires;
+
 WriteMakefile
 	...
 	META_MERGE => {
@@ -976,16 +978,19 @@ WriteMakefile
 			license  => [ 'http//dev.perl.org/licenses/' ],
 		},
 		prereqs => {
+			runtime => {
+				requires => \%requires,
+			},
 			develop => {
 				requires => {
 					'OODoc' => '3.00',
-				}
+				},
 			},
 			test => {
 				requires => {
 					'Test::More' => 1.00,
 					'Test::Pod'  => 1.00,
-				}
+				},
 			},
 		},
 
