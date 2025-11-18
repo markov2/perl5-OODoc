@@ -415,7 +415,7 @@ Each (text) block has same features:
     "name": "Constructors",                    # MARKUP
     "level": 2,                                # SAFE
     "type": "section",                         # SAFE
-    "extends": REFERENCE,                      #XXX TODO
+    "extends": REF,                            # SAFE
     "intro": "Intro to this section.",         # MARKUP
     "examples": [ REF, ... ],
     "subroutines": [ REF, ... ],
@@ -426,6 +426,14 @@ The examples, subroutines and nested blocks are to be kept in their order.
 
 The description and examples are about the content of the whole block.
 Subroutines will also have specific descriptions and examples.
+
+[3.05] When the C<extends> field is set, then this block is included in the tree
+to indicate that the element was inherited from the super-class.  The C<intro>
+text will contain something like "inherited from M<location>.".  In this case,
+the C<id> looks like C<id1519-id2852> which means: C<id1519> is the full
+description base node, and in this case we use it in manual page C<id2852>.
+The C<extends> field will contain C<id1519>, and can be used by the viewer to
+show the full object text.
 
 =subsection Subroutines
 
