@@ -178,6 +178,7 @@ The name of the produced stripped package file.
 Returns whether this package has real code related to it.
 
 =method index
+=method manual
 =cut
 
 sub package()   { $_[0]->{OM_package}  }
@@ -188,6 +189,7 @@ sub stripped()  { $_[0]->{OM_stripped} }
 sub isPurePod() { $_[0]->{OM_pure_pod} }
 sub index()     { $_[0]->{OM_index}    }
 sub distribution() { $_[0]->{OM_distr} }
+sub manual()    { $_[0] }
 
 #--------------------
 =section Collected

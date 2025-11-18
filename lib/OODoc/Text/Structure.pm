@@ -56,7 +56,7 @@ such.
 sub emptyExtension($)
 {	my ($self, $container) = @_;
 
-	my $new = ref($self)->new(
+	my $new = (ref $self)->new(
 		name      => $self->name,
 		linenr    => -1,
 		level     => $self->level,
@@ -74,7 +74,7 @@ Returns the level of the text structure.  Like in pod and html, a chapter
 will be 1, section 2, and subsection 3.
 =cut
 
-sub level()   { $_[0]->{OTS_level} }
+sub level() { $_[0]->{OTS_level} }
 
 =method niceName
 Returns the name of this chapter, section or sub-section beautified to

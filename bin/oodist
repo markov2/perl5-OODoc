@@ -979,7 +979,7 @@ WriteMakefile
 		},
 		prereqs => {
 			runtime => {
-				requires => \%requires,
+				requires => \\%requires,
 			},
 			develop => {
 				requires => {

@@ -84,15 +84,14 @@ sub init($)
 =section Attributes
 
 =method setBlock REF-SCALAR
-Set the scalar where the next documentation lines should be collected
-in.
+Set the scalar where the next documentation lines should be collected in.
 =cut
 
 sub setBlock($)
 {	my ($self, $ref) = @_;
 	$self->{OPM_block} = $ref;
 	$self->inDoc(1);
-	$self;
+	$ref;
 }
 
 =method inDoc [BOOLEAN]
@@ -544,7 +543,7 @@ within a restricted set of chapters.  You have not started any
 chapter yet.
 
 =error subroutine $name outside chapter in $file line $line
-=error subroutine without name in $file line $line
+=error subroutine type '$type' without name in $file line $line
 =cut
 
 sub docSubroutine($$$$)
@@ -555,12 +554,12 @@ sub docSubroutine($$$$)
 	my $type = $1;
 
 	my ($name, $params)
-	  = $type eq 'tie'      ? $line =~ m/^([$@%*]\w+)\,?\s*(.*?)\s*$/
+	  = $type eq 'tie'      ? $line =~ m/^([\$\@\%\*]\w+)\,?\s*(.*?)\s*$/
 	  : $type eq 'overload' ? $line =~ m/^(\S+)\s*(.*?)\s*$/
 	  :    $line =~ m/^(\w+)\s*(.*?)\s*$/;
 
 	defined $name
-		or error __x"subroutine without name in {file} line {line}", file => $fn, line => $ln;
+		or error __x"subroutine type '{type}' without name in {file} line {line}", type => $type, file => $fn, line => $ln;
 
 	my $container = $self->{OPM_subsection} || $self->{OPM_section} || $self->{OPM_chapter}
 		or error __x"subroutine {name} outside chapter in {file} line {line}", name => $name, file => $fn, line => $ln;
@@ -1013,10 +1012,12 @@ sub cleanupHtml($$$)
 
 		if($type =~ m/^\:?html\b/ )
 		{	$type    = 'html';
-			$capture = $self->cleanupHtml($manual, $capture, is_html => 1);
+			$capture = $self->cleanupHtml($manual, $capture, %args, is_html => 1);
 		}
 
-		return $self->cleanupHtml($manual, $before) . $capture . $self->cleanupHtml($manual, $after);
+		return $self->cleanupHtml($manual, $before, %args)
+		     . $capture
+		     . $self->cleanupHtml($manual, $after, %args);
 	}
 
 	for($string)
@@ -1026,9 +1027,7 @@ sub cleanupHtml($$$)
 #			s#(?<!\b[BCEFILSXMP<])\<#&lt;#g;
 			s#([=-])\>#$1\&gt;#g;
 		}
-		s# ([A-Z]) (?: \<\<\s*(.*?)\s*\>\> | \<(.*?)\> ) #
-			$self->_htmlReformat($manual, $1, $+, \%args) #gxe;
-
+		s# ([A-Z]) (?: \<\<\s*(.*?)\s*\>\> | \<(.*?)\> ) # $self->_htmlReformat($manual, $1, $+, \%args) #gxe;
 		s#^\=over(?:\s+\d+)?(.*?)\n=back#$self->_htmlItems($manual, $1)#gmes;
 		s#^\=pod\b##gm;
 
@@ -1276,6 +1275,30 @@ sub finalizeManual($%)
 sub filenameToPackage($)
 {   my ($thing, $fn) = @_;
     $fn =~ s!^lib/!!r =~ s#/#::#gr =~ s/\.(?:pm|pod)$//gr;
+}
+
+sub formatReferTo($$)
+{	my ($self, $manual, $object) = @_;
+
+	return $manual->name
+		if $object->isa('OODoc::Manual');
+
+	return $manual->name . '/"' . $object->name . '"'
+		if $object->isa('OODoc::Text::Structure');
+
+	my $page = $object->manual eq $manual ? '' : ($object->manual->name . '::');
+
+	return $page . $object->name . '()'
+		if $object->isa('OODoc::Text::Subroutine');
+
+	return $page . $object->subroutine->name . '(' . $object->name . ')'
+		if $object->isa('OODoc::Text::Option') || $object->isa('OODoc::Text::Default');
+
+	return $page . $object->subroutine->name . '()'
+		if $object->isa('OODoc::Text::Diagnostic');
+
+	panic ref $object;
+
 }
 
 #--------------------

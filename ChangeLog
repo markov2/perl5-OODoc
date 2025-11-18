@@ -18,6 +18,7 @@ version 3.05:
 	- error option without default
 	- add bugtracker to merge3
 	- add runtime/requires to merge3
+	- export now understands inheritance
 
 version 3.04: Fri 12 Sep 13:58:58 CEST 2025
 

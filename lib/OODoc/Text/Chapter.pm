@@ -86,9 +86,9 @@ sub findEntry($)
 
 sub all($@)
 {	my $self = shift;
-	(	$self->SUPER::all(@_),
-		map $_->all(@_), $self->sections
-	);
+	  (	$self->SUPER::all(@_),
+		(map $_->all(@_), $self->sections),
+	  );
 }
 
 #--------------------

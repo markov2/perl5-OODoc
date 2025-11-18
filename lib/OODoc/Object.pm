@@ -109,6 +109,15 @@ the same thing. The ids are numeric.
 
 sub unique() { $_[0]->{OO_unique} }
 
+=method manual
+The manual of the text object is returned.
+=cut
+
+sub manual() { panic }
+
+#--------------------
+=section Collected
+
 =method publish \%options
 Extract the data of an object for export, and register it in the index.
 A HASH is returned which should get filled with useful data.
@@ -119,7 +128,12 @@ sub _publicationIndex($) { $index = $_[1] }
 
 sub publish($)
 {	my ($self, $args) = @_;
-	$index->{$self->unique} = +{ id => $self->unique };
+	my $id     = $self->unique;
+
+	my $manual = $args->{manual};
+	$id .= '-' . $manual->unique if $manual->inherited($self);
+
+	$index->{$id} = +{ id => $id };
 }
 
 1;

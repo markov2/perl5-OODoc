@@ -152,6 +152,14 @@ a "E<lt>" will stay that way, not being translated in a "E<amp>lt;".
 
 sub cleanupHtml($$%) { ... }
 
+=mthod formatReferTo $manual, $object
+[3.05] Transform a text $object into a link in the parser specific syntax,
+as it can be used in the $manual to get to refer to the $object.  This
+output can be enclosed in an C<< M< > >> tag.
+=cut
+
+sub formatReferTo($$) { ... }
+
 =method finalizeManual $manual, %options
 [3.01] The parser gets a last chance to work on $manual documentation,
 after all documents have been collected and intergrated.

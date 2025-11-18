@@ -288,6 +288,16 @@ sub podChapters($)
 	...
 }
 
+=method referTo $manual, $object
+[3.05] Let the parser produce a piece of text which it would use to refer
+to the $object when used in the $manual.
+=cut
+
+sub referTo($$)
+{	my ($self, $manual, $object) = @_;
+	$self->parser->formatReferTo($manual, $object);
+}
+
 1;
 
 __END__
@@ -375,7 +385,8 @@ with OODoc, for instance OODoc itself at L<https://metacpan.org/XXX>
 The chapters are sorted logically, as they appear in traditional unix manual pages,
 with a few extensions.
 
-=subsection Inheritance
+=subsection Class Inheritance
+
 The manual contains a details inheritance relationship structure, which MAY
 use the following fields:
 
