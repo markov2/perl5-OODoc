@@ -53,11 +53,11 @@ into manual pages.
 
 =c_method new %options
 
-=option  additional_rules ARRAY
-=default additional_rules []
-Reference to an array which contains references to match-action pairs,
-as accepted by M<rule()>.  These rules get preference over the existing
-rules.
+=option  additional_rules \@rules
+=default additional_rules +[]
+An ARRAY which contains references to match-action pairs, as accepted
+by M<rule()>.  These rules get preference over the existing rules.
+Be warned: you pass an ARRAY of ARRAYs.
 
 =requires index  OODoc::Index object
 [2.01] where the package and manual administration is.
@@ -222,12 +222,12 @@ sub findMatchingRule($)
 =method parse %options
 Process an input file into manual fragments.
 
-=requires input FILENAME
+=requires input $file
 
-=option   output FILENAME
+=option   output $file
 =default  output devnull
 
-=requires distribution STRING
+=requires distribution $name
 =requires version STRING
 
 =option   notice $text
@@ -709,10 +709,10 @@ sub docExample($$$$)
 	$line =~ s/^\#.*//;
 
 	my $container = $self->activeSubroutine
-				|| $self->{OPM_subsubsection}
-				|| $self->{OPM_subsection}
-				|| $self->{OPM_section}
-				|| $self->{OPM_chapter};
+		|| $self->{OPM_subsubsection}
+		|| $self->{OPM_subsection}
+		|| $self->{OPM_section}
+		|| $self->{OPM_chapter};
 
 	defined $container
 		or error __x"example outside chapter in {file} line {linenr}", file => $fn, linenr => $ln;

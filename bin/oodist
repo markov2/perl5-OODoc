@@ -27,6 +27,10 @@ use OODoc::Parser     ();
 
 my $tmpdir      = $ENV{TMPDIR} || '/tmp';
 
+my @parser_rules = (
+	[ '#oodist: ' => sub { 1 } ],    # ignore lines marked oodist
+);
+
 my $default_pmhead = <<'__PMHEAD';
 This code is part of Perl distribution $distribution version $version.
 The POD got stripped from this file by OODoc version $ooversion.
@@ -287,7 +291,7 @@ sub extract_distro($%)
 	my $p_config = $dist_config->{parser} || { };
 	my $pmheadfn = rel2abs delete $p_config->{pmhead} || 'PMHEAD.txt', $dir;
 	my $select   = delete $p_config->{select} || qr[^ lib/ .*? \.(?:pod|pm) $ ]x;
-	my $parser   = OODoc::Parser->new(%$p_config, index => $doc->index);
+	my $parser   = OODoc::Parser->new(%$p_config, index => $doc->index, additional_rules => \@parser_rules);
 
 	if($is_root)
 	{	my $pmhead   = -f $pmheadfn ? read_text $pmheadfn : $default_pmhead;
