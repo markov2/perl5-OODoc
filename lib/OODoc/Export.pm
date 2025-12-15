@@ -40,10 +40,12 @@ serialization formats.
 Current serialization formats:
 
 =over 4
-
 =item OODoc::Export::JSON
-
 =back
+
+At the moment, there is one application which can be used to
+read these dumps: Tuyan Tatliparmak implemented the L<document
+viewer|https://github.com/TuT597/Perl-Docs>, downloadable at GitHub.
 
 =chapter METHODS
 
@@ -309,23 +311,18 @@ The exporters will each create the same data tree, but implement different seria
 In the following examples, magnifactured JSON dumps are shown.  Be aware the JSON
 does not sort fields, so your output looks less organized.
 
-=section the Tree
+=section The Document Tree
 
 The data-structure refers to a few capitalized comments:
 
 =over 4
-=item MARKUP
-The output markup used for text.  Currently only "html" is supported.
-
-=item META
-Distribution meta-data, as provided by its F<MYMETA.json>.
-
-=item SAFE
-No HTML, but does never contain any HTML conflicting data.  Is
-does not contain links.
+=item * MARKUP; the output markup used for text.  Currently only "html" is supported.
+=item * META; distribution meta-data, as provided by its F<MYMETA.json>.
+=item * SAFE; no HTML, but does never contain any HTML conflicting data.  Is does not contain links.
+=item * REF; refers to a node in the index by name.
 =back
 
-=subsection root
+=subsection Tree root
 
 The root:
 
@@ -373,7 +370,7 @@ with OODoc, for instance OODoc itself at L<https://metacpan.org/XXX>
 
   { "id": REF,
     "name": "Mail::Box",                       # MARKUP
-    "version": "3.14",                         # or undef
+    "version": "3.14",                         # or undef, SAFE
     "title": "Manage a mailbox",               # MARKUP
     "package": "lib/Mail/Box.pm",              # SAFE
     "distribution": "Mail-Box",                # SAFE
@@ -411,11 +408,11 @@ a list of nested blocks.
 
 Each (text) block has same features:
 
-  { "id": REF,                                 # SAFE
+  { "id": REF,
+    "type": "section",                         # SAFE
     "name": "Constructors",                    # MARKUP
     "level": 2,                                # SAFE
-    "type": "section",                         # SAFE
-    "extends": REF,                            # SAFE
+    "extends": REF,
     "intro": "Intro to this section.",         # MARKUP
     "examples": [ REF, ... ],
     "subroutines": [ REF, ... ],
@@ -450,10 +447,10 @@ There are a few types of subroutines:
 
 Each subroutine looks like this:
 
-  { "id": REF,                               # SAFE
+  { "id": REF,
+    "type": "i_method",                      # MARKUP
     "name": "producePages",                  # MARKUP
     "call": "$obj->producePages()" ],        # MARKUP
-    "type": "i_method",                      # MARKUP
     "intro": "Create the manual ...",        # MARKUP
     "examples": [ REF, ... ],
     "options: [ REF, ... ],
@@ -465,18 +462,18 @@ Each subroutine looks like this:
 Most subroutine forms can have options.  They are passed as
 list sorted by name.
 
-  { "id": REF,                               # SAFE
-    "name": "beautify",                      # MARKUP
+  { "id": REF,
     "type": "option",                        # SAFE
+    "name": "beautify",                      # MARKUP
     "params": "true|false",                  # MARKUP
     "intro": "Make the output better"        # MARKUP
   }
 
 The defaults look like this:
 
-  { "id": REF,                               # SAFE
-    "name": "beautify",                      # MARKUP
+  { "id": REF,
     "type": "default",                       # SAFE
+    "name": "beautify",                      # MARKUP
     "value": "<true>",                       # MARKUP
   }
 
@@ -487,9 +484,9 @@ The option is required when the default value is C<< <required> >>.
 Every block of text, and every subroutine can have a number of
 examples.  Examples do not always have a name.
 
-  { "id": REF,                               # SAFE
-    "name": "how to produce pages",          # MARKUP
+  { "id": REF,
     "type": "example",                       # SAFE
+    "name": "how to produce pages",          # MARKUP
     "intro": "Like this"                     # MARKUP
   }
 
@@ -500,7 +497,7 @@ sorted errors first, then by description text.  Other types of
 diagnostics will be added soon, to match the levels offered by
 Log::Report.
 
-  { "id": REF,                               # SAFE
+  { "id": REF,
     "type": "error"/"warning"/"info"...,     # SAFE
     "name": "Missing ...",                   # MARKUP
     "intro: "This error is shown when...",   # MARKUP

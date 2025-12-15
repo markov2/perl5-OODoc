@@ -15,7 +15,13 @@ better source is CPAN; to get it installed simply run:
    cpan -i OODoc
 ```
 
-# Development &rarr; Release
+The 'export' feature of OODoc produces a dump of the extracted code
+documentation.  The dump itself is described in manual page
+<OODoc::Export|https://metacpan.org/dist/OODoc/view/lib/OODoc/Export.pod#the-Tree>.
+One (currently the only one) application which can be used to read this data
+was produced by Tuyan Tatliparmak, <available on GitHub|https://github.com/TuT597/Perl-Docs>
+
+## Development &rarr; Release
 
 Important to know, is that I use an extension on POD to write the manuals.
 The "raw" unprocessed version is visible on GitHub.  It will run without

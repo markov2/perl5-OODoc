@@ -888,13 +888,13 @@ Returns a string which displays some stats about the manual.
 
 sub stats()
 {	my $self     = shift;
-	my $chapters = $self->chapters || return;
+	my $package  = $self->package;
+	my $chapters = $self->chapters or return "no manual for $package";
 	my $subs     = $self->ownSubroutines;
 	my $options  = map $_->options, $self->ownSubroutines;
 	my $diags    = $self->diagnostics;
 	my $examples = $self->examples;
 	my $manual   = $self->name;
-	my $package  = $self->package;
 	my $head     = $manual eq $package ? "manual $manual" : "manual $manual for $package";
 
 	<<STATS;

@@ -11,7 +11,7 @@ use File::Glob        qw/bsd_glob/;
 use File::Slurper     qw/read_text read_binary read_lines/;
 use File::Spec::Functions qw/catfile rel2abs devnull/;
 use File::Basename    qw/basename dirname/;
-use Getopt::Long      qw/GetOptions :config gnu_getopt/;
+use Getopt::Long      qw/GetOptions :config gnu_getopt bundling/;
 use HTML::Entities    qw/encode_entities/;
 use JSON              ();
 use List::Util        qw/first/;
@@ -77,8 +77,6 @@ sub introduce2oodoc();
 ###
 ### Command-line parsing
 ###
-
-Getopt::Long::Configure 'bundling';
 
 GetOptions
 	'all!'          => \(my $make_all),
@@ -758,7 +756,7 @@ sub create_export($$)
 
 	my $exportfn = catfile $dest, "$distvname-$name.$serial";
 
-	info "** Publish export into $exportfn" ;
+	info "*  publish export into $exportfn" ;
 	$exporter->write($exportfn, $tree, pretty_print => 1);
 
 	1;
@@ -984,6 +982,8 @@ WriteMakefile
 		prereqs => {
 			runtime => {
 				requires => \\%requires,
+				recommends => {},
+				suggests   => {},
 			},
 			develop => {
 				requires => {
