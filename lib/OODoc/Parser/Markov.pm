@@ -1028,7 +1028,7 @@ sub cleanupHtml($$$)
 			s#([=-])\>#$1\&gt;#g;
 		}
 		s# ([A-Z]) (?: \<\<\s*(.*?)\s*\>\> | \<(.*?)\> ) # $self->_htmlReformat($manual, $1, $+, \%args) #gxe;
-		s#^\=over(?:\s+\d+)?(.*?)\n=back#$self->_htmlItems($manual, $1)#gmes;
+		s#^\=over(?:\s+\d+)?(.*?)=back#$self->_htmlItems($manual, $1)#gmes;
 		s#^\=pod\b##gm;
 
 		my ($label, $level, $title);
@@ -1040,10 +1040,18 @@ sub cleanupHtml($$$)
 
 		next if $is_html;
 
+		# Paragraphs are hard to detect.  It is where POD and HTML have
+		# other ideas.  Very tricky :-(
+
 		s!((?:(?:^|\n)
 			[^\ \t\n]+[^\n]*      # line starting with blank: para
 		)+)
 		!<p>$1</p>!gsx;
+
+		s!\<p\>\n\<(/?ol|/?ul)\>\</p\>!<$1>!g; # overeager
+		s!\n*\<p\>\n\<(li)\>(.*?)\</p\>!\n<$1>$2!g;
+
+		# fixed code blocks
 
 		s!((?:(?:^|\n)            # start of line
 			[\ \t]+[^\n]+         # line starting with blank: pre

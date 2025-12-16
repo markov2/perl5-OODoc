@@ -62,7 +62,7 @@ in 'html' is supported.  See accessor M<markupStyle()>.
 
 =error exporter serializer '$name' is unknown.
 =error exporter $name has compilation errors: $err
-=error only HTML markup is currently supported.
+=error only HTML markup is currently supported, found $style.
 =cut
 
 sub new(%)
@@ -86,10 +86,10 @@ sub init($)
 {	my ($self, $args) = @_;
 	$self->SUPER::init($args);
 	$self->{OE_serial} = delete $args->{serializer} or panic;
-	$self->{OE_markup} = delete $args->{markup}     or panic;
+	$self->{OE_markup} = my $markup = delete $args->{markup} or panic;
 
-	$self->markupStyle eq 'html'   # avoid producing errors in every method
-		or error __x"only HTML markup is currently supported.";
+	$markup eq 'html'   # avoid producing errors in every method
+		or error __x"only HTML markup is currently supported, found {style UNKNOWN}.", style => $markup;
 
 	$self;
 }
