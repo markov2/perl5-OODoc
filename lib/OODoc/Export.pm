@@ -300,9 +300,6 @@ sub referTo($$)
 	$self->parser->formatReferTo($manual, $object);
 }
 
-1;
-
-__END__
 #--------------------
 =chapter DETAILS
 
@@ -505,3 +502,5 @@ Log::Report.
   }
 
 =cut
+
+1;

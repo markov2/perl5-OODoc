@@ -12,7 +12,8 @@ version 3.05:
 	Fixes:
 	- do not check loadable Pod2: needs optional Template/Magic
 	  [Slaven Rezic] cpantesters, rt.cpan.org #169881
-	- remove lines added by oodist
+	- remove lines added by oodist.
+	- export functions and overloaded.
 
 	Improvements:
 	- example header formatting

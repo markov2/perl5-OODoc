@@ -23,8 +23,9 @@ my @chapter_names = qw/
 	Inheritance
 	Synopsis
 	Description
-	Overload
+	Overloaded
 	Methods
+	Functions
 	Exports
 	Details
 	Diagnositcs
