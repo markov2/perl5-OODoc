@@ -22,6 +22,7 @@ my %oodist = (
 
 	use              => [                      #O  List of repo roots, which are not recursively
 		'../Log-Report',                       #O     included in the documentation.
+		'../Log-Report-Optional',
 	],
 
 	parser => {

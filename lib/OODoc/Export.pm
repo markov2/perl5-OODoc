@@ -423,7 +423,7 @@ Subroutines will also have specific descriptions and examples.
 
 [3.05] When the C<extends> field is set, then this block is included in the tree
 to indicate that the element was inherited from the super-class.  The C<intro>
-text will contain something like "inherited from M<location>.".  In this case,
+text will contain something like "inherited from I<location>.".  In this case,
 the C<id> looks like C<id1519-id2852> which means: C<id1519> is the full
 description base node, and in this case we use it in manual page C<id2852>.
 The C<extends> field will contain C<id1519>, and can be used by the viewer to

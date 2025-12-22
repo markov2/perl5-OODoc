@@ -785,7 +785,11 @@ is not always easy to find.
 sub decomposeM($$)
 {	my ($self, $manual, $link) = @_;
 
-	my ($subroutine, $option) = $link =~ s/(?:^|\:\:) (\w+) \( (.*?) \)$//x ? ($1, $2) : ('', '');
+	my ($subroutine, $option) = $link =~ s/
+		(?:^|\:\:)      # skip till last ::
+		(\w+ | '[^']+') # sub or overload between quotes
+		\( (.*?) \)     # parameters
+		$//x ? ($1, $2) : ('', '');
 
 	my $man;
 		if(not length($link)) { $man = $manual }
@@ -806,9 +810,9 @@ sub decomposeM($$)
 		$man = $link;
 	}
 
-	blessed $man or return (
-		$manual,
-		$man . (length $subroutine ? " subroutine $subroutine" : '') . (length $option ? " option $option" : ''),
+	blessed $man or return ($manual, $man
+	  . (length $subroutine ? " subroutine $subroutine" : '')
+	  . (length $option ? " option $option" : ''),
 	);
 
 	defined $subroutine && length $subroutine

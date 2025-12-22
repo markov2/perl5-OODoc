@@ -1193,6 +1193,7 @@ sub indexListSubroutines(@)
 Creates this $directory and all its non-existing parents.
 =cut
 
+no warnings 'once';
 *mkdirhier = \&OODoc::mkdirhier;
 
 1;

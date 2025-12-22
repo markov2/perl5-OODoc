@@ -146,16 +146,16 @@ See M<OODoc::Format::cleanup(create_link)>.
 
 =option  is_html BOOLEAN
 =default is_html false
-Some changes will not be made when P<is_html> is true, for instance,
+Some changes will not be made when this is true, for instance,
 a "E<lt>" will stay that way, not being translated in a "E<amp>lt;".
 =cut
 
 sub cleanupHtml($$%) { ... }
 
-=mthod formatReferTo $manual, $object
+=method formatReferTo $manual, $object
 [3.05] Transform a text $object into a link in the parser specific syntax,
 as it can be used in the $manual to get to refer to the $object.  This
-output can be enclosed in an C<< M< > >> tag.
+output can be enclosed in an C<< M < > >> tag.
 =cut
 
 sub formatReferTo($$) { ... }
