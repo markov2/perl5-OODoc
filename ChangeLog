@@ -11,6 +11,7 @@ version 3.06:
 
 	Improvements:
 	- do not include Log::Report in the documentation.
+	- export meta
 
 version 3.05: Mon 22 Dec 16:31:08 CET 2025
 

@@ -154,7 +154,6 @@ __INFO
 }
 
 my $email     = $meta->{email}   || $1;
-
 my $project   = $meta->{name};
 my $version   = $meta->{version};
 my $distvname = "$project-$version";
@@ -749,6 +748,7 @@ sub create_export($$)
 	my $tree = $exporter->tree($doc,
 		manuals       => $manuals,
 		distributions => \%distros,
+		meta          => { },  # nothing yet
 	);
 
 	-d $dest || mkdir $dest
