@@ -1027,9 +1027,9 @@ sub cleanupHtml($$$)
 	for($string)
 	{	unless($is_html)
 		{	s#\&#\&amp;#g;
-			s#(\s|^) \< ([^<>]+) \> #$1&lt;$2&gt;#gx;
-#			s#(?<!\b[BCEFILSXMP<])\<#&lt;#g;
-			s#([=-])\>#$1\&gt;#g;
+			s#(\s|^) \< ([^<>]+) \> #$1&lt;$2&gt;#gx;  # <required>
+			s#(?<!\b[BCEFILSXMP<])\<#&lt;#g;           # for instance <!--, not C<word>
+			s#([=-])\>#$1\&gt;#g;                      # option => default, object->method
 		}
 		s# ([A-Z]) (?: \<\<\s*(.*?)\s*\>\> | \<(.*?)\> ) # $self->_htmlReformat($manual, $1, $+, \%args) #gxe;
 		s#^\=over(?:\s+\d+)?(.*?)=back#$self->_htmlItems($manual, $1)#gmes;

@@ -315,7 +315,7 @@ The data-structure refers to a few capitalized comments:
 =over 4
 =item * MARKUP; the output markup used for text.  Currently only "html" is supported.
 =item * META; distribution meta-data, as provided by its F<MYMETA.json>.
-=item * SAFE; no HTML, but does never contain any HTML conflicting data.  Is does not contain links.
+=item * SAFE = no HTML; does never contain any HTML conflicting data.  Is does not contain links.
 =item * REF; refers to a node in the index by name.
 =back
 
@@ -326,6 +326,7 @@ The root:
   { "project": "MailBox",                      # MARKUP
     "distribution": "Mail-Box",                # SAFE
     "version": "4.01_12",                      # SAFE
+    "meta": { },
 
     "generated_by" : {
        "program": "oodist",                    # SAFE
@@ -346,6 +347,8 @@ The root:
        "id1023": { ... }
     }
   }
+
+The C<meta> HASH can contain any kind of additional data (passed via M<tree(meta)>).
 
 =subsection Distributions
 
@@ -483,7 +486,7 @@ examples.  Examples do not always have a name.
 
   { "id": REF,
     "type": "example",                       # SAFE
-    "name": "how to produce pages",          # MARKUP
+    "name": "how to produce pages",          # MARKUP (optional)
     "intro": "Like this"                     # MARKUP
   }
 

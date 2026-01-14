@@ -45,22 +45,25 @@ my %oodist = (
 		publish      => "$publish/raw",        #  where a $dist-$version-raw.tar.gz is produced
 	},
 
-	generate => [
-	  {	format       => 'pod3',                #O  Pod files are merged into the distribution
+	generate => [ {
+		format       => 'pod3',                #O  Pod files are merged into the distribution
 		podtail      => 'PODTAIL.txt',         #O  chapters to be added to the end of each manual in this dist
-	  },
-	  {	format       => 'html',                #O  Produce static HTML output
+	  }, {
+		format       => 'html',                #O  Produce static HTML output
 		webpages     => "$publish/html",       #   where the pages are created
 		templates    => './html',              #O  templates to be used
 		docroot      => '/oodoc/html',         #O  the root for each generated website link
 		publish      => "$publish/htmlpkg",    #   where a $dist-$version-html.tar.gz is produced
 		stylesheet   =>'/oodoc/html/oodoc.css',#O  use the generic style sheet (under docroot)
-	  },
-	  {	export       => 'website',             #   Name of export
+	  }, {
+		export       => 'website',             #   Name of export
 		serializer   => 'json',                #O  Serializer to produce export
 		markup       => 'html',                #O  markup to be used for the output texts
 		publish      => "$publish/doctree",    #   where the $dist-$version-$name.json will be produced
 		include_manuals => undef,              #O  array of package prefixes
+		meta         => {
+			main_manual => "OODoc",
+		},
 	  },
 	],
 );

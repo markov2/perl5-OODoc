@@ -52,7 +52,6 @@ use overload
 =section Constructors
 
 =c_method new %options
-
 Create a new object (instantiation).  All objects in OODoc are created
 the same way: they carry a list of key-value pairs as option.  For
 examples, see the description of this method in the manual page of
