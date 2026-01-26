@@ -947,7 +947,8 @@ __POD
 	  },
 __HTML
 
-	push @generate, "\t\t  # You may add exporter configurations here.\n";
+	push @generate, "\t  # You may add exporter configurations here.\n";
+	local $" = '';
 
 	print <<__TAIL;
 
