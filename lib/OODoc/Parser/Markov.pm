@@ -1127,8 +1127,9 @@ sub _markupSplit($)
 
 sub _markupText($$%)
 {	my ($self, $text, $where, %args) = @_;
+	my $params = $args{params} || {};
 
-	my @frags = $self->_markupSplit($text);
+	my @frags  = $self->_markupSplit($text);
 	my @rewritten;
 
 	while(@frags)
@@ -1145,8 +1146,7 @@ sub _markupText($$%)
 		}
 
 		if($args{make_p})
-		{	my $params = $args{params} || {};
-
+		{
 			# auto-P variable
 			$text =~ s! ( [\$\@\%]\w+ ) !
 				my $p = $1;
@@ -1191,7 +1191,7 @@ sub autoMarkup($$%)
 		my $w   = $manual->name . '::' . $sub->name;
 
 		my $params = +{};
-		if($sub->type =~ m!(_method$|^function$)!)
+		if($sub->type =~ m!(_method$|^function|tie$)!)
 		{	$params    = $self->_collectParams($params, call => $sub->parameters);
 			$params    = $self->_collectParamsAllCaps($params, call => $sub->parameters);
 		}

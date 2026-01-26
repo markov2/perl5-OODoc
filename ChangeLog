@@ -10,6 +10,7 @@ version 3.06:
 
 	Fixes:
 	- export escape <!--
+	- understand parameters from a tie.
 
 	Improvements:
 	- do not include Log::Report in the documentation.
