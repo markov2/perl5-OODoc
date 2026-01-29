@@ -787,7 +787,7 @@ sub decomposeM($$)
 
 	my ($subroutine, $option) = $link =~ s/
 		(?:^|\:\:)      # skip till last ::
-		(\w+ | '[^']+') # sub or overload between quotes
+		(\w+ | '[^']*' | "[^"]*" ) # sub or overload between quotes
 		\( (.*?) \)     # parameters
 		$//x ? ($1, $2) : ('', '');
 
