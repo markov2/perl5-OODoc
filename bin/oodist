@@ -748,7 +748,7 @@ sub create_export($$)
 	my $tree = $exporter->tree($doc,
 		manuals       => $manuals,
 		distributions => \%distros,
-		meta          => { },  # nothing yet
+		meta          => $gen->{meta},
 	);
 
 	-d $dest || mkdir $dest

@@ -65,8 +65,8 @@ sub _call($)
 
 	if($style eq 'html')
 	{	my $call       = qq[<b><a name="$unique">$name</a></b>];
-		$type eq 'tie'
-			and return qq[tie $call, $paramlist];
+		$type eq 'tie'      and return qq[tie $call, $paramlist];
+		$type eq 'overload' and return qq[overload $call; $paramlist];
 
 		$call         .= "(&nbsp;$paramlist&nbsp;)" if length $paramlist;
 
@@ -74,7 +74,6 @@ sub _call($)
 			$type eq 'i_method' ? qq[\$obj-&gt;$call]
 		  : $type eq 'c_method' ? qq[\$class-&gt;$call]
 		  : $type eq 'ci_method'? qq[\$any-&gt;$call]
-		  : $type eq 'overload' ? qq[overload: $call]
 		  : $type eq 'function' ? qq[$call]
 		  :    panic "Type $type? for $call";
 	}
